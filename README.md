@@ -1,8 +1,8 @@
 istatd
 ======
 
-Check with jwatte@imvu.com for more information. Not currently released 
-for redistribution! All rights reserved. Copyright 2011 IMVU, Inc.
+Check with jwatte@imvu.com for more information. Released under MIT 
+license. All rights reserved. Copyright 2011 IMVU, Inc.
 
 The purpose of istatd is to efficiently collect, store and retrieve 
 named statistics from a large number of sources. This is similar to 
@@ -18,7 +18,7 @@ carbon back-end. The specific goals of this system are:
   average, standard deviation.
 
 For more documentation than what is found in this file, see:
-- https://github.com/imvu/istatd/wiki
+- https://github.com/imvu-open/istatd/wiki
 
 This program is implemented in C++ using boost::asio for asynchronous, 
 multi-threaded, evented net handling. One version of this program used 
