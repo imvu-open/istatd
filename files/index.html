@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+    <title>Istatd Counter Browser</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=9"/>
+    <!-- relative files must start with /files/ !-->
+    <link rel='stylesheet' href='/files/styles.css'/>
+    <link rel='shortcut icon' href='/files/favicon.ico'/>
+    <link rel='icon' type='image/vnd.microsoft.icon' href='/files/favicon.ico'/>
+    <!--[if gte IE 10]>
+    <style type='text/css'>
+        * {
+            /* IE10 has -ms-linear-gradient! IE9 does not. */
+            filter: none !important;
+            -ms-filter: none !important;
+        }
+    </style>
+    <![endif]-->
+</head>
+<body>
+<div id='lefttab' class='tabs'>
+    <h1>istatd</h1>
+    <div class='progressbg' id='progressbar'><div class='progressfg'></div></div>
+    <div id='login'>
+        <input type='text' id='loginname' value='Username'/>
+        <input type='password' id='loginpassword' value='********' /><div class='tbutton' action='login()'>Login</div>
+    </div>
+    <div title='User Controls' class='tdropdown username'>
+        <div class='label'>User: <span id='username'></span></div>
+        <div class='reveal'>
+            <div class='tmenuitem' action='logout()'>Logout</div>
+        </div>
+    </div>
+    <div class='labels'></div>
+    <div id='counters' class='active tab'>
+        <div id='counter_filter'>
+            <div id='counter_filter_label'>Search</div>
+            <input type='text' id='counter_filter_text' value=""/>
+            <div id='counter_filter_clear'></div>
+        </div>
+        <div class='scroll'>
+        </div>
+    </div>
+    <div id='dashboards' class='tab'>
+        <div class='scroll'>
+            <ul class='picklist'></ul>
+        </div>
+    </div>
+</div>
+<div id='hsplit'></div>
+
+<div id='grid' class='areabg'>
+<div id='menubar'>
+<div id='tools'>
+    <div id='save_dashboard' class='tbutton disabled' action='save_dashboard()' title='Save Dashboard'>
+        Save Dashboard
+    </div>
+    <div class='tbutton image refresh' action='refresh()' title='Refresh Now'>
+        &nbsp;
+    </div>
+    <div class='tbutton image auto_refresh' action='auto_refresh()' title='Auto-Refresh'>
+        &nbsp;
+    </div>
+    <div class='tslider manual' id='time_slider' default='2' title='Time Range'>
+        <div class='label'>Range</div>
+        <div class='widget'>
+            <div class='markers'>
+                <div title='5 minutes' class='marker' action='set_interval(5*60)'>5m</div>
+                <div title='15 minutes' class='marker' action='set_interval(15*60)'>15m</div>
+                <div title='1 hour' class='marker' action='set_interval(3600)'>1h</div>
+                <div title='3 hours' class='marker' action='set_interval(3*3600)'>3h</div>
+                <div title='12 hours' class='marker' action='set_interval(12*3600)'>12h</div>
+                <div title='1 day' class='marker' action='set_interval(1*86400)'>1d</div>
+                <div title='3 days' class='marker' action='set_interval(3*86400)'>3d</div>
+                <div title='1 week' class='marker' action='set_interval(7*86400)'>1w</div>
+                <div title='1 month' class='marker' action='set_interval(31*86400)'>1m</div>
+                <div title='3 months' class='marker' action='set_interval(92*86400)'>3m</div>
+                <div title='6 months' class='marker' action='set_interval(183*86400)'>6m</div>
+                <div title='1 year' class='marker' action='set_interval(366*86400)'>1y</div>
+                <div title='2 years' class='marker' action='set_interval(731*86400)'>2y</div>
+                <div title='5 years' class='marker' action='set_interval(1827*86400)'>5y</div>
+            </div>
+            <div class='gauge'>
+                <div class='value'></div>
+                <div class='thumb'></div>
+            </div>
+        </div>
+    </div>
+    <div title='Chart Size' class='tdropdown chart_size'>
+        <div class='label'>Chart Size</div>
+        <div class='reveal'>
+            <div class='tmenuitem' action='graph_size(300, 120, $i)'>
+                Small (300x120)
+            </div>
+            <div class='tmenuitem current' action='graph_size(600, 240, $i)'>
+                Medium (600x240)
+            </div>
+            <div class='tmenuitem' action='graph_size(800, 480, $i)'>
+                Large (800x480)
+            </div>
+            <div class='tmenuitem' action='size_custom()'>Custom...</div>
+        </div>
+    </div>
+    <div title='Advanced Tools' class='tdropdown'>
+        <div class='label'>Advanced</div>
+        <div class='reveal'>
+            <div class='tmenuitem' action='regexp_change()'>Regex/Replace...</div>
+            <div class='tmenuitem' action='regexp_add()'>Regex/Add...</div>
+            <div class='tmenuitem' action='xref_change()'>Cross-reference Counters...</div>
+            <div class='tmenuitem' action='select_daterange()'>Manual Date Range...</div>
+            <div class='tmenuitem' action='packup_state_as_hash()'>Create Bookmark URL</div>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="/files/jquery.min.js"></script>
+<script type="text/javascript">
+    // Load the Visualization API and the piechart package.
+</script>
+<script src='/files/sha256.js'></script>
+<script src='/files/dygraph-combined.js'></script>
+<script src='/files/graph.js'></script>
+<script>
+    $(document).ready(on_ready);
+</script>
+</body>
+</html>

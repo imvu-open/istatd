@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+<title>test form</title>
+<link rel='stylesheet' href='/?f=styles.css'/>
+</head>
+<body>
+<div>
+<textarea id='data' rows='10' cols='60'></textarea><br/>
+<input type='button' value='post' onclick='javascript:post();'/>
+</div>
+<pre id='result'>
+</pre>
+<script language='javascript'>
+function getKeys() {
+    var ret = [];
+    var data = document.getElementById('data').value;
+    console.log('data=' + data);
+    var spl = data.split(',');
+    for (var k in spl) {
+        ret.push(spl[k].replace(/^ */, '').replace(/ *$/, ''));
+    }
+    return ret;
+}
+
+function post() {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+            document.getElementById('result').innerHTML = 
+                xhr.responseText.replace(/\&/g, '&amp;').replace(/</g, '&lt;').replace(/},{/g, "},\n{");
+        }
+    }
+    xhr.open("POST", "/*", true);
+    var content = JSON.stringify({
+        start: Math.floor((new Date()).getTime() / 1000) - 900,
+        stop: Math.floor((new Date()).getTime() / 1000),
+        keys: getKeys()
+        });
+    console.log('' + content.length + ':' + content);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Content-Length", content.length);
+    xhr.send(content);
+}
+</script>
+</body>
+</html>

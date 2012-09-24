@@ -1,0 +1,2 @@
+GET http://127.0.0.2:18013/foo.bar?start=1611&end=2509&samples=45
+error: [Errno socket error] [Errno 111] Connection refused

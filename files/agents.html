@@ -1,0 +1,87 @@
+<!doctype html>
+<head><title>Agent Status</title></head>
+<body>
+<style>
+table {
+    border-collapse: collapse;
+    padding: 0px;
+    margin: 0px;
+    border: solid 2px #777777;
+    font-family: sans-serif;
+}
+tr {
+    padding: 0px;
+    margin: 0px;
+    border: solid 1px #777777;
+}
+td {
+    padding: 1px 5px;
+    margin: 0px;
+    border: solid 1px #777777;
+    text-align: center;
+}
+</style>
+<div id='agents'>
+Fetching status...
+</div>
+<script language='javascript'>
+var xhr = new XMLHttpRequest();
+xhr.onreadystatechange = function() {
+    if (xhr.readyState == 4) {
+        var data = JSON.parse(xhr.responseText);
+        var i = invert(data.agents);
+        var tbl = generate_table(i);
+        var telem = document.getElementById('agents');
+        telem.innerHTML = tbl;
+    }
+}
+xhr.open('GET', '/?a=*', true);
+xhr.send();
+
+function invert(x) {
+    var ret = {};
+    var empty = [];
+    for (var ix in x) {
+        var xx = x[ix];
+        for (var key in xx) {
+            var a = ret[key];
+            if (a === undefined) {
+                a = empty.slice(0);
+                ret[key] = a;
+            }
+            a.push(xx[key]);
+        }
+        for (var key in ret) {
+            if (xx[key] === undefined) {
+                ret[key].push(undefined);
+            }
+        }
+        empty.push(undefined);
+    }
+    return ret;
+}
+
+function generate_table(i) {
+    var ret = ['<table><tr class="headers">'];
+    var len = 0;
+    for (var k in i) {
+        ret.push("<th>" + k + "</th>");
+        var a = i[k];
+        if (a.length > len) {
+            len = a.length;
+        }
+    }
+    ret.push('</tr>');
+    for (var ix = 0; ix < len; ix = ix + 1) {
+        ret.push('<tr>');
+        for (var k in i) {
+            var a = i[k];            
+            ret.push('<td>' + String(a[ix]).replace(/\,/g, " ") + '</td>');
+        }
+        ret.push('</tr>');
+    }
+    ret.push('</table>');
+    return ret.join('');
+}
+</script>
+</body>

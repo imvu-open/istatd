@@ -1,0 +1,124 @@
+#!/bin/bash
+# Simple configuration script for people who expect such a script to exist.
+# Please do not convert istatd to autotools. We will likely not accept such 
+# a conversion. Thanks for your interest in istatd, and good luck!
+
+set -e
+set -o nounset
+
+rm -f makevars.config
+echo "# makevars.config for istatd generated on " `date` > makevars.config
+
+BOOST_SYSTEM=""
+BOOST_FILESYSTEM=""
+STATGRAB=""
+DESTDIR=""
+USR_PREFIX=""
+VAR_PREFIX=""
+ETC_PREFIX=""
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        --boost_system)
+            shift
+            BOOST_SYSTEM="$1"
+            ;;
+        --boost_filesystem)
+            shift
+            BOOST_FILESYSTEM="$1"
+            ;;
+        --statgrab)
+            shift
+            STATGRAB="$1"
+            ;;
+        --prefix)
+            shift
+            DESTDIR="$1"
+            ;;
+        --usr-prefix)
+            shift
+            USR_PREFIX="$1"
+            ;;
+        --var-prefix)
+            shift
+            VAR_PREFIX="$1"
+            ;;
+        --etc-prefix)
+            shift
+            ETC_PREFIX="$1"
+            ;;
+        *)
+            echo "Options:"
+            echo "--boost_system     -lboost_system-mt      What is the boost_system library name?"
+            echo "--boost_filesystem -lboost_filesystem-mt  What is the boost_filesystem library name?"
+            echo "--statgrab         -lstatgrab             What is the statgrab library name?"
+            echo "--prefix           /                      What is the root of the install?"
+            echo "--usr-prefix       /usr                   What is the '/usr' directory for executables?"
+            echo "--var-prefix       /var                   What is the '/var' directory for database data?"
+            echo "--etc-prefix       /etc                   What is the '/etc/ directory for rc.d scripts?"
+            echo "No equal sign for option values."
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# see if we need to install boost
+if [ ! -d /usr/include/boost -a ! -d /usr/local/include/boost ]; then
+    echo "You need to install libboost-all-dev for your distribution."
+    exit 1
+fi
+
+if [ ! -r /usr/include/statgrab.h -a ! -r /usr/local/include/statgrab.h ]; then
+    echo "You need to install libstatgrab-dev for your distribution, or "
+    echo "download and install it from source. See README.md"
+fi
+
+
+# boost_system is a pain across versions
+if [ -z "$BOOST_SYSTEM" ]; then
+    if [ -r /usr/lib/libboost_system.so ]; then
+        BOOST_SYSTEM=-lboost_system
+    elif [ -r /usr/lib/libboost_system.so ]; then
+        BOOST_SYSTEM=-lboost_system-mt.so
+    fi
+fi
+# boost_filesystem is also somewhat a pain
+if [ -z "$BOOST_FILESYSTEM" ]; then
+    if [ -r /usr/lib/libboost_filesystem.so ]; then
+        BOOST_FILESYSTEM=-lboost_filesystem
+    elif [ -r /usr/lib/libboost_filesystem.so ]; then
+        BOOST_FILESYSTEM=-lboost_filesystem-mt
+    fi
+fi
+if [ -z "$STATGRAB" ]; then
+    if [ -r /usr/lib/libstatgrab.so ]; then
+        STATGRAB=-lstatgrab
+    elif [ -r /usr/local/lib/libstatgrab.so ]; then
+        STATGRAB=-lstatgrab
+    fi
+fi
+
+if [ ! -z "$BOOST_SYSTEM" ]; then
+    echo "BOOST_SYSTEM=$BOOST_SYSTEM" >> makevars.config
+fi
+if [ ! -z "$BOOST_FILESYSTEM" ]; then
+    echo "BOOST_FILESYSTEM=$BOOST_FILESYSTEM" >> makevars.config
+fi
+if [ ! -z "$STATGRAB" ]; then
+    echo "STATGRAB=$STATGRAB" >> makevars.config
+fi
+if [ ! -z "$DESTDIR" ]; then
+    echo "DESTDIR=$DESTDIR" >> makevars.config
+fi
+if [ ! -z "$USR_PREFIX" ]; then
+    echo "USR_PREFIX=$USR_PREFIX" >> makevars.config
+fi
+if [ ! -z "$VAR_PREFIX" ]; then
+    echo "VAR_PREFIX=$VAR_PREFIX" >> makevars.config
+fi
+if [ ! -z "$ETC_PREFIX" ]; then
+    echo "ETC_PREFIX=$ETC_PREFIX" >> makevars.config
+fi
+
+echo "All done"

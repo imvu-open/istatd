@@ -1,0 +1,5 @@
+GET http://localhost:18011/foo.bar?start=1391&end=1398
+start:          1390
+end:            1400
+interval:         10
+      1390 1.00 1.00 1.00 1 1.00 1.00

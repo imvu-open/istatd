@@ -1,0 +1,334 @@
+#!/bin/bash
+
+set -e
+set -o nounset
+set +o histexpand
+
+FTEST_NAME=`basename $0 .sh`
+echo $FTEST_NAME
+
+# do a bit of a fail-safe to make sure we don't hang forever
+export ALARMPARENT=$$
+(sleep 30; echo "Test process timed out."; kill -9 $ALARMPARENT; killall -q -9 istatd; exit 1) &
+ALARMCHILD=$!
+
+function failure {
+    echo ""
+    echo "FAILURE: $1"
+    exit 1
+}
+
+function onexit {
+    trap "$1" SIGINT SIGTERM SIGHUP EXIT
+}
+
+function assert_equal {
+    LHS=$1
+    RHS=$2
+    MSG=$3
+    if [ "$LHS" != "$RHS" ]; then
+        failure "'$LHS' not equal to '$RHS': $MSG"
+    fi
+}
+
+function setup_test {
+    rm -rf "$DBDIR"
+}
+
+function kill_server {
+    KIND=$1
+    if [ -s $DBDIR/$KIND-pid.pid ]; then
+        KILLPID=`cat $DBDIR/$KIND-pid.pid`
+        kill -9 $KILLPID 2> /dev/null || true
+    fi
+}
+
+function cleanup_inner {
+    kill -SIGTERM $ALARMCHILD || true
+    onexit 'echo "signal received in cleanup"'
+    TOKILL="$STARTED_SERVERS"
+    STARTED_SERVERS=""
+    for srv in $TOKILL; do
+        kill_server "$srv"
+    done
+    trap true EXIT
+}
+
+function cleanup_test {
+    cleanup_inner
+    rm -rf "$DBDIR"
+}
+
+function cleanup_exit {
+    cleanup_inner
+    echo "Saving state in $DBDIR"
+    exit 1
+}
+
+function wait_for_file {
+    FILENAME=$1
+    N=0
+    echo -n "wait_for_file $FILENAME ";
+    while [ ! -s "$FILENAME" ]; do
+        if [ $N -gt 100 ]; then
+            echo ""
+            failure "timeout waiting for $FILENAME"
+        fi
+        echo -n "."
+        bin/istatd_sleep 0.1
+        N=`expr $N + 1`
+    done
+    echo ""
+}
+
+function wait_for_counter {
+    CONFIG=$1
+    COUNTER=$2
+    FILENAME=$DBDIR/$CONFIG-store/`echo $COUNTER | tr [.] [/]`
+    wait_for_file $FILENAME
+}
+
+function wait_for_stats {
+    PORT=$1
+    EXPECTED=$2
+    N=0
+    echo -n "wait_for_stats $PORT $EXPECTED "
+    while [ $N -lt 100 ]; do
+        DATA=`echo -ne 'stats\r\nquit\r\n' | netcat -q 1 localhost $PORT || true`
+        DATA=`echo "$DATA" | grep -F "$EXPECTED" || true`
+        if [ ! -z "$DATA" ]; then
+            echo ""
+            return
+        fi
+        echo -n "."
+        bin/istatd_sleep 0.1
+        let N=N+1
+    done
+    echo ""
+    failure "timeout waiting for $2 on port $1"
+}
+
+function start_server {
+    CONFIG=$1; shift
+    if ! echo $CONFIG | grep -q agent ; then
+       maybe_store="--store $DBDIR/$CONFIG-store"
+    else
+       # agent mode skips the stat store argument
+       maybe_store=""
+    fi
+    [ -f ftest/$CONFIG.cfg ] || failure "cannot find config file ftest/$CONFIG.cfg"
+    bin/istatd --debug segv --config ftest/$CONFIG.cfg $maybe_store --settings $DBDIR/$CONFIG-settings --pid-file $DBDIR/$CONFIG-pid.pid --log-file $DBDIR/$CONFIG-log.log --daemonize $* > $DBDIR/$CONFIG-stdouterr 2>&1
+    istatd_launch=$?
+    if [ ${istatd_launch} -eq 0 ] ; then
+       STARTED_SERVERS="$STARTED_SERVERS $CONFIG"
+       wait_for_file "$DBDIR/$CONFIG-pid.pid"
+    else
+       failure "Unable to launch istatd \($istatd_launch\) for $CONFIG and args: $*"
+    fi
+}
+
+function send_stat {
+    PORT="$1"
+    shift
+    if [ -z "$2" ]; then
+        failure "usage: send_stat port counter.name val [...]"
+    fi
+    echo -ne "$*\r\n" | netcat -q 1 localhost "$PORT"
+}
+
+function send_event {
+    PORT="$1"
+    shift
+    if [ -z "$1" ]; then
+        failure "usage: send_event port 'eventType|eventMessage[|maybehost]'"
+    fi
+    echo -ne "$*\r\n" | netcat -q 1 localhost "$PORT"
+}
+
+function make_data {
+    START_TIME=$1
+    END_TIME=$2
+    INTERVAL=$3
+    MAYBE_TIMESTAMP=${4-""}
+    for ts in `seq $START_TIME $INTERVAL $END_TIME`; do
+        if [ -z ${MAYBE_TIMESTAMP} ] ; then
+            echo 1
+        else
+            echo $ts 1
+        fi
+    done
+}
+
+function dump_counter {
+    CONFIG=$1;shift
+    COUNTER=$1;shift
+    INTERVAL_STR=$1;shift
+    STAT_COUNTER_DIR=$DBDIR/$CONFIG-store/`echo $COUNTER | tr [.] [/]`
+    bin/istatd_filedump $* $STAT_COUNTER_DIR/$INTERVAL_STR
+}
+
+function create_stat_file {
+    STAT_COUNTER_DIR=$1
+    START_TIME=$2
+    END_TIME=$3
+    INTERVAL=$4
+    INTERVAL_STR=$5
+    MAYBE_ZERO_TIME=""
+    STAT_FILE=$STAT_COUNTER_DIR/$INTERVAL_STR
+    if [ ! -d $STAT_COUNTER_DIR ] ; then
+        mkdir -p $STAT_COUNTER_DIR
+    fi
+    if [ ! -f $STAT_FILE ] ; then
+        MAYBE_ZERO_TIME="--zero-time $START_TIME"
+    fi
+    make_data $START_TIME $END_TIME $INTERVAL 1 | bin/istatd_nums2file --stat-file $STAT_FILE --time-in-file $MAYBE_ZERO_TIME --interval $INTERVAL
+}
+
+function create_stat_files {
+    CONFIG=$1
+    COUNTER=$2
+    START_TIME=$3
+    END_TIME=$4
+    STAT_COUNTER_DIR=$DBDIR/$CONFIG-store/`echo $COUNTER | tr [.] [/]`
+    create_stat_file $STAT_COUNTER_DIR $START_TIME $END_TIME   10 10s
+    create_stat_file $STAT_COUNTER_DIR $START_TIME $END_TIME  300 5m
+    create_stat_file $STAT_COUNTER_DIR $START_TIME $END_TIME 3600 1h
+}
+
+function http_get_counter {
+    PORT="--host=$1"
+    START_TIME="--start-time=$2"
+    END_TIME="--end-time=$3"
+    SAMPLES="--max-samples=$4"
+    shift 4
+    tool/istatd_query.py ${PORT} ${START_TIME} ${END_TIME} ${SAMPLES} $1
+}
+
+function http_post_for_counters {
+    PORT="--host=$1"
+    START_TIME="--start-time=$2"
+    END_TIME="--end-time=$3"
+    SAMPLES="--max-samples=$4"
+    shift 4
+    tool/istatd_query.py --force-post ${PORT} ${START_TIME} ${END_TIME} ${SAMPLES} $*
+}
+
+function http_post_json {
+    curl -d "$2" -s -X POST "$1" 2>&1
+}
+
+function test_counter {
+    PROFILE=$1
+    COUNTER=$2
+    shift 2
+    FILENAME=$DBDIR/$PROFILE-store/`echo $COUNTER | tr [.] [/]`
+    wait_for_file $FILENAME
+    VALUES=( `bin/istatd_filedump $FILENAME | tail -n +2 | sed -e 's/[^,]*,\\([^,]*\\),.*/\\1/'` )
+    COUNT=${#VALUES[@]}
+    
+    if [ $COUNT != $# ]; then
+        bin/istatd_filedump $FILENAME
+        failure "Wrong file length for $FILENAME - expected exactly $# bucket(s), but got $COUNT bucket(s) instead."
+    else
+        for (( i=1; i<=$COUNT; i++ )); do
+            value=${VALUES[$i - 1]} 
+            if [ $value != ${!i} ]; then
+                bin/istatd_filedump $FILENAME
+                failure "Wrong sum in bucket $i of $FILENAME - expected ${!i}, but got $value instead."
+            fi
+        done
+    fi
+}
+
+function flush_istatd {
+    bin/istatd_flush -q localhost $1
+}
+
+function purge_istatd {
+    bin/istatd_purge -q localhost $1
+}
+
+function check_get {
+    PORT="$1"; shift
+    QUERY="$1"; shift
+    echo -n "check GET $PORT $QUERY "
+    curl -s "http://localhost:$PORT/$QUERY" > "$DBDIR/curl.out"
+    while [ "$#" -ne "0" ]; do
+        NAME="$1"; shift
+        if grep "$NAME" "$DBDIR/curl.out" > /dev/null; then
+            true
+        else
+            failure "Did not find pattern $NAME on port $PORT (see $DBDIR/curl.out)"
+        fi
+    done
+    echo ""
+}
+
+function check_post {
+    PORT="$1"; shift
+    QUERY="$1"; shift
+    DATA="$1"; shift
+    echo -n "check POST $PORT $QUERY "
+    curl -s -d "$DATA" "http://localhost:$PORT/$QUERY" > "$DBDIR/curl.out"
+    while [ "$#" -ne "0" ]; do
+        NAME="$1"; shift
+        if grep "$NAME" "$DBDIR/curl.out" > /dev/null; then
+            true
+        else
+            failure "Did not find pattern $NAME on port $PORT (see $DBDIR/curl.out)"
+        fi
+    done
+    echo ""
+}
+
+function check_counters {
+    PORT="$1"; shift
+    PATTERN="$1"; shift
+    check_get "$PORT" "?q=$PATTERN" $*
+}
+
+function assert_files_equal {
+    FILE1=$1
+    FILE2=$2
+    TMPF=/var/tmp/assert_file_equal_$$.txt
+    if ! diff $FILE1 $FILE2 > $TMPF 2>&1 ; then
+        echo "FAILURE: $TEST_NAME"
+        echo "test_output < $FILE1"
+        echo "test_expect > $FILE2"
+        cat $TMPF
+        rm -f $TMPF
+        exit 1
+    fi
+    rm -f $TMPF
+}
+
+function assert_expected {
+    RESULT_F=$1
+    EXPECT_F=ftest/expected/$FTEST_NAME/$TEST_NAME
+    [ -d ftest/expected ] || failure "dir does not exist: ftest/expected"
+    [ -d ftest/expected/$FTEST_NAME ] || failure "dir does not exist: ftest/expected/$FTEST_NAME"
+    assert_files_equal $RESULT_F $EXPECT_F
+}
+
+TEST_NUM=0
+TEST_OUT=/var/tmp/test_out_$$
+EXPECT_OUT=/var/tmp/expect_out_$$
+TEST_NAME=""
+function test_name {
+    TEST_NAME=$1
+    let TEST_NUM=$TEST_NUM+1    
+    TEST_NUM_STR=`printf "%03d" $TEST_NUM`
+    TEST_OUT=$DBDIR/test_${TEST_NUM_STR}
+    EXPECT_OUT=$DBDIR/expect_${TEST_NUM_STR}
+    printf "TEST_%s -- %s\n" $TEST_NUM_STR $TEST_NAME
+}
+alias get_test_number='print +%03d $TEST_NUM'
+
+STARTED_SERVERS=""
+DBDIR=/var/tmp/test/func$$
+rm -rf "$DBDIR"
+mkdir -p "$DBDIR"
+chown -R `whoami` $DBDIR
+onexit cleanup_exit
+trap 'echo "child died"' SIGCHLD
+

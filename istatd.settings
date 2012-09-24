@@ -1,0 +1,13 @@
+# istatd for a typical installation
+--store /var/db/istatd/store
+--settings /var/db/istatd/settings
+--pid-file /var/run/istatd.pid
+--log-file /var/log/istatd.log
+--log-level 2
+--num-files 100000
+--flush 300
+--thread-count 8
+--stat-port 8001
+--http-port 8011
+--admin-port 8031
+--files-dir /usr/share/istatd/files

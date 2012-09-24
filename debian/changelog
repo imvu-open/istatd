@@ -1,0 +1,929 @@
+istatd (0.56-1) UNRELEASED; urgency=low
+
+  [ Jon Watte ]
+  * Minor touch-ups ahead of open source release.
+
+ -- Jon Watte <jwatte@imvu.com>  Thu, 20 Sep 2012 16:00:00 -0700
+
+istatd (0.55-1) UNRELEASED; urgency=low
+
+  [ Mitch Nibbelink ]
+  * reverting cpullen change 06b9b829670de3f370d3a140f072c5ba6eb82883
+    since it hides *.role.web ... and that's important to be able to
+    render
+  * change abs to fabs for floating point absolute value math during
+    rejection check min <= avg <= max
+
+ -- Mitch Nibbelink <mnibbelink@imvu.com>  Tue, 26 Jun 2012 13:52:37 -0700
+
+istatd (0.54-1) UNRELEASED; urgency=low
+
+  [ Jon Watte ]
+  * Add a splitter tool
+
+  [ Curtis Pullen ]
+  * istatd init script now works when pid file is missing
+
+  [ Andrew Crowell ]
+  * Fixed an error when saving dashboards if the chart size was set to
+    one of the preset sizes.
+
+  [ Todd Lee ]
+  * make istatd accept negative values for counters
+
+ -- Mitch Nibbelink <mnibbelink@imvu.com>  Wed, 20 Jun 2012 12:10:10 -0700
+
+istatd (0.53-1) unstable; urgency=low
+
+  [ Andrew Crowell ]
+  * Remove Bucket::avgstr() and Bucket::sdevstr() methods, and instead
+    return zero for average and standard deviation in buckets with a
+    count of 0.
+
+ -- Andrew Crowell <acrowell@imvu.com>  Wed, 04 Apr 2012 11:47:29 -0700
+
+istatd (0.52-1) UNRELEASED; urgency=low
+
+  [ Mitch Nibbelink ]
+  * Add some comments about what the various flags mean in the headers
+    of a stat file
+
+  [ Andrew Crowell ]
+  * Fix an issue where the toolbar spills on to the next line if the
+    browser width is below a certain number of pixels. Fix the min-width
+    so a scrollbar will appear instead.
+
+  [ Mitch Nibbelink ]
+  * Add some arg handling to the rrd converter tool... allows user to
+    specify whether to create counter or gauge fils when converting
+  * fix bug with missing prefix for gauges
+  * Remove spurious debugging accidentally committed
+
+  [ Andrew Crowell ]
+  * UI state for the time range slider is now persisted and restored for
+    newly saved dashboards.
+  * UI state for chart size is now stored in dashboard saves.
+
+  [ Mitch Nibbelink ]
+  * Add counter flattening for 10 second data when converting from cacti
+  * Move rrd to istatd time expansion logic into better location
+
+  [ Andrew Crowell ]
+  * Made an import tool that writes raw bucket data to statfiles,
+    overwriting any existing data (optionally, it will only overwrite if
+    buckets are empty with a commandline flag). This is intended for
+    cacti import.
+
+  [ Jon Watte ]
+  * enable runtime log level changing
+  * Bundle up graph state as bookmarkable / copy-pastable URL
+  * a tool to deploy UI to IMVU istatd-master
+  * fix spaces in URL dates
+  * missing unescape() on pulling data out. Also clean up some logs
+  * Make dates actually work cross browser
+  * Support requests asking for 1 bucket.
+
+ -- Eric Hohenstein <ehohenstein@imvu.com>  Fri, 30 Mar 2012 15:37:03 -0700
+
+istatd (0.51-1) unstable; urgency=low
+
+  [ Mitch Nibbelink ]
+  * Clean up the code around the .01% epsilon allowed before rejecting
+    counters
+  * Fix bug where collated window was shifted by 2 buckets by default
+    instead of 1 when flushing, making counters < 10secs from now fall
+    out of acceptable window
+
+  [ Andrew Crowell ]
+  * Fixed a bug where the periodic flush of a Statcounter would cause
+    values from one collation interval behind the current time to be
+    rejected, which meant that no time skew was permitted in recording
+    data. (This latency is required for agents to forward event data in
+    a timely manner -- so the current bucket must be in the middle of
+    the collation window.)
+
+  [ Mitch Nibbelink ]
+  * Change default filename for the rrd export tool
+
+ -- Mitch Nibbelink <mnibbelink@imvu.com>  Mon, 27 Feb 2012 14:27:54 -0800
+
+istatd (0.50-1) unstable; urgency=low
+
+  * repackage of 0.49-1
+
+ -- Mitch Nibbelink <mnibbelink@imvu.com>  Sat, 25 Feb 2012 17:47:52 -0800
+
+istatd (0.49-1) UNRELEASED; urgency=low
+
+  [ Andrew Crowell ]
+  * Forgot some files required by a functional test that asserts correct
+    behaviour for synthetic reduction of collated buckets.
+
+  [ Mitch Nibbelink ]
+  * Fix bug in date range selection where it was using octal for
+    parseInt for anything with leading 0
+
+  [ Andrew Crowell ]
+  * Factor out some repeated code in StatCounter::reduce() into a small
+    inline function in an anonymous namespace.
+  * Updated istatd_fileinfo to read the extra fields that come with
+    version 8 of the Header struct.
+  * Kill unfinished event system and mysql dependency in istatd.
+  * Kill unused redis include.
+  * Kill gstlfilt, which doesn't belong in the istatd repo.
+  * Kill scripts directory which would talk to assetdb in production.
+    (Follow-up task: Kill the history associated with these scripts?)
+
+  [ Jon Watte ]
+  * fix INFRA-2340: validate start and end input parameters
+  * actually check in the fixes for start/stop; additionally verify
+    INFRA-2360 fixed
+  * fix INFRA-2365: maxSamples missing behavior
+
+  [ Mitch Nibbelink ]
+  * Add basic functional test to ensure that pushing stats via tcp
+    connections do not leak EagerConnections internally
+
+  [ Jon Watte ]
+  * Fix INFRA-2369: fail when required keys argument is missing.
+
+  [ Andrew Crowell ]
+  * Moved some of the unit tests defined in test_main.inl (particularly
+    StatCounter tests) into test/test_StatCounter.cpp. Maybe one day,
+    we'll fully dissolve this old test file.
+  * Dashboard list is now refreshed when you save new dashboards.
+
+  [ Mitch Nibbelink ]
+  * Fix minor bug when no args presented to istatd on start
+
+  [ Jon Watte ]
+  * fix INFRA-2244: cannot login as user
+
+  [ Mitch Nibbelink ]
+  * Add debugging (log warnings) to help determine what's up with
+    rejected counters in production
+
+  [ Andrew Crowell ]
+  * 'Chart Size' dropdown now emphasizes the currently selected graph
+    size, when it is one of the predefined options.
+
+  [ Mitch Nibbelink ]
+  * Use statfile header for the counter name being presented in the
+    warning message
+
+  [ Jon Watte ]
+  * improve logging for rejected out-of-time counters
+  * Only log once for each event.
+  * fix INFRA-2257: make a discoverable alternative to double-click to
+    reset time interval
+
+  [ Andrew Crowell ]
+  * Bold the currently active dashboard so it's easy to tell what
+    dashboard you're viewing.
+  * Add titles to the button controls in graph boxes, like we have for
+    the top toolbar buttons.
+
+  [ Jon Watte ]
+  * implement INFRA-2267: make it obvious how to clear the counter
+    filter
+  * Enable removing saved values from settings.
+
+  [ Andrew Crowell ]
+  * Made a change to dashboard save dialog, to prepopulate the name
+    field when a dashboard is already open.
+
+  [ Jon Watte ]
+  * Update README a little bit
+  * Actually purge deleted settings from RAM after saving to disk.
+
+  [ Andrew Crowell ]
+  * Allow deletion of dashboards in the web interface. Gracefully handle
+    deletion of the dashboard currently being viewed. Drop the
+    openCallback argument to dialog functions, and instead return the
+    dialog's div element.
+
+  [ Jon Watte ]
+  * delete settings in a better place
+
+  [ Andrew Crowell ]
+  * Confirm with the user when overwriting an existing dashboard. Also
+    fix some quirks in detecting the 'current dashboard'.
+
+ -- mnibbelink <mnibbelink@imvu.com>  Sat, 25 Feb 2012 17:43:01 -0800
+
+istatd (0.48-1) unstable; urgency=low
+
+  [ Mitch Nibbelink ]
+  * Add internal counters to istatd ; intermediate EagerConnection
+    instrumentation work.
+
+  [ Andrew Crowell ]
+  * Fix a few instances of `<` in for(;;) loop conditions to be `!=`
+    instead, for consistency with the recommended way to traverse STL
+    iterators.
+  * Made a few code style changes (prefer pre-increment instead of post-
+    increment when possible, use != instead of < in for loops), and
+    removed some instances where exceptions were being thrown on the
+    heap by accident
+
+  [ Mitch Nibbelink ]
+  * Checkpoint ... passing functional tests now.
+  * Remove commented lines
+
+  [ Andrew Crowell ]
+  * Allow manual date range dialog to also optionally specify max sample
+    count for the graph (defaults to the width of the graph).
+  * Fixed bug with synthetic bucket reduction for collated counters,
+    which would occur when there was sparse data.
+
+ -- Andrew Crowell <acrowell@imvu.com>  Wed, 22 Feb 2012 16:27:14 -0800
+
+istatd (0.47-1) unstable; urgency=low
+
+  [ Andrew Crowell ]
+  * Fixed sample reduction for StatCounter reads to tolerate empty
+    buckets (count = 0) with valid timestamps, so that returned
+    samples are properly aligned to a multiple of the reduced interval
+    time. This was a change specifically affecting reduction of
+    collated counters, which flush empty buckets between records. 
+
+ -- Andrew Crowell <acrowell@imvu.com>  Tue, 21 Feb 2012 14:00:00 -0800
+
+istatd (0.46-1) UNRELEASED; urgency=low
+
+  [ Andrew Crowell ]
+  * Fixed a bug where bucket maxes were being recorded as bucket count
+    in most cases, due to consuming the wrong command argument in the
+    seven-argument record message (used when forwarding). Additionally,
+    we now validate data being sent to istatd and reject completely
+    bogus samples (min > max, or count = 0, or sum/count outside of
+    [min, max]). Each rejection is tracked in a loopback counter for
+    later examination.
+  * Changed references to <time.h>'s time(0) to use istattime(0)
+    instead, for consistency.
+  * Fixed test_StatServer so it will no longer intermittently fail when
+    time is a multiple of 10 seconds. Have all test failures go through
+    the same function, to aid in debugging (exit(1) tends to be caught
+    too late). Also, conditionally allow test failure to throw an
+    exception so it is even easier to setup a breakpoint in gdb (just
+    'catch throw').
+  * Fixed a quirk in how times for collated buckets were recorded which
+    was throwing the web frontend for a loop. It now rounds down
+    timestamps to the nearest multiple of the collationInterval_ in
+    StatCounter.
+
+ -- Andrew Crowell <acrowell@imvu.com>  Thu, 16 Feb 2012 16:13:30 -0800
+
+istatd (0.45-1) unstable; urgency=low
+
+  [ Mitch Nibbelink ]
+  * Fix bug in graphing where refresh did not work as expected
+
+  [ Andrew Crowell ]
+  * Fixed a small bug in the refresh code
+  * Document the funky behaviour of istatd's collated counters in a C++-
+    side acceptance test in test_StatCounter.cpp. The eventually desired
+    behaviour is commented out.
+
+  [ Mitch Nibbelink ]
+  * Fix up circular references which caused istatd to leak
+    EagerConnection references and bloat after tcp stats were sent.
+    Check in perl code to replicate the problem.  No actual tests
+    written to replicate the problem since it required manual valgrind
+    analysis
+  * graph tweaks to improve range setting as well as human readable
+    range tags
+  * Allow bare words to be auto wildcarded in search so af002013 becomes
+    *af002013* automatically
+
+  [ Andrew Crowell ]
+  * Massive rewrite of the counter system to handle collation correctly,
+    and with tolerance to latency and clock skew.
+
+  [ acrowell-imvu ]
+  * Remove unnecessary initialization step -- default constructors must
+    be run anyways, and do the exact same thing that loop does. (Not
+    compiled, but inferred by review)
+  * Why are we throwing an exception on the heap? That is probably a
+    mistake. (Not compiled, trivial change)
+  * Dangling semi-colon, probably from deleted code sometime.
+
+  [ Andrew Crowell ]
+  * Check for power-of-two in Statcounter record was of form (a & (a -
+    1)) instead of ((a & (a - 1)) == 0), meaning it would've been
+    updating every non-power-of-two before. Fixed.
+  * Minor clarity edits (more descriptive naming, removing unnecessary
+    comments, fixing some logging, function signature changes) after
+    some review to the istatd counter-collation change. Additionally,
+    removed the variable isCollated_ from the otherwise purely abstract
+    IStatCounter class in favor of a predicate function isCollated().
+
+ -- Mitch Nibbelink <mnibbelink@imvu.com>  Mon, 13 Feb 2012 18:47:21 -0800
+
+istatd (0.43-1) unstable; urgency=low
+
+  [ Andrew Crowell ]
+  * Zooming of graphs now fetches higher resolution data. Built off the
+    work that Jon S. started, but with a bunch of extra tricks (using
+    new Dygraph features that are undocumented but have examples)
+    involved to get Dygraphs to work with 1) multiple graphs. 2)
+    restoring zoom to 'original' intervals when double-clicking. 3)
+    allow y zooming, without having to reload datasets.
+
+  [ Curtis Pullen ]
+  * added test asserting that counter data gets aggregated properly
+  * improved counter test, test infrastructure
+
+  [ Mitch Nibbelink ]
+  * A bit of code to serve favicon.ico ; add first cut of icon from
+    wyatt
+
+  [ Andrew Crowell ]
+  * Added favicon links to the index HTML, changed 'Edit' to 'Advanced'
+    and added the size information to the chart size menus.
+
+  [ Jon Watte ]
+  * Make roll-up be optional, and default it to 0 levels.
+
+  [ Curtis Pullen ]
+  * improved counter increment test
+
+  [ Mitch Nibbelink ]
+  * Startup script should be bash so the 'let' syntax works
+  * uid_t is unsigned, so will never be less than zero.  And we end up
+    trying to return MAXINT for 32 bits it as the uid should it not be
+    numeric.  Fixed
+  * Try to create an istatd user during the pre-install step of the
+    package if one doesn't already exist
+
+ -- Mitch Nibbelink <mnibbelink@imvu.com>  Tue, 24 Jan 2012 14:27:13 -0800
+
+istatd (0.42-1) unstable; urgency=low
+
+  [ Mitch Nibbelink ]
+  * Fix up some error messaging on date range selection
+  * Add ability to change graphs via crossreference to the edit button
+
+  [ Curtis Pullen ]
+  * Interface upgrade: single-leaf branches like a->b->c get collapsed
+    into single leaf nodes like a.b.c
+
+  [ Andrew Crowell ]
+  * Added preliminary CSV format support to the web interface. The GET
+    handler for generating counter data now takes an optional format
+    parameter, which can be either '&format=json' (the default) or
+    '&format=csv'
+
+  [ Curtis Pullen ]
+  * add interface branches for counter names with underscores and dashes
+
+  [ Andrew Crowell ]
+  * Fixed graphs to not expand for error bars, and instead use the
+    minimum and maximum of the plot data points
+  * Expand graph ranges to fit positive standard deviation error bar.
+  * Add 'plain-text: nowrap' rules to counter tree and dashboard list so
+    that labels don't wrap lines when there are hyphens in them.
+
+  [ Mitch Nibbelink ]
+  * INFRA-1862 address security issue where istat would always bind to
+    all interfaces when listening.  Now have optional --listen-address
+    1.2.3.4 style arguments as well.  Added functional tests for it as
+    well
+
+  [ Curtis Pullen ]
+  * istatd init script now properly waits for istatd to stop before
+    starting on restart.
+  * fixed restart script again. this time with better shell-fu
+
+  [ Andrew Crowell ]
+  * Just made a bunch of UI tweaks for dialog windows so they look
+    nicer. Fixed a bug where opening 'Manual Date Range'/'Xref Counters'
+    and then opening another dialog would use the wrong controls,
+    instead of switching windows properly.
+  * Giving more human-readable, descriptive names to the Edit menu
+    items.
+  * Commiting a small change to error cases in Custom date/Custom graph
+    size dialogs, so that the user can edit what they've previously
+    typed and correct it
+  * Fix the login form so it doesn't look wierd when you resize the
+    sidebar.
+  * Prevented a graph.js concurrency issue that occurred when the events
+    for redrawing a graph (in response to a reload) and toggling the
+    series in a graph were interleaved. It would render something that
+    was in the graph's series (because toggles affect the series
+    instantly), but which wasn't loaded yet. Now redraws are given the
+    series from their resepective reload, rather than relying on the
+    current state. There is more work to be done though, because there
+    are *still* problems if the requests come back out of order.
+
+  [ Mitch Nibbelink ]
+  * Fix bug where istatd agent crashes when its sent an event ... agents
+    still do not propogate events upstream to the master, but at least
+    it won't crash
+
+ -- Mitch Nibbelink <mnibbelink@imvu.com>  Tue, 10 Jan 2012 09:36:42 -0800
+
+istatd (0.41-1) UNRELEASED; urgency=low
+
+  * make new, pretty UI the default
+
+ -- Jon Schedler <jschedler@imvu.com>  Fri, 23 Dec 2011 15:18:29 -0800
+
+istatd (0.40-1) UNRELEASED; urgency=low
+
+  [ Jon Schedler ]
+  * modified tool/istatd_query.py to also use POST method to get counters
+    the first test that uses POST
+  * StatCounter::select() interface changed so that the method will
+    reduce the number of buckets to be less than maxSamples.  the method
+    will also return the normalized start and stop times and the
+    interval value of the buckets being return.  The bucket reduction
+    has been moved from RequestInFlight to StatCounter.
+
+  [ Mitch Nibbelink ]
+  * fix slight bug in date range selection ; improve error messaging on
+    date selection in hack graph ; convert comma to spaces in
+    agents.html for easier categories formatting
+
+  [ Curtis Pullen ]
+  * rrd2istatd.py now correctly deals with multiple counter imports at a
+    time
+  * 10x factor to turn per-second data into per-bucket data
+
+ -- Jon Schedler <jschedler@imvu.com>  Fri, 23 Dec 2011 10:24:40 -0800
+
+istatd (0.39-1) UNRELEASED; urgency=low
+
+  [ Curtis Pullen ]
+  * Don't divide data by interval; Cacti is doing that already
+
+  [ Mitch Nibbelink ]
+  * Fix slight bug in date range selection ... looks like simple typo
+  * Advanced edit hack to allow manual date range specification
+
+  [ Jon Schedler ]
+  * ensure that json for HTTP GET request properly handle edge cases and
+    return buckets normalized outward from current interval. strengthen
+    tests.
+
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 20 Dec 2011 20:49:02 -0800
+
+istatd (0.38-1) UNRELEASED; urgency=low
+
+  [ Mitch Nibbelink ]
+  * Work with andy to NOT retry on errors, avoid istatd crash when
+    looping on error conditions and double decrementing in progress
+
+  [ Andrew Crowell ]
+  * The left sidebar can now be resized by dragging the horizontal
+    splitter.
+
+  [ Curtis Pullen ]
+  * cacti data importer script
+
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 20 Dec 2011 08:32:41 -0800
+
+istatd (0.37-1) unstable; urgency=low
+
+  [ Andrew Crowell ]
+  * The login is now on the sidebar, and differently styled, as per
+    design. Also fixing a bunch of login functionality things: Cookies
+    are now off of the '/' path, so that '/?f=index.html' and
+    '/files/index.html' share a common cookie. Fixed logout to expire
+    the cookies reliably. Fixed login to search the entire cookie for a
+    'login' key instead of the first value, because in some browsers
+    there are other cookie entries (presumably because they don't
+    isolate cookie entries by port).
+  * The toolbar is now always visible, even when logged out. (Save
+    Dashboard button is disabled when not logged in)
+  * Animated the login state switch, and added placeholder
+    'Username'/'*******' text for login inputs.
+  * <div class='graph'> containers no longer have a fixed height, so the
+    legend can wrap across multiple lines when needed. The graph grid
+    layout still generally works, and so does graph canvas resizing.
+  * Prevent the web interface from rendering graphs before there is
+    data. Now dashboards will no longer trigger errors by redrawing
+    before the graphs are initialized.
+
+  [ Curtis Pullen ]
+  * istatd will now store old data that is recent enough to still fit in
+    the StatFile
+
+ -- Jon Schedler <jschedler@imvu.com>  Fri, 16 Dec 2011 07:36:20 -0800
+
+istatd (0.36-1) unstable; urgency=low
+
+  [ Andrew Crowell ]
+  * Moved the progress bar under the title. Made the chart size dropdown
+    look like the design (except the icon).
+  * Make the progress bar only show when something is loading. Also
+    replace a tdurp with tdropdown so the chart size menu is no longer
+    selectable as text.
+  * The slider code no longer fires actions when its value is unchanged.
+  * istatd web frontend now mostly works in IE9, but linear gradients
+    mixed with border-radius doesn't work in IE, because of some
+    limitations with IE's directx filter transform magic. Also context
+    for exceptions in IE is sort of terrible. But there's not much I can
+    do there.
+  * Added a knob image for the slider widget, and a little arrow for the
+    dropdown widget.
+
+  [ Jon Watte ]
+  * Allow older data, as long as it's not before the start of the file.
+  * IE9 wants images in directories, not as query arguments. Make any
+    URL starting with /files/ be a file request.
+
+  [ Mitch Nibbelink ]
+  * Add test and fix bug where agent mode would fail if a stat store was
+    not specified
+
+  [ Jon Schedler ]
+
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 13 Dec 2011 14:25:35 -0800
+
+istatd (0.35-1) unstable; urgency=low
+
+  [ Jon Watte ]
+  * Make initialData get re-sent for re-established connections.
+  * Make the intialData header always be first!
+  * Fix the display of day / date
+  * Make StatFile capable of keeping seasonal trailing data.
+  * Fix the display of values in the 100-s-of-megs range (would be 0.1G
+    for 150M)
+  * Allow a hack to test line drawing
+  * Make it possible to log more to stderr.
+  * Allow specifying a particular date/time range (dialog entry only)
+  * Fix nums2file, and defend it with a functional tests
+  * Allow freezing time in istatd.
+  * Batch counter updates in agent.
+
+  [ Jon Schedler ]
+  * update census script to get info from istatd and the asset database
+    directly
+  * work-in-progress integration with dygraphs for rendering 2d time-
+    series data.
+  * create make rule to build debian package with unstripped binaries
+  * changed command line options for istatd_nums2file.  added new option
+    to specify zero-time when stat file is created
+  * fix UI bug when trying to remove a counter from a graph in a
+    specific situtation
+  * remove old graph renderer code from hack_graph.js.
+  * fix bug so that samples get reduced it a more expected manner.  add
+    new test infrastructure to test the istatd JSON interface.
+  * ensure reduced bucket are aligned on interval boundry
+
+  [ Andrew Crowell ]
+  * Improved comments for RequestInFlight tests, so it's clearly
+    documented what each test case is trying to assert.
+  * Work-in-progress of new istatd UI from product designers.
+
+  [ Jon Schedler ]
+
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 13 Dec 2011 14:25:20 -0800
+
+istatd (0.34-1) unstable; urgency=low
+
+  [ Jon Watte ]
+  * Tweak the colors for better clarity
+  * Update readme documentation.
+  * Purge old connection stat records.
+  * Tooltips for full counter names.
+
+  [ Jon Schedler ]
+  * commit new script that compares agents to imvu asset db. move older
+    script to new scripts folder
+
+  [ Mitch Nibbelink ]
+  * Fix bug in [X] where it would only work if graph was active
+  * Auto expand a tree with only one child.  Experimental graph counter
+    editing via pattern
+
+ -- Jon Schedler <jschedler@imvu.com>  Mon, 21 Nov 2011 11:42:31 -0800
+
+istatd (0.33-1) unstable; urgency=low
+
+  [ Jon Watte ]
+  * Retain a roster of connected (and disconnected) agents.
+  * Provide a simple table of connected agents.
+  * Provide the IP address of the agent.
+
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 15 Nov 2011 15:09:17 -0800
+
+istatd (0.32-1) lucid; urgency=low
+
+  [ Jon Schedler ]
+  * add test to check StatServer to_double.  enabled existing stat
+    server test test_handleInputData().
+  * fix script to properly count what classes are connected
+
+  [ Mitch Nibbelink ]
+  * Allow defaults file to supply alternate config file
+  * Update graph so that re-clicking on a counter will delete it from
+    the selected graph.  You cannot delete the last counter from the
+    graph
+  * Put filter string with graph tree refresh.  Also add [X] delete link
+    to remove series from existing graphs without having to navigate the
+    tree
+
+  [ Jon Watte ]
+  * better fix for ctrl-C deadlock -- do everything from main thread
+
+ -- Mitch Nibbelink <mnibbelink@imvu.com>  Mon, 14 Nov 2011 11:12:43 -0800
+
+istatd (0.31-1) unstable; urgency=low
+
+  * istatd_lint scans your istatd db for old files
+  * do not record counter if it timestamp is more than 60 seconds ahead
+    of master wall clock
+  * Added a disk space checker to StatStore, which will periodically
+    check if free space is above the minimum requirements, and log
+    errors when below the required storage.
+  * be safer about pidfile in init script
+  * Fix the ctrl-C / signal shutdown code.
+  * move strfunc.cpp from daemon to lib and put the function in the
+    istat namespace.  added new iso_8601_datatime format function and
+    replace redundant implementation of istatd_filedump and
+  * lazy human friendly time output in istatd_filedump and istatd_fileinfo
+
+ -- Jon Schedler <jschedler@imvu.com>  Fri, 11 Nov 2011 08:12:14 -0800
+
+istatd (0.30-1) unstable; urgency=low
+
+  * disassociate from stdin when daemonizing
+  * Remove logger from istatd startup ... hopefully this will allow
+    cleaner daemonized startup
+  * Make building the counter hierarchy incremental on demand.
+  * Hopefully solve the 'slow to enumerate 100,000 counter names'
+    problem.
+  * Minor lint picking. Add pid to log message.
+
+ -- Jon Schedler <jschedler@imvu.com>  Wed, 09 Nov 2011 16:05:29 -0800
+
+istatd (0.29-1) unstable; urgency=low
+
+  * Improve HTML dashboard UI code.
+  * Down-sample data that is too dense.
+
+ -- Jon Schedler <jschedler@imvu.com>  Wed, 09 Nov 2011 07:17:40 -0800
+
+istatd (0.28-1) unstable; urgency=low
+
+  * gradients should work in Chrome.
+  * refactor debian packaging
+
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 08 Nov 2011 11:01:15 -0800
+
+istatd (0.27-1) unstable; urgency=low
+
+  * new istatd GUI on HTTP port. 
+  * supports POST to get bulk counters.
+
+ -- Jon Schedler <jschedler@imvu.com>  Fri, 04 Nov 2011 09:42:31 -0700
+
+istatd (0.26-1) unstable; urgency=low
+
+  * fix counter list matching bug where counters were not identified
+    as leaves
+
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 01 Nov 2011 07:59:29 -0700
+
+istatd (0.25-1) unstable; urgency=low
+
+  * Add performance tweak for finding all keys.
+  * start on a new local istatd webapp
+  * test framework improvements
+  * when opening an existing counter, used the isCollated flag 
+    in the header of the first StatFile set the isCollated flag 
+    of the StatCounter.
+
+ -- Jon Schedler <jschedler@imvu.com>  Mon, 31 Oct 2011 13:27:53 -0700
+
+istatd (0.24-1) unstable; urgency=low
+
+  * Added new counter for current work queue length
+  * Make collated counters report per-second values
+
+ -- Jon Schedler <jschedler@imvu.com>  Thu, 27 Oct 2011 10:54:18 -0700
+
+istatd (0.23-1) unstable; urgency=low
+
+  * Refactor EagerConnection ownership to get rid of bad weak pointers.
+
+ -- Jon Schedler <jschedler@imvu.com>  Wed, 26 Oct 2011 13:05:38 -0700
+
+istatd (0.22-1) unstable; urgency=low
+
+  * Add 'connected' gauge. Remove --length option.
+
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 25 Oct 2011 15:30:30 -0700
+
+istatd (0.21-1) unstable; urgency=low
+
+  * Treat a protocol as a state machine.
+  * Clean up logging spamminess.
+  * refactor how we configure --localstat via the /etc/init.d and 
+    /etc/default scripts. new default is to have localstat disabled
+
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 25 Oct 2011 09:43:21 -0700
+
+istatd (0.20-1) unstable; urgency=low
+
+  * Make it possible to generally fake time. Make istatd use itself to
+    track itself. Add tests for that. Also move forward on replication.
+
+ -- Jon Schedler <jschedler@imvu.com>  Fri, 21 Oct 2011 12:40:12 -0700
+
+istatd (0.19-1) unstable; urgency=low
+
+  * Remove ^ from JSON interface, since that's something graphite should
+    have managed.
+
+ -- Jon Schedler <jschedler@imvu.com>  Thu, 20 Oct 2011 11:15:33 -0700
+
+istatd (0.18-1) unstable; urgency=low
+
+  * make the ftest not intermittent (don't depend on /etc/istatd.cfg)
+  * support arbitrary retention
+  * Add an admin interface.
+  * don't wedge on recv()
+  * Make acceptance test progress on multi-threaded machine.
+  * Fixed up istatd to expose rollup counters in its JSON interface and
+    renamed 'is_counter' to 'is_leaf'.
+  * A counter which has no buckets (such as a top-level rollup counter) will not
+    return a start or end time, as these do not apply.
+
+ -- Jon Schedler <jschedler@imvu.com>  Wed, 19 Oct 2011 09:27:13 -0700
+
+istatd (0.17-1) unstable; urgency=low
+
+  * store the sum of a bucket as a double.
+  * do not create an empty bucket after each flush
+  * improve functional test
+  * use boost date_time
+
+ -- Jon Schedler <jschedler@imvu.com>  Thu, 13 Oct 2011 16:38:26 -0700
+
+istatd (0.16.1) unstable; urgency=low
+
+  * Changes below by Enno, Wyatt, Mitch, Andy C., Jon W, Jon S.
+  * Only pretend to mmap(), instead doing file I/O
+  * load counters synchronously, istatd startup speed improvement.
+  * new JSON structure to returning counters
+  * only return finest resolution available for request range
+  * only return valid data (no buckets are padding)
+  * do not call statvfs in openCounter
+  * Make the new magic file id start with 'istat' but preserve old magic
+    number for now
+  * add atomic counters for profiling. 
+  * Change time stamps to use time!
+  * complain if there isn't enough free space to create new counter
+  * implement --flush argument
+  * bug fixes
+  * Add a functional tests
+  * Add and improve unit tests
+  * fake wrapper around time() so we can control said time in our tests
+  * Add an environment service that can be used for mocks later.
+  * StatStore, StatCounter, StatServer refactoring
+  * Refactor classes that interface to Mysql
+  * improve type semantics, remove all warnings, treat warnings as
+    errors
+  * remove the past,count arguments from the list of arguments, we never
+    use then
+  * replace gcc-only atomic operations with boost implementations that
+    work on other platforms
+  * ssize_t is not a portable datatype. also, times should be using
+    time_t
+  * WIN32 compilation
+  * Moved the expanding of counter names out of StatStore and into
+    StatServer, so that different recorder methods can be dispatched
+    down the road, with the counter names pre-expanded.
+  * since the actual size of the fields in the header struct is
+    relevant, we should specify it (int32_t beats int in this one case)
+  * istatd returns the last 15 minutes of counter data by default. If no
+    data was recorded in the last 15 minutes, an empty list is returned
+
+ -- Jon Schedler <jschedler@imvu.com>  Wed, 12 Oct 2011 14:13:41 -0700
+
+istatd (0.15-1) unstable; urgency=low
+
+  [ Enno Rehling ]
+  * fixes for warnings about incompatible some integer types, ctor
+    initialization order
+
+  [ Wyatt Peterson ]
+  * Change the sql schema. always refer to event_type_id for consistency
+
+ -- Wyatt Peterson <wpeterson@imvu.com>  Thu, 22 Sep 2011 15:23:49 -0700
+
+istatd (0.14-1) unstable; urgency=low
+
+  [ wpetersonimvu ]
+  * Serve event data as json in response to http requests
+  * Fix a crash when istatd reconnects to mysql
+  * MySQL connections can now be configured in the configuration file or
+    as command line parameters
+
+  [ Enno Rehling ]
+  * this function is in the global namespace, why did that even work?
+  * eliminate some warnings that appear when compiling with -Wall
+
+ -- Wyatt Peterson <wpeterson@imvu.com>  Thu, 22 Sep 2011 09:54:39 -0700
+
+istatd (0.13-1) unstable; urgency=low
+
+  * Add a handy build script for development purposes
+  * Add a method to get events. Add an event struct
+  * Fix bug where agent mode did not forward information
+
+ -- Wyatt Peterson <wpeterson@imvu.com>  Fri, 15 Sep 2011 11:52:37 -0700
+
+istatd (0.12-1) unstable; urgency=low
+
+  * add a cache for event types; avoid race condition; quote SQL strings
+  * close the out handles for the logger before backgrounding 
+  * do not create an EventStore when not storing anything (agent mode ~ no storePath)
+  * build from 5efee28fa659caa0af92ac372ce157d1ee712557 
+
+ -- Wyatt Peterson <wpeterson@imvu.com>  Fri, 15 Sep 2011 11:52:37 -0700
+
+istatd (0.11-1) unstable; urgency=low
+
+  * bump file version number
+
+ -- Jon Schedler <jschedler@imvu.com>  Thu, 15 Sep 2011 14:38:00 -0700
+
+istatd (0.10-1) unstable; urgency=low
+
+  * support probe/event type counters
+  * improvements to event storage
+  * create a dpkg Makefile target that skips the test
+
+ -- Jon Watte <jwatte@imvu.com>  Thu, 15 Sep 2011 13:21:00 -0700
+
+istatd (0.09-1) unstable; urgency=low
+
+  * pre-allocate file blocks on creation.
+  * Make nan (aka Nan) not cause a boost lexical cast error -- treat as 0.
+  * Add a scaling factor for retention buckets.
+  * Add mysql event storing prototype 
+
+ -- Jon Watte <jwatte@imvu.com>  Mon, 12 Sep 2011 11:15:00 -0700
+
+istatd (0.08-1) unstable; urgency=low
+
+  * add preinst and postinst scripts to the package 
+
+ -- Wyatt Peterson <wpeterson@imvu.com>  Tue, 06 Sep 2011 14:13:28 -0700
+
+istatd (0.07-1) unstable; urgency=low
+
+  * fixes built in graphing script
+  * handles leaf nodes
+  * handles long floats in JSON so they don't end in decimal point
+
+ -- Jon Schedler <jschedler@imvu.com>  Mon, 22 Aug 2011 10:11:00 -0700
+
+istatd (0.06-1) unstable; urgency=low
+
+  * make sure we have enough mmap sections
+  * refactor classes to their own files
+  * build from 3c657613ae58ac4713b6f153e2a23c21a6d21c85
+
+ -- Jon Watte <jwatte@imvu.com>  Wed, 04 Aug 2011 14:37:00 -0700
+
+istatd (0.05-1) unstable; urgency=low
+
+  * fix a bug where no store specified would still attempt to create a store in /var/tmp
+  * build from 3c657613ae58ac4713b6f153e2a23c21a6d21c85
+
+ -- Jon Watte <jwatte@imvu.com>  Wed, 03 Aug 2011 17:00:00 -0700
+
+istatd (0.04-1) unstable; urgency=low
+
+  * update logging to support --log-level from 0 through 4
+  * change init.d startup script to use /var/log/istatd.cfg
+  * close and re-open log periodically to allow for rotation
+  * build from 9fb3aae9b578e9d30a4ec6553e3523631a51fed3
+
+ -- Jon Watte <jwatte@imvu.com>  Tue, 02 Aug 2011 12:50:00 -0700
+
+istatd (0.03-1) unstable; urgency=low
+
+  * change init.d startup to automatically determine role calling imvuasset.pl 
+  * support ^ syntax to set a metric value to multiple metric names
+  * bug fixes 
+  * build from 936356975f84f54d974af7c1afd73e0823b4ce09
+
+ -- Jon Schedler <jschedler@imvu.com>  Thu, 29 Jul 2011 19:19:11 -0700
+
+istatd (0.02-1) unstable; urgency=low
+
+  * Update release json support, bug fixes (build from f524248ad22736388847aebd2fe039f13a0e175c)
+
+ -- Jon Schedler <jschedler@imvu.com>  Thu, 29 Jul 2011 19:19:11 -0700
+
+istatd (0.01-1) unstable; urgency=low
+
+  * Initial release (built from 3ed6cb2174749503426de2a81f9401bde71a268c)
+
+ -- Imran Hameed <ihameed@imvu.com>  Thu, 21 Jul 2011 15:00:11 -0700

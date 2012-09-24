@@ -1,0 +1,2 @@
+POST http://localhost:18011/* {"keys": ["foo.bar", "ice.cream.bar"], "start": 1001, "stop": -1, "maxSamples": 600}
+error: Invalid 'stop' parameter

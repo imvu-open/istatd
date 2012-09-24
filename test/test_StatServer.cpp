@@ -1,0 +1,149 @@
+#include <iostream>
+#include <string>
+#include <istat/test.h>
+#include <istat/istattime.h>
+#include <boost/shared_ptr.hpp>
+#include <istat/Log.h>
+
+#include "../daemon/StatServer.h"
+#include "../include/istat/Mmap.h"
+#include "../daemon/StatCounterFactory.h"
+#include "../daemon/StatStore.h"
+#include "../daemon/Retention.h"
+#include "../daemon/FakeEagerConnection.h"
+
+#define BUFSIZE 256
+
+using namespace istat;
+
+
+RetentionPolicy rp("10s:1d,5m:2d,1h:1y");
+RetentionPolicy xrp("");
+
+boost::shared_ptr<StatServer> makeServer(Mmap *mm, boost::asio::io_service &svc) {
+    int port = 0;
+    std::string agent("");
+    std::string listenAddress("");
+    std::string storePath("/tmp/test/testdir");
+    //Mmap *mm(NewMmap());
+    boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storePath, mm, rp, xrp));
+    boost::shared_ptr<IStatStore> statStore(new StatStore(storePath, getuid(), svc, statCounterFactory, mm));
+    statStore->setAggregateCount(2);
+    return boost::shared_ptr<StatServer>(new StatServer(port, listenAddress, agent, 1, svc, statStore));
+}
+
+void test_counter() {
+    istat::FakeTime ft(1329345880);
+    boost::asio::io_service svc;
+    boost::shared_ptr<StatServer> server;
+    Mmap *mm(NewMmap());
+    server = makeServer(mm, svc);
+    boost::shared_ptr<ConnectionInfo> ec(new FakeEagerConnection(svc));
+
+    boost::shared_ptr<IStatCounter> statCounter;
+    boost::asio::strand* strand = 0;
+    server->handleCmd("something.different 4242", ec);
+    svc.poll();
+
+    // Advance time so we include the data we just recorded in the returned results.
+    ft.set(istattime(0) + 10);
+    server->store()->find("something.different", statCounter, strand);
+
+    std::vector<istat::Bucket> buckets;
+    time_t normalized_start, normalized_end, interval;
+    statCounter->select(0, 0, buckets, normalized_start, normalized_end, interval, 0);
+    assert_equal(1, buckets.size());
+    assert_equal(4242, buckets[0].sum());
+}
+
+void test_multiple_counters() {
+    istat::FakeTime ft(1329345880);
+    boost::asio::io_service svc;
+    boost::shared_ptr<StatServer> server;
+    Mmap *mm(NewMmap());
+    server = makeServer(mm, svc);
+    boost::shared_ptr<ConnectionInfo> ec(new FakeEagerConnection(svc));
+
+    boost::shared_ptr<IStatCounter> statCounter;
+    boost::asio::strand* strand;
+    server->handleCmd("test.counter^a^b^c 4242", ec);
+    svc.poll();
+
+    // Advance time so we include the data we just recorded in the returned results.
+    ft.set(istattime(0) + 10);
+    server->store()->find("test.counter.b", statCounter, strand);
+
+    std::vector<istat::Bucket> buckets;
+    time_t normalized_start, normalized_end, interval;
+    statCounter->select(0, 0, buckets, normalized_start, normalized_end, interval, 0);
+    assert_equal(1, buckets.size());
+    assert_equal(4242, buckets[0].sum());
+}
+
+void test_collated_counters() {
+    boost::asio::io_service svc;
+    boost::shared_ptr<StatServer> server;
+    Mmap *mm(NewMmap());
+    server = makeServer(mm, svc);
+    boost::shared_ptr<ConnectionInfo> ec(new FakeEagerConnection(svc));
+
+    boost::shared_ptr<IStatCounter> statCounter;
+    boost::asio::strand* strand;
+    time_t now = 1000000000 - 1000;
+    istat::FakeTime ft(now);
+    char buffer[BUFSIZE];
+    snprintf(buffer, BUFSIZE, "*collated.counter %ld 4242", now);
+    server->handleCmd(buffer, ec);
+    server->handleCmd(buffer, ec);
+    server->handleCmd(buffer, ec);
+
+    //  running something that's a lot further into the future will flush
+    //  the previous bucket
+    ft.set(now+100);
+    snprintf(buffer, BUFSIZE, "*collated.counter %ld 4242", now+100);
+    server->handleCmd(buffer, ec);
+    svc.poll();
+
+    server->store()->find("collated.counter", statCounter, strand);
+    std::vector<istat::Bucket> buckets;
+    time_t normalized_start, normalized_end, interval=0;
+
+    statCounter->select(now-900000,now+10,buckets, normalized_start, normalized_end, interval, 0);
+    assert_equal(interval, 60 * 60);
+    assert_equal(251, buckets.size());
+    size_t bucketSum = 0;
+    for (size_t i = 0; i != buckets.size(); ++i)
+    {
+        bucketSum += buckets[i].sum();
+    }
+    assert_equal(4242*3/10, bucketSum);
+
+    statCounter->select(now-10,now+9,buckets, normalized_start, normalized_end, interval, 0);
+    assert_equal(interval, 10);
+    assert_equal(2, buckets.size());
+    assert_equal(4242*3/10, (int)buckets[1].sum());
+
+    statCounter->select(now-90000,now+9,buckets, normalized_start, normalized_end, interval, 0);
+    assert_equal(interval, 5*60);
+    assert_equal(301, buckets.size());
+    bucketSum = 0;
+    for (size_t i = 0; i != buckets.size(); ++i)
+    {
+        bucketSum += buckets[i].sum();
+    }
+    assert_equal(4242*3/10, bucketSum);
+}
+
+
+void func() {
+    test_collated_counters();
+    test_multiple_counters();
+    test_counter();
+    test_handleInputData();
+    test_to_double();
+}
+
+int main(int argc, char const *argv[]) {
+    LogConfig::setLogLevel(istat::LL_Spam);
+    return istat::test(func, argc, argv);
+}

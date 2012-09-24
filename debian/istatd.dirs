@@ -1,0 +1,6 @@
+usr/bin
+usr/share/istatd
+usr/share/istatd/files
+etc
+etc/init.d
+etc/default

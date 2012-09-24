@@ -1,0 +1,51 @@
+define add_install
+INSTALL_DSTS:=$(sort $(INSTALL_DSTS) $(2))
+INSTALL_DIRS:=$(sort $(INSTALL_DIRS) $(dir $(2)))
+$(2):	$(1)
+	$(INSTALL) -m $(3) $(1) $(2)
+endef
+define add_precious_install
+INSTALL_DSTS:=$(sort $(INSTALL_DSTS) $(2))
+INSTALL_DIRS:=$(sort $(INSTALL_DIRS) $(dir $(2)))
+$(2):	$(1)
+	if [ -f $(2) ]; then \
+		$(INSTALL) -m $(3) $(1) $(2).new; \
+		$(TOUCH) $(2); \
+	else \
+		$(INSTALL) -m $(3) $(1) $(2); \
+	fi
+endef
+
+
+define mk_install_dir
+$(1):
+	mkdir -p $$@
+endef
+
+BUILD_TEST_PREVIOUS:=bin
+define build_test
+.PHONY:	run_bin/$(1)
+bin/$(1):	obj/test/$(1).o $(LIB_DEPS)
+	$(CXX) -o $$@ $$< $(LXXFLAGS) $(SYS_LIBS)
+run_bin/$(1):	bin/$(1) $(BUILD_TEST_PREVIOUS)
+	bin/$(1)
+TESTS_TO_RUN+=bin/$(1)
+BUILD_TEST_PREVIOUS:=run_bin/$(1)
+endef
+
+define run_test
+	$(1)
+endef
+
+define build_tool
+bin/$(1):	obj/tool/$(1).o $(LIB_DEPS)
+	$(CXX) -o $$@ $$< $(LXXFLAGS) $(SYS_LIBS)
+$(eval $(call add_install,bin/$(1),$(VAR_PREFIX)/lib/istatd/bin/$(1),775))
+endef
+
+define build_dir
+$(1):
+	mkdir -p $(1)
+endef
+
+
