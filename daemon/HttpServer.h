@@ -132,7 +132,7 @@ class HttpServer : public IHttpServerInfo
 {
 public:
     HttpServer(int port, boost::asio::io_service &svc, std::string listen_addr);
-    ~HttpServer();
+    virtual ~HttpServer();
     inline boost::asio::io_service &svc() { return svc_; }
     //  You will see the request *before* headers are parsed. 
     //  Generally, sign up for onHeader_ and perhaps onError_ if you keep a reference.

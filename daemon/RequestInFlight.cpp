@@ -213,7 +213,7 @@ public:
             for (std::map<boost::shared_ptr<IStatCounter>, std::pair<boost::asio::strand *, std::string> >::iterator
                 ptr(data.begin()), end(data.end()); ptr != end; ++ptr)
             {
-                (*ptr).second.first->io_service().post((*ptr).second.first->wrap(
+                (*ptr).second.first->get_io_service().post((*ptr).second.first->wrap(
                     boost::bind(&MultiCounterWorker::workOne, this, (*ptr).first, (*ptr).second.second)));
             }
         }

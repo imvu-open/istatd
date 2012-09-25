@@ -349,7 +349,7 @@ public:
             delete this;
             return;
         }
-        ptrs.front()->strand_.io_service().post(ptrs.front()->strand_.wrap(
+        ptrs.front()->strand_.get_io_service().post(ptrs.front()->strand_.wrap(
             boost::bind(&Flusher::flush_stuff, this)));
     }
     void flush_stuff()

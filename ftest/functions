@@ -94,7 +94,7 @@ function wait_for_stats {
     N=0
     echo -n "wait_for_stats $PORT $EXPECTED "
     while [ $N -lt 100 ]; do
-        DATA=`echo -ne 'stats\r\nquit\r\n' | netcat -q 1 localhost $PORT || true`
+        DATA=`echo -ne 'stats\r\nquit\r\n' | bin/istatd_netcat -q 1 localhost $PORT || true`
         DATA=`echo "$DATA" | grep -F "$EXPECTED" || true`
         if [ ! -z "$DATA" ]; then
             echo ""
@@ -133,7 +133,7 @@ function send_stat {
     if [ -z "$2" ]; then
         failure "usage: send_stat port counter.name val [...]"
     fi
-    echo -ne "$*\r\n" | netcat -q 1 localhost "$PORT"
+    echo -ne "$*\r\n" | bin/istatd_netcat -q 1 localhost "$PORT"
 }
 
 function send_event {
@@ -142,7 +142,7 @@ function send_event {
     if [ -z "$1" ]; then
         failure "usage: send_event port 'eventType|eventMessage[|maybehost]'"
     fi
-    echo -ne "$*\r\n" | netcat -q 1 localhost "$PORT"
+    echo -ne "$*\r\n" | bin/istatd_netcat -q 1 localhost "$PORT"
 }
 
 function make_data {

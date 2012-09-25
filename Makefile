@@ -17,7 +17,8 @@ DAEMON_OBJS:=$(patsubst %.cpp,obj/%.o,$(DAEMON_SRCS))
 SPLITTER_MAIN_SRC:=splitter/main.cpp
 SPLITTER_MAIN_OBJ:=$(patsubst %.cpp,obj/%.o,$(SPLITTER_MAIN_SRC))
 DAEMONS:=istatd splitd
-DEPS:=$(sort $(patsubst %.o,%.d,$(TEST_OBJS) $(TOOL_OBJS) $(LIB_OBJS) $(DAEMON_OBJS) $(DAEMON_MAIN_OBJ) $(SPLITTER_MAIN_OBJ)))
+DEPS:=$(sort $(patsubst %.o,%.d,$(TEST_OBJS) $(TOOL_OBJS) $(LIB_OBJS) $(DAEMON_OBJS) \
+  $(DAEMON_MAIN_OBJ) $(SPLITTER_MAIN_OBJ)))
 BINS:=$(patsubst %,bin/%,$(TESTS) $(TOOLS) $(DAEMONS))
 LIB_DEPS:=$(foreach lib,$(LIBS),obj/lib$(lib).a)
 HDRS:=$(wildcard include/istat/*.h) $(wildcard include/json/*.h)
@@ -40,7 +41,8 @@ ifeq ($(OPT),)
 OPT := -O2
 endif
 CXXFLAGS:=-pipe $(OPT) -g -Iinclude -MMD -D_LARGEFILE64_SOURCE -Wall -Werror
-SYS_LIBS:=$(BOOST_SYSTEM) -lboost_thread -lboost_signals -lpthread $(STATGRAB) $(BOOST_FILESYSTEM) -lboost_date_time
+SYS_LIBS:=$(BOOST_SYSTEM) -lboost_thread -lboost_signals -lpthread $(STATGRAB) \
+  $(BOOST_FILESYSTEM) -lboost_date_time $(LIBRT)
 
 all:	$(DIR_DEPS) $(LIB_DEPS) $(BINS) tests ftests
 

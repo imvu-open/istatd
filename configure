@@ -12,6 +12,7 @@ echo "# makevars.config for istatd generated on " `date` > makevars.config
 BOOST_SYSTEM=""
 BOOST_FILESYSTEM=""
 STATGRAB=""
+LIBRT=""
 DESTDIR=""
 USR_PREFIX=""
 VAR_PREFIX=""
@@ -30,6 +31,10 @@ while [ $# -gt 0 ]; do
         --statgrab)
             shift
             STATGRAB="$1"
+            ;;
+        --librt)
+            shift
+            LIBRT="$1"
             ;;
         --prefix)
             shift
@@ -52,6 +57,7 @@ while [ $# -gt 0 ]; do
             echo "--boost_system     -lboost_system-mt      What is the boost_system library name?"
             echo "--boost_filesystem -lboost_filesystem-mt  What is the boost_filesystem library name?"
             echo "--statgrab         -lstatgrab             What is the statgrab library name?"
+            echo "--librt            -lrt                   What is the librt library name (if any)?"
             echo "--prefix           /                      What is the root of the install?"
             echo "--usr-prefix       /usr                   What is the '/usr' directory for executables?"
             echo "--var-prefix       /var                   What is the '/var' directory for database data?"
@@ -72,6 +78,7 @@ fi
 if [ ! -r /usr/include/statgrab.h -a ! -r /usr/local/include/statgrab.h ]; then
     echo "You need to install libstatgrab-dev for your distribution, or "
     echo "download and install it from source. See README.md"
+    exit 1
 fi
 
 
@@ -79,7 +86,7 @@ fi
 if [ -z "$BOOST_SYSTEM" ]; then
     if [ -r /usr/lib/libboost_system.so ]; then
         BOOST_SYSTEM=-lboost_system
-    elif [ -r /usr/lib/libboost_system.so ]; then
+    elif [ -r /usr/lib/libboost_system-mt.so ]; then
         BOOST_SYSTEM=-lboost_system-mt.so
     fi
 fi
@@ -87,7 +94,7 @@ fi
 if [ -z "$BOOST_FILESYSTEM" ]; then
     if [ -r /usr/lib/libboost_filesystem.so ]; then
         BOOST_FILESYSTEM=-lboost_filesystem
-    elif [ -r /usr/lib/libboost_filesystem.so ]; then
+    elif [ -r /usr/lib/libboost_filesystem-mt.so ]; then
         BOOST_FILESYSTEM=-lboost_filesystem-mt
     fi
 fi
@@ -96,6 +103,13 @@ if [ -z "$STATGRAB" ]; then
         STATGRAB=-lstatgrab
     elif [ -r /usr/local/lib/libstatgrab.so ]; then
         STATGRAB=-lstatgrab
+    fi
+fi
+if [ -z "$LIBRT" ]; then
+    if [ -r /usr/lib/librt.so ]; then
+        LIBRT=-lrt
+    elif [ -r /usr/local/lib/librt.so ]; then
+        LIBRT=-lrt
     fi
 fi
 
@@ -107,6 +121,9 @@ if [ ! -z "$BOOST_FILESYSTEM" ]; then
 fi
 if [ ! -z "$STATGRAB" ]; then
     echo "STATGRAB=$STATGRAB" >> makevars.config
+fi
+if [ ! -z "$LIBRT" ]; then
+    echo "LIBRT=$LIBRT" >> makevars.config
 fi
 if [ ! -z "$DESTDIR" ]; then
     echo "DESTDIR=$DESTDIR" >> makevars.config

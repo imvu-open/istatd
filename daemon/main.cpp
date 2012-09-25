@@ -997,12 +997,14 @@ int main(int argc, char const *argv[])
     {
         std::cerr << "Error in main() [" << x.what() << "]" << std::endl;
         delete hsp;
+        delete asp;
         return 2;
     }
     catch (...)
     {
         std::cerr << "Error in main() [unknown]" << std::endl;
         delete hsp;
+        delete asp;
         return 1;
     }
 

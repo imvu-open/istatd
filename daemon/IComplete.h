@@ -6,6 +6,8 @@ class IComplete
 {
 public:
     virtual void on_complete() = 0;
+protected:
+    virtual ~IComplete() {}
 };
 
 template<typename Cls, void (Cls::*Func)()>
