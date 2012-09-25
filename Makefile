@@ -93,7 +93,7 @@ tests:	$(DIR_DEPS) $(patsubst %,run_%,$(TESTS_TO_RUN))
 
 # ftests require istatd to be built
 ftests: $(DIR_DEPS) $(BINS) tests $(FTEST_FILES)
-	@for ft in $(FTEST_FILES); do echo "\n============================================\nftest $$ft"; $$ft || exit 1; done
+	@for ft in $(FTEST_FILES); do echo ""; echo "============================================"; echo "ftest $$ft"; $$ft || exit 1; done
 	bin/istatd --test --config test.cfg
 	@echo "ftests complete"
 
