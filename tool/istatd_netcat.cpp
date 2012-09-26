@@ -156,7 +156,10 @@ int main(int argc, char const *argv[]) {
             exit(1);
         }
         if (r > 0) {
-            write(1, buf, r);
+            if (write(1, buf, r) < 0) {
+                perror("write()");
+                exit(1);
+            }
         }
     }
     shutdown(s, SHUT_WR);
@@ -175,7 +178,10 @@ int main(int argc, char const *argv[]) {
             exit(1);
         }
         if (r > 0) {
-            write(1, buf, r);
+            if (write(1, buf, r) < 0) {
+                perror("write()");
+                exit(1);
+            }
         }
         time(&now);
     }
