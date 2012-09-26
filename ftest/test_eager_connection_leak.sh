@@ -10,10 +10,10 @@ source "$SCRIPTDIR/functions"
 start_server single --fake-time 84000
 for i in `seq 84001 84015` ; do 
     # counter timestamp val valsq valmin valmax count
-    send_stat 18001 "*testconn" $i 1 1 1 1
+    send_stat single "*testconn" $i 1 1 1 1
 done
 
-flush_istatd 18031
+flush_istatd single
 
 echo checking peak eager connection count
 for max in `dump_counter single istatd.counter.eagerconns 10s | grep -v DATE | cut -f5 -d,` ; do 

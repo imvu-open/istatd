@@ -535,6 +535,7 @@ namespace istat
 
     Bucket *StatFile::writableBucket(int64_t bucket_index)
     {
+        Log(LL_Debug, "istat") << "StatFile::writableBucket(" << bucket_index << ")";
         int64_t file_index = StatFile::mapBucketIndexToFileIndex(bucket_index);
         int64_t page_index = file_index / bucketsPerPage_;
         int64_t off = file_index - (page_index * bucketsPerPage_);
@@ -562,6 +563,7 @@ namespace istat
     {
         //  flush the bucket being shifted out, but nothing else
         Bucket &eb0(expBucket[0]);
+        Log(LL_Debug, "istat") << "StatFile::flushOneExpBucket()" << eb0.time();
         if (eb0.time() > 0)
         {
             int64_t ix = mapTimeToBucketIndex(eb0.time());
@@ -585,6 +587,7 @@ namespace istat
 
     void StatFile::flush()
     {
+        Log(LL_Debug, "istat") << "StatFile::flush()";
         //  Flush at most one expBucket, because the test may still be waiting for data.
         flushOneExpBucket();
         mm_->flush(fileHeader_, sizeof(Header), false);

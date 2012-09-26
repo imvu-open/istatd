@@ -18,17 +18,17 @@ test_name counter_increments_get_rolled_up_correctly
     let TIME900=`expr $TIME0+900`
 
     # Send a bunch of stats, first dense and then sparse.
-    send_stat 18001 "*$TESTCOUNTER" $TIME0 10
-    send_stat 18001 "*$TESTCOUNTER" $TIME1 10
-    send_stat 18001 "*$TESTCOUNTER" $TIME2 10    
-    send_stat 18001 "*$TESTCOUNTER" $TIME60 100
-    send_stat 18001 "*$TESTCOUNTER" $TIME120 100
-    send_stat 18001 "*$TESTCOUNTER" $TIME180 100
-    send_stat 18001 "*$TESTCOUNTER" $TIME500 1000
-    send_stat 18001 "*$TESTCOUNTER" $TIME600 1000
-    send_stat 18001 "*$TESTCOUNTER" $TIME900 1000
+    send_stat single "*$TESTCOUNTER" $TIME0 10
+    send_stat single "*$TESTCOUNTER" $TIME1 10
+    send_stat single "*$TESTCOUNTER" $TIME2 10    
+    send_stat single "*$TESTCOUNTER" $TIME60 100
+    send_stat single "*$TESTCOUNTER" $TIME120 100
+    send_stat single "*$TESTCOUNTER" $TIME180 100
+    send_stat single "*$TESTCOUNTER" $TIME500 1000
+    send_stat single "*$TESTCOUNTER" $TIME600 1000
+    send_stat single "*$TESTCOUNTER" $TIME900 1000
 
-    flush_istatd 18031    
+    flush_istatd single    
     test_counter single "$TESTCOUNTER/10s" 0 0 3 0 0 0 0 0 10 0 0 0 0 0 10 0 0 0 0 0 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 100 0 0 0 0 0 0 0 0 0 100 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 100 0 0 0 0 0 0 0 0 0 0  
     test_counter single "$TESTCOUNTER/5m" 33 100 100 100
     test_counter single "$TESTCOUNTER/1h" 333

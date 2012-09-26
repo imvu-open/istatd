@@ -11,8 +11,8 @@ start_server single --fake-time $END_TIME
 
 test_name old_packets_within_file_interval_are_accepted
     let LONG_TIME_AGO=$END_TIME-12000
-    send_stat 18001 foo.bar $LONG_TIME_AGO 1337
-    flush_istatd 18031
+    send_stat single foo.bar $LONG_TIME_AGO 1337
+    flush_istatd single
 
     assert_equal 0 `dump_counter single foo.bar 10s | grep -c ,1337,` "Not supposed to be in 10s file"
     assert_equal 1 `dump_counter single foo.bar 5m  | grep -c ,1337,` "Missing from 5m file"
@@ -28,14 +28,14 @@ test_name packets_from_crazy_times_make_sane_statfile
     let TIME_5=$START_TIME+10
     let TIME_6=$START_TIME+20
     
-    send_stat 18001 foo.baz $TIME_4 1337
-    send_stat 18001 foo.baz $TIME_2 1337
-    send_stat 18001 foo.baz $TIME_1 1337
-    send_stat 18001 foo.baz $TIME_0 1337
-    send_stat 18001 foo.baz $TIME_3 1337
-    send_stat 18001 foo.baz $TIME_5 1337
-    send_stat 18001 foo.baz $TIME_6 1337
-    flush_istatd 18031
+    send_stat single foo.baz $TIME_4 1337
+    send_stat single foo.baz $TIME_2 1337
+    send_stat single foo.baz $TIME_1 1337
+    send_stat single foo.baz $TIME_0 1337
+    send_stat single foo.baz $TIME_3 1337
+    send_stat single foo.baz $TIME_5 1337
+    send_stat single foo.baz $TIME_6 1337
+    flush_istatd single
 
     #10s file catches T4-T6, adding them to existing data
     assert_equal 3 `dump_counter single foo.baz 10s | grep -c ",1337,"` "10s buckets mismatch"

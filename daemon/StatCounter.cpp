@@ -348,8 +348,8 @@ void StatCounter::flush(boost::shared_ptr<IStatStore> const &store)
         ptr != end;
         ++ptr)
     {
-        store->iterateSignal(ptr->file->header());
         ptr->file->flush();
+        store->iterateSignal(ptr->file->header());
     }
 }
 

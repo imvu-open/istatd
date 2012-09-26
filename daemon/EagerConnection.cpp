@@ -256,11 +256,22 @@ void EagerConnection::on_resolve(boost::system::error_code const &err, tcp::reso
     if(!err)
     {
         tryingLater_ = false;
+  next:
         endpoint_ = *endpoint;
         std::stringstream ss;
         ss << endpoint_;
         endpointName_ = ss.str();
-        startConnect(*endpoint);
+        //  prefer ipv4, because that's what we bind
+        if (endpoint_.address().is_v6())
+        {
+          ++endpoint;
+          if (endpoint != tcp::resolver::iterator())
+          {
+            //  the good kind of goto
+            goto next;
+          }
+        }
+        startConnect(endpoint_);
     }
     else
     {

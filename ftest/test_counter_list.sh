@@ -6,8 +6,8 @@ source "$SCRIPTDIR/functions"
 
 start_server single
 
-send_stat 18001 foo.bar.baz 2
-send_stat 18001 foo.bar.quux 3
+send_stat single foo.bar.baz 2
+send_stat single foo.bar.quux 3
 
 wait_for_file $DBDIR/single-store/foo/bar/quux/10s
 
@@ -21,7 +21,7 @@ check_get 18011 "?s=local&sk=*.key" '"first.key":"aa"' '"second.key":"bb"'
 # note: the integer turned to string here!
 check_get 18011 "?s=global" '"test.a":"1"' '"test.b":"some string"'
 
-flush_istatd 18031
+flush_istatd single
 wait_for_file $DBDIR/single-settings/global.set
 wait_for_file $DBDIR/single-settings/local.set
 
@@ -32,7 +32,7 @@ from.disk=yes
 to.disk=no
 EOF
 
-flush_istatd 18031
+flush_istatd single
 check_get 18011 "?s=local&sk=*.disk" '"from.disk":"yes"' '"to.disk":"no"'
 
 # these may take 10 seconds to show up

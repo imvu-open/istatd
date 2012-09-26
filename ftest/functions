@@ -128,16 +128,17 @@ function start_server {
 }
 
 function send_stat {
-    PORT="$1"
+    PORT=`stat_port_from_profile $1`
     shift
     if [ -z "$2" ]; then
         failure "usage: send_stat port counter.name val [...]"
     fi
+    echo "send_stat $PORT $*"
     echo -ne "$*\r\n" | bin/istatd_netcat -q 1 localhost "$PORT"
 }
 
 function send_event {
-    PORT="$1"
+    PORT=`stat_port_from_profile $1`
     shift
     if [ -z "$1" ]; then
         failure "usage: send_event port 'eventType|eventMessage[|maybehost]'"
@@ -217,12 +218,21 @@ function http_post_json {
     curl -d "$2" -s -X POST "$1" 2>&1
 }
 
+function admin_port_from_profile {
+    grep admin-port ftest/$1.cfg | sed -e 's/.* //'
+}
+
+function stat_port_from_profile {
+    grep stat-port ftest/$1.cfg | sed -e 's/.* //'
+}
+
 function test_counter {
     PROFILE=$1
     COUNTER=$2
     shift 2
     FILENAME=$DBDIR/$PROFILE-store/`echo $COUNTER | tr [.] [/]`
     wait_for_file $FILENAME
+    #flush_istatd $PROFILE
     VALUES=( `bin/istatd_filedump $FILENAME | tail -n +2 | sed -e 's/[^,]*,\\([^,]*\\),.*/\\1/'` )
     COUNT=${#VALUES[@]}
     
@@ -241,7 +251,7 @@ function test_counter {
 }
 
 function flush_istatd {
-    bin/istatd_flush -q localhost $1
+    bin/istatd_flush -q localhost `admin_port_from_profile $1`
 }
 
 function purge_istatd {

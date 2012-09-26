@@ -5,8 +5,8 @@ source "$SCRIPTDIR/functions"
 
 start_server single
 
-send_stat 18001 tep.tep_die 1
-send_stat 18001 tep.tep_live.and_let_die 2
+send_stat single tep.tep_die 1
+send_stat single tep.tep_live.and_let_die 2
 
 wait_for_file $DBDIR/single-store/tep/tep_live/and_let_die/10s
 

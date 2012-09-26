@@ -2,6 +2,7 @@
 #include <istat/test.h>
 #include <istat/istattime.h>
 
+
 namespace
 {
     time_t fake = 0;

@@ -468,7 +468,7 @@ void collectLocalStats(StatServer *ss)
     {
         nextStatsTime_ = (now + STATS_INTERVAL);
         nextStatsTime_ -= (nextStatsTime_ % STATS_INTERVAL);
-        statsTimer_.expires_at(boost::posix_time::from_time_t(nextStatsTime_));
+        statsTimer_.expires_from_now(boost::posix_time::seconds(nextStatsTime_ - now));
         statsTimer_.async_wait(statsStrand_.wrap(boost::bind(&collectLocalStats, ss)));
     }
 
