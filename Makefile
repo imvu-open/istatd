@@ -57,7 +57,7 @@ clean:
 	rm -fr obj bin testdata/* /tmp/test /var/tmp/test /tmp/ss.test
 
 distclean:	clean
-	rm -f makevars.config
+	rm -fr makevars.config debian/files debian/istatd/
 
 killall:
 	killall -q istatd || true
