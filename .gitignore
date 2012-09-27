@@ -22,3 +22,4 @@ bin/
 obj/
 debian/files
 debian/istatd/
+python
