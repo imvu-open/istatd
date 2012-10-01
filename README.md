@@ -24,7 +24,7 @@ Quickstart:
 -----------
 
     git clone git@github.com:imvu-open/istatd.git
-    cd git
+    cd istatd
     ./quickstart.sh
   
     Then open localhost:18011 in a browser.
