@@ -23,11 +23,11 @@ For more documentation than what is found in this file, see:
 Quickstart:
 -----------
 
-  git clone git@github.com:imvu-open/istatd.git
-  cd git
-  ./quickstart.sh
+    git clone git@github.com:imvu-open/istatd.git
+    cd git
+    ./quickstart.sh
   
-  Then open localhost:18011 in a browser.
+    Then open localhost:18011 in a browser.
 
 This program is implemented in C++ using boost::asio for asynchronous, 
 multi-threaded, evented net handling. One version of this program used 
