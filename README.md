@@ -29,6 +29,18 @@ Quickstart:
   
     Then open localhost:18011 in a browser.
 
+You may need to install libboost-dev-all (or whatever the boost headers 
+and libraries are called on your system) and libstatgrab-dev for the 
+build to succeed.
+
+https://github.com/imvu-open/libstatgrab
+
+Any counter will get a default retention, configured as 10 second data 
+for a few days, 5 minute data for a few months, and 1 hour data for a 
+few years. All updates go into all of the buckets -- there is no 
+decimation, only aggregation (statistics like min, max, average and 
+standard deviation are collected/calculated).
+
 This program is implemented in C++ using boost::asio for asynchronous, 
 multi-threaded, evented net handling. One version of this program used 
 mmap() to do counter I/O asynchronously using madvise() and msync(). 
@@ -43,11 +55,6 @@ the actual implementation uses lseek() and read()/write(). A periodic
 timer iterates over all counters to make sure they are flushed to 
 disk about once every 5 minutes. (Check the --flush option)
 
-Any counter will get a default retention, configured as 10 second data 
-for a few days, 5 minute data for a few months, and 1 hour data for a 
-few years. All updates go into all of the buckets -- there is no 
-decimation, only aggregation (statistics like min, max, average and 
-standard deviation are collected/calculated).
 
 Some random thoughts
 --------------------
@@ -119,7 +126,8 @@ You will likely want to do something like:
 
 The libstatgrab library is available only through source download. Configure 
 it and make + make install (into /usr/local is fine).
-
+    http://github.com/imvu-open/libstatgrab
+    
 g++ and GNU make are needed, too.
 
 The make file is automatic:
