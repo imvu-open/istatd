@@ -90,8 +90,12 @@ fi
 
 # boost_system is a pain across versions
 if [ -z "$BOOST_SYSTEM" ]; then
-    if [ -r /usr/lib/libboost_system.so ]; then
+    if [ -r /usr/lib64/libboost_system.so ]; then
         BOOST_SYSTEM=-lboost_system
+    elif [ -r /usr/lib/libboost_system.so ]; then
+        BOOST_SYSTEM=-lboost_system
+    elif [ -r /usr/lib64/libboost_system-mt.so ]; then
+        BOOST_SYSTEM=-lboost_system-mt.so
     elif [ -r /usr/lib/libboost_system-mt.so ]; then
         BOOST_SYSTEM=-lboost_system-mt.so
     else
@@ -102,8 +106,12 @@ if [ -z "$BOOST_SYSTEM" ]; then
 fi
 # boost_filesystem is also somewhat a pain
 if [ -z "$BOOST_FILESYSTEM" ]; then
-    if [ -r /usr/lib/libboost_filesystem.so ]; then
+    if [ -r /usr/lib64/libboost_filesystem.so ]; then
         BOOST_FILESYSTEM=-lboost_filesystem
+    elif [ -r /usr/lib/libboost_filesystem.so ]; then
+        BOOST_FILESYSTEM=-lboost_filesystem
+    elif [ -r /usr/lib64/libboost_filesystem-mt.so ]; then
+        BOOST_FILESYSTEM=-lboost_filesystem-mt
     elif [ -r /usr/lib/libboost_filesystem-mt.so ]; then
         BOOST_FILESYSTEM=-lboost_filesystem-mt
     else
@@ -113,24 +121,30 @@ if [ -z "$BOOST_FILESYSTEM" ]; then
     fi
 fi
 if [ -z "$STATGRAB" ]; then
-    if [ -r /usr/lib/libstatgrab.so ]; then
+    if [ -r /usr/lib64/libstatgrab.so ]; then
+        STATGRAB=-lstatgrab
+    elif [ -r /usr/lib/libstatgrab.so ]; then
+        STATGRAB=-lstatgrab
+    elif [ -r /usr/local/lib64/libstatgrab.so ]; then
         STATGRAB=-lstatgrab
     elif [ -r /usr/local/lib/libstatgrab.so ]; then
         STATGRAB=-lstatgrab
     else
         echo "Cannot find libstatgrab.so"
         echo "Specify it with --statgrab or install libstatgrab-dev."
+        echo "Or try https://github.com/imvu-open/libstatgrab"
         exit 1
     fi
 fi
 if [ -z "$LIBRT" ]; then
     if [ -r /usr/lib/librt.so ]; then
         LIBRT=-lrt
+    elif [ -r /usr/lib64/librt.so ]; then
+        LIBRT=-lrt
     elif [ -r /usr/local/lib/librt.so ]; then
         LIBRT=-lrt
-    else
-        echo "Cannot find librt.so"
-        echo "Specify it with --librt"
+    elif [ -r /usr/local/lib64/librt.so ]; then
+        LIBRT=-lrt
     fi
 fi
 

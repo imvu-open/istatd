@@ -8,6 +8,9 @@
 #include <istat/Atomic.h>
 #include <istat/istattime.h>
 #include <json/json.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
@@ -390,7 +393,7 @@ void RequestInFlight::serveFile(std::string const &name)
     std::replace(x.begin(), x.end(), '/', '.');
     x = filesDir_ + "/" + x;
     struct stat st;
-    if (stat(x.c_str(), &st) < 0)
+    if (::stat(x.c_str(), &st) < 0)
     {
         LogWarning << "serveFile(" << x << "): not found";
         complete(404);

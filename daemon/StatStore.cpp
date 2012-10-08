@@ -55,7 +55,7 @@ StatStore::StatStore(std::string const &path, int uid,
     if (uid >= 0)
     {
         struct stat st;
-        if (stat(path.c_str(), &st) < 0)
+        if (::stat(path.c_str(), &st) < 0)
         {
             throw std::runtime_error("Can't stat(" + path + ")");
         }
@@ -282,7 +282,7 @@ void StatStore::scanDir(std::string const& dir)
             }
             path = dir + dent->d_name;
             apath = path_ + "/" + path;
-            if (stat(apath.c_str(), &stbuf) < 0)
+            if (::stat(apath.c_str(), &stbuf) < 0)
             {
                 LogWarning << "Could not stat:" << apath;
             }

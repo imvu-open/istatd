@@ -10,7 +10,9 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
+#include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <boost/thread.hpp>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -198,7 +200,7 @@ bool loadConfigFile()
 {
     std::string path(config.get());
     struct stat st;
-    if (stat(path.c_str(), &st) < 0 || !S_ISREG(st.st_mode))
+    if (::stat(path.c_str(), &st) < 0 || !S_ISREG(st.st_mode))
     {
         std::cerr << "Not a file: " << path << std::endl;
         return false;
@@ -543,7 +545,7 @@ void handle_pid_daemon(std::string const &pidf, bool daemon)
     if (pidf.size() > 0)
     {
         struct stat stbuf;
-        if (0 == stat(cpf.c_str(), &stbuf))
+        if (0 == ::stat(cpf.c_str(), &stbuf))
         {
             std::ifstream fi;
             fi.open(cpf.c_str(), std::ios_base::in | std::ios_base::binary);
