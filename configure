@@ -17,6 +17,7 @@ echo "# makevars.config for istatd generated on " `date` > makevars.config
 
 BOOST_SYSTEM=""
 BOOST_FILESYSTEM=""
+BOOST_THREAD=""
 STATGRAB=""
 LIBRT=""
 DESTDIR=""
@@ -33,6 +34,10 @@ while [ $# -gt 0 ]; do
         --boost_filesystem)
             shift
             BOOST_FILESYSTEM="$1"
+            ;;
+        --boost_thread)
+            shift
+            BOOST_THREAD="$1"
             ;;
         --statgrab)
             shift
@@ -62,6 +67,7 @@ while [ $# -gt 0 ]; do
             echo "Options:"
             echo "--boost_system     -lboost_system-mt      What is the boost_system library name?"
             echo "--boost_filesystem -lboost_filesystem-mt  What is the boost_filesystem library name?"
+            echo "--boost_thread     -lboost_thread-mt      What is the boost_thread library name?"
             echo "--statgrab         -lstatgrab             What is the statgrab library name?"
             echo "--librt            -lrt                   What is the librt library name (if any)?"
             echo "--prefix           /                      What is the root of the install?"
@@ -120,6 +126,24 @@ if [ -z "$BOOST_FILESYSTEM" ]; then
         exit 1
     fi
 fi
+
+# RHEL can't find boost_thread on its own.
+if [ -z "$BOOST_THREAD" ]; then
+    if [ -r /usr/lib64/libboost_thread.so ]; then
+        BOOST_THREAD=-lboost_thread
+    elif [ -r /usr/lib/libboost_thread.so ]; then
+        BOOST_THREAD=-lboost_thread
+    elif [ -r /usr/lib64/libboost_thread-mt.so ]; then
+        BOOST_THREAD=-lboost_thread-mt
+    elif [ -r /usr/lib/libboost_thread-mt.so ]; then
+        BOOST_THREAD=-lboost_thread-mt
+    else
+        echo "Cannot find boost_thread-mt.so (or boost_thread.so)"
+        echo "Specify it with --boost_thread or install libboost-dev-all."
+        exit 1
+    fi
+fi
+
 if [ -z "$STATGRAB" ]; then
     if [ -r /usr/lib64/libstatgrab.so ]; then
         STATGRAB=-lstatgrab
@@ -153,6 +177,9 @@ if [ ! -z "$BOOST_SYSTEM" ]; then
 fi
 if [ ! -z "$BOOST_FILESYSTEM" ]; then
     echo "BOOST_FILESYSTEM=$BOOST_FILESYSTEM" >> makevars.config
+fi
+if [ ! -z "$BOOST_THREAD" ]; then
+    echo "BOOST_THREAD=$BOOST_THREAD" >> makevars.config
 fi
 if [ ! -z "$STATGRAB" ]; then
     echo "STATGRAB=$STATGRAB" >> makevars.config
