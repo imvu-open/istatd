@@ -41,7 +41,7 @@ ifeq ($(OPT),)
 OPT := -O2
 endif
 CXXFLAGS:=-pipe $(OPT) -g -Iinclude -MMD -D_LARGEFILE64_SOURCE -Wall -Werror
-SYS_LIBS:=$(BOOST_SYSTEM) -lboost_thread -lboost_signals -lpthread $(STATGRAB) \
+SYS_LIBS:=$(BOOST_SYSTEM) $(BOOST_THREAD) -lboost_signals -lpthread $(STATGRAB) \
   $(BOOST_FILESYSTEM) -lboost_date_time #$(LIBRT)
 
 all:	$(DIR_DEPS) $(LIB_DEPS) $(BINS) tests ftests

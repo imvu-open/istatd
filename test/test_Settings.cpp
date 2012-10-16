@@ -4,7 +4,7 @@
 #include <boost/asio/io_service.hpp>
 #include <istat/test.h>
 #include <istat/Log.h>
-
+#include <sys/stat.h>
 
 boost::asio::io_service svc;
 class complete : public IComplete
@@ -136,7 +136,7 @@ void func_real()
 
     //  make sure the file exists
     struct stat stbuf;
-    assert_equal(0, stat("/tmp/test/config/allowCreate.set", &stbuf));
+    assert_equal(0, ::stat("/tmp/test/config/allowCreate.set", &stbuf));
 }
 
 void func()
