@@ -12,15 +12,15 @@ void func()
         assert_true(a.enabled());
         assert_false(b.enabled());
         DebugOption const *opt = DebugOption::first();
-        assert_not_equal(opt, NULL);
+        assert_not_equal(opt, (DebugOption const *)NULL);
         assert_true(opt == &a || opt == &b);
         opt = DebugOption::next(opt);
-        assert_not_equal(opt, NULL);
+        assert_not_equal(opt, (DebugOption const *)NULL);
         assert_true(opt == &a || opt == &b);
         opt = DebugOption::next(opt);
-        assert_equal(opt, NULL);
+        assert_equal(opt, (DebugOption const *)NULL);
     }
-    assert_equal(DebugOption::first(), NULL);
+    assert_equal(DebugOption::first(), (DebugOption const *)NULL);
 }
 
 int main(int argc, char const *argv[])
