@@ -111,7 +111,7 @@ void test_Debug()
     assert_true(DebugOption::find("http")->enabled());
     assert_true(DebugOption::find("record")->enabled());
     assert_false(DebugOption::find("admin")->enabled());
-    assert_equal(DebugOption::find("derp"), NULL);
+    assert_equal(DebugOption::find("derp"), (DebugOption const *)NULL);
 }
 
 

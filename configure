@@ -161,15 +161,16 @@ if [ -z "$STATGRAB" ]; then
     fi
 fi
 if [ -z "$LIBRT" ]; then
-    if [ -r /usr/lib/librt.so ]; then
-        LIBRT=-lrt
-    elif [ -r /usr/lib64/librt.so ]; then
-        LIBRT=-lrt
-    elif [ -r /usr/local/lib/librt.so ]; then
-        LIBRT=-lrt
-    elif [ -r /usr/local/lib64/librt.so ]; then
-        LIBRT=-lrt
+    mkdir -p tmp
+    fn=tmp/tt$$.c
+    echo "#include <time.h>" > "$fn"
+    echo "int main() { (void)clock_gettime(0, NULL); }" >> "$fn"
+    if gcc -o tmp/tt "$fn" > /dev/null 2>&1; then
+        LIBRT=""
+    else
+        LIBRT="-lrt"
     fi
+    rm -rf tmp
 fi
 
 if [ ! -z "$BOOST_SYSTEM" ]; then
