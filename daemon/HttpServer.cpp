@@ -29,8 +29,6 @@ HttpServer::HttpServer(int port, boost::asio::io_service &svc, std::string liste
     {
         sInfo_.port = port_;
         tcp::resolver resolver(svc);
-        //tcp::resolver::query query("0.0.0.0", boost::lexical_cast<std::string>(port));
-        //tcp::endpoint endpoint = *resolver.resolve(query);
         acceptor_.open(tcp::v4());
         acceptor_.set_option(tcp::acceptor::reuse_address(true));
         if (listen_addr.length() > 0) {

@@ -123,7 +123,7 @@ void RequestInFlight::do_GET(std::string const &url, std::map<std::string, std::
     else if (url.substr(0, 7) == "/files/") {
         serveFile(url.substr(7));
     }
-    else if ((params.size() == 0) && url == "favicon.ico") {
+    else if ((params.size() == 0) && (url == "favicon.ico" || url == "/favicon.ico")) {
         serveFile("/files/favicon.ico");
     }
     else if ((param_val = params.find("f")) != params.end()) {
