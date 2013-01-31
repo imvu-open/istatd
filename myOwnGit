@@ -1,0 +1,4 @@
+ssh-add #0c:b9:a1:a7:9b:35:f8:14:c0:69:72:37:f7:db:09:88#
+git clone git@github.com:xinzaitian/istatd.git
+cd istatd
+./quickstart.sh
