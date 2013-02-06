@@ -169,6 +169,7 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         ec_->writeOut("purge [maxOld[,maxAge]] - purge old connection info records\r\n");
         ec_->writeOut("debug [option[,on|off]] - display or toggle debug options\r\n");
         ec_->writeOut("loglevel [level[,stderrLevel]] - display or change logging verbosity\r\n");
+		ec_->writeOut("ignore name - ignore all updates for current session\r\n");
         ec_->writeOut("quit - disconnect from stat server\r\n");
         ec_->writeOut("ok\r\n");
         return;
@@ -249,6 +250,33 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         ec_->writeOut("ok\r\n");
         return;
     }
+
+	if (cmd == "ignore")
+    {
+        try
+        {
+			if (args.size() > 1) 
+			{
+				throw std::runtime_error("too many arguments");
+			}
+			std::string name = args[0];
+			as_->ssp_->ignore(name);			
+        }
+        catch (std::exception const &x)
+        {
+            for (std::vector<std::string>::const_iterator ptr(args.begin()), end(args.end());
+                ptr != end; ++ptr)
+            {
+                ec_->writeOut(*ptr + ", ");
+            }
+            ec_->writeOut("\r\n");
+            ec_->writeOut(std::string("huh? ") + x.what() + "\r\n");
+            return;
+        }
+        ec_->writeOut("ok\r\n");
+        return;
+    }
+
     if (cmd == "debug")
     {
         try

@@ -258,6 +258,11 @@ function purge_istatd {
     bin/istatd_purge -q localhost $1
 }
 
+function ignore_istatd {
+    bin/istatd_ignore localhost `admin_port_from_profile $1` $2
+}
+
+
 function check_get {
     PORT="$1"; shift
     QUERY="$1"; shift

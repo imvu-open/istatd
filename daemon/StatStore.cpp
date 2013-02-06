@@ -5,6 +5,7 @@
 #include "IComplete.h"
 #include <istat/Mmap.h>
 #include <istat/istattime.h>
+#include "NullStatCounter.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -17,6 +18,8 @@
 #include <iostream>
 #include <dirent.h>
 #include <algorithm>
+
+
 
 using namespace istat;
 
@@ -203,6 +206,65 @@ boost::shared_ptr<StatStore::AsyncCounter> StatStore::openCounter(std::string co
     return asyncCounter;
 }
 
+void StatStore::ignore(std::string const &name)
+{
+	LogSpam << "StatStore::ignore(" << name << ")";
+    
+	if (name == "")
+    {
+        return;
+    }
+
+    std::string xform(name);
+    if (name[0] == '*')
+    {
+        xform = name.substr(1);
+        if (!xform.length())
+        {
+            return;
+        }
+    }
+    munge(xform);
+
+    boost::shared_ptr<StatStore::AsyncCounter>  asyncCounter;
+    {
+        grab aholdof(counterShards_.lock(xform));
+        CounterMap &counters(counterShards_.map(xform));
+        CounterMap::iterator ptr(counters.find(xform));
+        if (ptr != counters.end())
+        {
+            //  This is the common case
+            LogSpam << "StatStore::ignore(" << name << ") ... flush old" << xform;
+			asyncCounter = (*ptr).second;
+			asyncCounter->statCounter_->flush(IStatStore::shared_from_this());
+			asyncCounter.reset();
+        }
+        LogSpam << "StatStore::ignore(" << name << ") ... creating Null";
+
+        asyncCounter = boost::shared_ptr<StatStore::AsyncCounter>(
+			new StatStore::AsyncCounter(svc_, 
+										boost::shared_ptr<IStatCounter>(
+											new NullStatCounter(name))));
+
+        if (!asyncCounter)
+        {
+			LogDebug << "StatStore::ignore fail to create NullStatCounter";
+			return;
+        }
+        counters[xform] = asyncCounter;
+        keys_.add(xform);
+    }
+    //  strip the leaf name "extension"
+    std::string sex(name);
+    stripext(sex);
+    if (sex != name)
+    {
+        //  recursively ignore counters up the chain
+        ignore(sex);
+    }
+}
+
+
 void StatStore::flushOne(Shards::iterator &iterator)
 {
     std::string key;
@@ -215,6 +277,9 @@ void StatStore::flushOne(Shards::iterator &iterator)
     LogSpam << "StatStore::flushOne(" << key << ")";
     svc_.post(value->strand_.wrap(boost::bind(&IStatCounter::flush, value->statCounter_, shared_from_this())));
 }
+
+
+
 
 void StatStore::syncNext()
 {
