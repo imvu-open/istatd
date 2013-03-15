@@ -821,6 +821,9 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     } else {
         // need to add % above the ends of of range for easy selection of zoom ranges
         range_slop = (maximum - minimum) * 0.05;
+        if (range_slop == 0.0) {
+            range_slop = 0.5;
+        }
         maximum = maximum + (range_slop * 2); // 10% extra on top
         minimum = minimum - range_slop;       // 5% extra on bottom!
     }
