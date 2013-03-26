@@ -2,11 +2,11 @@ Source: istatd
 Section: universe 
 Priority: extra
 Maintainer: Imran Hameed <ihameed@imvu.com>
-Build-Depends: debhelper (>= 7), libstatgrab-dev, cdbs, libboost-all-dev, build-essential, libmysqlcppconn-dev
+Build-Depends: debhelper (>= 7), libstatgrab-dev, cdbs, libboost-all-dev, build-essential, libmysqlcppconn-dev, curl
 Standards-Version: 3.8.3
 Homepage: https://github.com/imvu/istatd
 
 Package: istatd
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libstatgrab6, libboost-system1.40.0, libboost-thread1.40.0, libboost-signals1.40.0, libmysqlcppconn4
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: imvu statistics gathering/forwarding/aggregating/storage daemon

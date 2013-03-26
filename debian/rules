@@ -13,8 +13,8 @@
 override_dh_auto_build:
 	dh_auto_build -v -- all
 
-override_dh_auto_clean:
-	@echo "not executing $(MAKE) clean"
+#override_dh_auto_clean:
+#	@echo "not executing $(MAKE) clean"
 
 override_dh_auto_configure:
 	./configure
