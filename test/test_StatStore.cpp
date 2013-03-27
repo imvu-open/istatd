@@ -95,7 +95,7 @@ void run_tests(void)
         std::string storepath("/tmp/test/statstore");
         boost::filesystem::remove_all(storepath);
         boost::filesystem::create_directories(storepath);
-        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, rp, xrp));
+        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, rp));
         StatStore store(storepath, getuid(), service, statCounterFactory, mm);
 
         store.record("taco", 42.42);
@@ -116,7 +116,7 @@ void run_tests(void)
         std::string storepath("/tmp/test/statstore");
         boost::filesystem::remove_all(storepath);
         boost::filesystem::create_directories(storepath);
-        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, rp, xrp));
+        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, rp));
         StatStore store(storepath, getuid(), service, statCounterFactory, mm);
 
         assert_equal(store.hasAvailableSpace(), false);
@@ -130,7 +130,7 @@ void run_tests(void)
         std::string storepath("/tmp/test/statstore");
         boost::filesystem::remove_all(storepath);
         boost::filesystem::create_directories(storepath);
-        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, rp, xrp));
+        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, rp));
         StatStore store(storepath, getuid(), service, statCounterFactory, mm);
 
         assert_equal(store.hasAvailableSpace(), true);

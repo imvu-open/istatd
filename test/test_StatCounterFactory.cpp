@@ -18,7 +18,7 @@ void run_tests(void)
     {
         assert_true(true);
         boost::filesystem::remove_all("/tmp/test");
-        StatCounterFactory factory("/tmp/test", mm, rp, xrp);
+        StatCounterFactory factory("/tmp/test", mm, rp);
         boost::shared_ptr<IStatCounter> counter = factory.create("taco", false, istattime(0));
         assert_true(counter.get()!=0);
         assert_false(counter->isCollated());
@@ -26,14 +26,14 @@ void run_tests(void)
     }
     {
         boost::filesystem::remove_all("/tmp/test");
-        StatCounterFactory factory("/tmp/test", mm, rp, xrp);
+        StatCounterFactory factory("/tmp/test", mm, rp);
         boost::shared_ptr<IStatCounter> counter = factory.create("taco", true, istattime(0));
         boost::shared_ptr<IStatCounter> reopen = factory.create("taco", true, istattime(0));
         assert_true(reopen.get()!=0);
     }
     {
         boost::filesystem::remove_all("/tmp/test");
-        StatCounterFactory factory("/tmp/test", mm, rp, xrp);
+        StatCounterFactory factory("/tmp/test", mm, rp);
         boost::shared_ptr<IStatCounter> one = factory.create("bbq", true, istattime(0));
         assert_true(one.get()!=0);
         boost::shared_ptr<IStatCounter> two = factory.create("bbq", true, istattime(0));
@@ -42,7 +42,7 @@ void run_tests(void)
     }
     {
         boost::filesystem::remove_all("/tmp/test");
-        StatCounterFactory factory("/tmp/test", mm, rp, xrp);
+        StatCounterFactory factory("/tmp/test", mm, rp);
         boost::shared_ptr<IStatCounter> one = factory.create("sandwich", true, istattime(0));
         assert_true(one.get()!=0);
         assert_true(one->isCollated());

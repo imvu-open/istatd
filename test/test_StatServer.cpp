@@ -26,7 +26,7 @@ boost::shared_ptr<StatServer> makeServer(Mmap *mm, boost::asio::io_service &svc)
     std::string listenAddress("");
     std::string storePath("/tmp/test/testdir");
     //Mmap *mm(NewMmap());
-    boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storePath, mm, rp, xrp));
+    boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storePath, mm, rp));
     boost::shared_ptr<IStatStore> statStore(new StatStore(storePath, getuid(), svc, statCounterFactory, mm));
     statStore->setAggregateCount(2);
     return boost::shared_ptr<StatServer>(new StatServer(port, listenAddress, agent, 1, svc, statStore));

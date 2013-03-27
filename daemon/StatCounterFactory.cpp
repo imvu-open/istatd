@@ -6,16 +6,15 @@
 #include <string>
 
 
-StatCounterFactory::StatCounterFactory(std::string const &root_path, istat::Mmap *mm, RetentionPolicy &rp, RetentionPolicy &xmap) :
+StatCounterFactory::StatCounterFactory(std::string const &root_path, istat::Mmap *mm, RetentionPolicy &rp) :
     rootPath_(root_path),
     mm_(mm),
-    policy_(rp),
-    xmaPolicy_(xmap)
+    policy_(rp)
 {
 }
 
 boost::shared_ptr<IStatCounter> StatCounterFactory::create(std::string const &name, bool isCollated, time_t zeroTime)
 {
     std::string fullpath = rootPath_ + "/" + istat::counter_filename(name);
-    return boost::shared_ptr<IStatCounter>(new StatCounter(fullpath, isCollated, zeroTime, mm_, policy_, xmaPolicy_));
+    return boost::shared_ptr<IStatCounter>(new StatCounter(fullpath, isCollated, zeroTime, mm_, policy_));
 }

@@ -168,7 +168,6 @@ Argument<bool> testMode("test", false, "When specified, run unit tests built int
 Argument<int> adminPort("admin-port", 0, "When specified, port that exposes an admin telnet interface");
 Argument<int> minimumRequiredSpace("min-space", -1, "When specified, minimum free space required (in bytes). When below this amount, error messages will be generated periodically.");
 Argument<std::string> retention("retention", "10s:10d,5m:1y9d,1h:6y12d", "When specified, adjusts number and size of retention times.");
-Argument<std::string> movingAverage("moving-average", "", "When specified, calculates an exponential moving average at given granularity at given season length.");
 Argument<std::string> debug("debug", "", "When specified, turns on specific debugging options (as comma separated list).");
 Argument<std::string> settings("settings", "/tmp", "Where to store settings (mostly used for HTTP app).");
 Argument<int> fakeTime("fake-time", 0, "Fake current time to UNIX epoch (for testing).");
@@ -893,7 +892,6 @@ int main(int argc, char const *argv[])
     set_files_max(numFiles.get());
 
     RetentionPolicy retentionPolicy(retention.get().c_str());
-    RetentionPolicy xmaPolicy(movingAverage.get().c_str());
 
     //  audit the hit/miss counters for the retention intervals
     for (size_t i = 0, n = retentionPolicy.countIntervals(); i != n; ++i)
@@ -915,7 +913,7 @@ int main(int argc, char const *argv[])
         if (storepath.size())
         {
             storepath = combine_paths(initialDir_, storepath);
-            boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, retentionPolicy, xmaPolicy));
+            boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, retentionPolicy));
 
             StatStore * ss = new StatStore(storepath, dropped_uid(), g_service, statCounterFactory, mm, flush.get()*1000, minimumRequiredSpace.get());
             LoopbackCounter::setup(ss, g_service);

@@ -303,7 +303,7 @@ void csvDump(char const *fileName)
 
 int main(int argc, char const *argv[])
 {
-    if (argc < 2 && argc > 4)
+    if (argc < 2 || argc > 4)
     {
 usage:
         std::cerr << "usage: istatd_filedump [--full [--force]] filename" << std::endl;

@@ -11,7 +11,7 @@
 class StatCounterFactory : public IStatCounterFactory
 {
 public:
-    StatCounterFactory(std::string const &root_path, istat::Mmap *mm, RetentionPolicy &rp, RetentionPolicy &xmap);
+    StatCounterFactory(std::string const &root_path, istat::Mmap *mm, RetentionPolicy &rp);
 
     virtual boost::shared_ptr<IStatCounter> create(std::string const &name, bool isCollated, time_t zeroTime);
 
@@ -19,7 +19,6 @@ private:
     std::string rootPath_;
     istat::Mmap *mm_;
     RetentionPolicy &policy_;
-    RetentionPolicy &xmaPolicy_;
 
 };
 

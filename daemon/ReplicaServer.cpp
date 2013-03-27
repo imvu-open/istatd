@@ -79,7 +79,7 @@ public:
             emit(buf, sz);
             return;
         }
-        LogNotice << "New replica connetion from" << conn.ServerId.str() << "at" << conn_->endpointName();
+        LogNotice << "New replica connection from" << conn.ServerId.str() << "at" << conn_->endpointName();
         UniqueId id;
         rs_->ss_->getUniqueId(id);
         if (id == conn.ServerId)

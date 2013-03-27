@@ -17,7 +17,7 @@ class RetentionPolicy;
 class StatCounter : public IStatCounter, public boost::noncopyable
 {
 public:
-    StatCounter(std::string const &name, bool isCollated, time_t zeroTime, istat::Mmap *mm, RetentionPolicy const &rp, RetentionPolicy const &xmap);
+    StatCounter(std::string const &name, bool isCollated, time_t zeroTime, istat::Mmap *mm, RetentionPolicy const &rp);
     StatCounter(boost::shared_ptr<istat::StatFile> file, time_t interval, int history, std::string suffix, bool isCollated);
     virtual ~StatCounter();
 

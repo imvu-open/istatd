@@ -142,7 +142,7 @@ int main(int argc, char const *argv[])
         {
             RetentionPolicy rp("10s:10d,5m:150d,1h:6y");
             RetentionPolicy xrp("");
-            StatCounter sc(s, true, start_time, mm, rp, xrp); // tiny tiny length for testing
+            StatCounter sc(s, true, start_time, mm, rp); // tiny tiny length for testing
             StatGenerator sg(start_time, interval, store_value, store_increment, store_max);
             generate_counters(&sc, &sg, 1000);
         }

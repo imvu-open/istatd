@@ -74,7 +74,7 @@ void test_RequestInFlight()
         Mmap *mm2 = NewMmap(); // we never dispose this because of a race D:
 RetentionPolicy rp("10s:10d,5m:140d,1h:5y");
 RetentionPolicy xrp("");
-        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory("testdir", mm2, rp, xrp));
+        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory("testdir", mm2, rp));
 
         boost::shared_ptr<StatStore> storep(new StatStore("testdir", getuid(), svc, statCounterFactory, mm2));
         storep->record("a.b", 1000, 1, 2, 3, 4, 5);

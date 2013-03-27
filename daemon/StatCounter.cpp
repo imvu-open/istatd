@@ -38,7 +38,7 @@ StatCounter::CollationInfo::CollationInfo(time_t t)
 {
 }
 
-StatCounter::StatCounter(std::string const &pathName, bool isCollated, time_t zeroTime, istat::Mmap *mm, RetentionPolicy const &rp, RetentionPolicy const &xmap) :
+StatCounter::StatCounter(std::string const &pathName, bool isCollated, time_t zeroTime, istat::Mmap *mm, RetentionPolicy const &rp) :
     isCollated_(isCollated),
     collationInterval_(1)
 {
