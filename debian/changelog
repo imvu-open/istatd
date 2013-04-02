@@ -1,9 +1,41 @@
-istatd (0.56-1) UNRELEASED; urgency=low
+istatd (0.57-1) unstable; urgency=low
 
   [ Jon Watte ]
-  * Minor touch-ups ahead of open source release.
+  * Add a quickstart for easy testing.
+  * Update README.md
+  * Better checks in configure
 
- -- Jon Watte <jwatte@imvu.com>  Thu, 20 Sep 2012 16:00:00 -0700
+  [ Patrick O'Brien ]
+  * updating the Makefile and configure files in order to be able to
+    specify the location of libboost_thread, since RHEL was failing to
+    find it. updating test/test_Settings.cpp to include sys/stat.h and
+    updating stat - I made these changes based off of commit
+    d8db5e09739f33f68a3de1a544a7af6063623597
+
+  [ Jon Watte ]
+  * fix a python2/3 issue
+  * Work around a reported template type derivation problem in some
+    version of GCC.
+  * LIBRT must be set if there is a librt.so, to support modern
+    headers/libs
+  * fix some more Ubuntu 12.04 built issues
+
+  [ Jon Schedler ]
+  * reenable make clean in debian/rules
+  * remove deps on hardcodeded libboost versions
+
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 26 Mar 2013 12:34:56 -0700
+
+istatd (0.56-1) UNRELEASED; urgency=low
+  [ Jon Watte ]
+  * Minor touch-ups ahead of open source release.
+  * Add an explicit LICENSE.md file.
+  * builds on GCC 4.7.1
+  * builds and passes tests on Arch / gcc 4.7
+  * Fix a return value complaint.
+  * Additional make file cleanup 
+
+ -- Jon Watte <jwatte@imvu.com>  Mon, 24 Sep 2012 09:39:45 -0700
 
 istatd (0.55-1) UNRELEASED; urgency=low
 
