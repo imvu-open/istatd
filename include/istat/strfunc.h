@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <stdint.h>
 
 namespace istat
 {
@@ -51,7 +52,7 @@ namespace istat
     time_t interval_to_seconds(std::string const &ival);
     std::string seconds_to_interval(time_t secs);
     std::string http_date(time_t t = 0);
-    std::string iso_8601_datetime(time_t t = 0);
+    std::string iso_8601_datetime(int64_t t = 0);
 
     bool is_valid_settings_name(std::string const &str);
 }

@@ -12,6 +12,7 @@ rm -f makevars.config
 # If this fails, you need to create appropriate aliases or symlinks for 
 # testing to work!
 /usr/bin/env python -V
+/usr/bin/env python2 -V
 
 echo "# makevars.config for istatd generated on " `date` > makevars.config
 
@@ -83,7 +84,7 @@ done
 
 # see if we need to install boost
 if [ ! -d /usr/include/boost -a ! -d /usr/local/include/boost ]; then
-    echo "You need to install libboost-all-dev for your distribution."
+    echo "You need to install libboost-dev-all for your distribution."
     exit 1
 fi
 
