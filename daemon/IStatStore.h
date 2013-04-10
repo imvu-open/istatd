@@ -45,6 +45,8 @@ public:
 
     virtual void setAggregateCount(int ac) = 0;
 
+	virtual void ignore(std::string const &ctr) = 0;
+
 protected:
     friend class boost::detail::shared_count;
     friend class boost::shared_ptr<IStatStore>;
@@ -65,7 +67,8 @@ public:
     inline std::string const &getLocation() const { static std::string ss; return ss; }
     inline void flushAll(IComplete *cmp) {}
     inline void getUniqueId(UniqueId &out) { out = UniqueId(); }
-    inline void setAggregateCount(int ac) {}
+    inline void setAggregateCount(int ac) {};
+	inline void ignore(std::string const &ctr) {};
 };
 
 #endif  //  daemon_IStatStore_h

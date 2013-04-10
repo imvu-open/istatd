@@ -677,6 +677,12 @@ void StatServer::on_udp_recv(boost::system::error_code const &err, size_t bytes)
 }
 
 
+void StatServer::ignore(std::string const &name)
+{
+    statStore_->ignore(name);
+}
+
+
 AgentFlushRequest::AgentFlushRequest(size_t n, IComplete *comp) :
     n_(n),
     comp_(comp)

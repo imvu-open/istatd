@@ -44,6 +44,8 @@ public:
 
     inline virtual std::string const &getLocation() const { return path_; }
 
+	virtual void ignore(std::string const &ctr);
+
     //  expensive!
     void flushAll(IComplete *complete);
 
