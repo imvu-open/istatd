@@ -29,7 +29,7 @@ test_name counter_increments_get_rolled_up_correctly
     send_stat single "*$TESTCOUNTER" $TIME900 1000
 
     flush_istatd single    
-    test_counter single "$TESTCOUNTER/10s" 0 0 3 0 0 0 0 0 10 0 0 0 0 0 10 0 0 0 0 0 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 100 0 0 0 0 0 0 0 0 0 100 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 100 0 0 0 0 0 0 0 0 0 0  
+    test_counter single "$TESTCOUNTER/10s" 0 0 0 0 3 0 0 0 0 0 10 0 0 0 0 0 10 0 0 0 0 0 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 100 0 0 0 0 0 0 0 0 0 100 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 100 0 0 0 0 0 0 0 0 0 0 0
     test_counter single "$TESTCOUNTER/5m" 33 100 100 100
     test_counter single "$TESTCOUNTER/1h" 333
 

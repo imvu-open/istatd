@@ -13,6 +13,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/detail/atomic_count.hpp>
 
+#include "Bucketizer.h"
 #include "EagerConnection.h"
 #include "EagerConnectionFactory.h"
 #include "LoopbackCounter.h"
@@ -166,7 +167,7 @@ private:
     InfoHashMap metaInfo_;
     time_t metaInterval_;
     ::lock forwardMutex_;
-    std::tr1::unordered_map<std::string, istat::Bucket> forwardCounters_;
+    std::tr1::unordered_map<std::string, Bucketizer> forwardBuckets_;
     boost::asio::deadline_timer forwardTimer_;
 };
 

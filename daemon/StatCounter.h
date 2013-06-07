@@ -43,7 +43,7 @@ private:
     };
     std::vector<OneCounter> counters_;
 
-    static size_t const BUCKETS_PER_COLLATION_WINDOW = 3;
+    static size_t const BUCKETS_PER_COLLATION_WINDOW = 5;
     struct CollationInfo
     {
         istat::Bucket bucket;

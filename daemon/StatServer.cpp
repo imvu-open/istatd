@@ -502,48 +502,61 @@ void StatServer::handle_record(std::string const &ctr, time_t time, double val, 
 
 void StatServer::handle_forward(std::string const &ctr, time_t time, double val, double sumSq, double min, double max, size_t n)
 {
+    time_t now;
+    istat::istattime(&now);
+
     if (time == 0)
     {
-        istat::istattime(&time);
+        time = now;
     }
     grab aholdof(forwardMutex_);
-    std::tr1::unordered_map<std::string, istat::Bucket>::iterator buck(
-        forwardCounters_.find(ctr));
-    if (buck == forwardCounters_.end())
+    std::tr1::unordered_map<std::string, Bucketizer>::iterator buckets(
+        forwardBuckets_.find(ctr));
+    if (buckets == forwardBuckets_.end())
     {
-        forwardCounters_[ctr] = istat::Bucket(val, sumSq, min, max, n, time);
+        forwardBuckets_[ctr] = Bucketizer(now, istat::Bucket(val, sumSq, min, max, n, time));
     }
     else
     {
-        (*buck).second.update(istat::Bucket(val, sumSq, min, max, n, time));
+        (*buckets).second.update(istat::Bucket(val, sumSq, min, max, n, time));
     }
 }
 
 void StatServer::clearForward()
 {
-    std::tr1::unordered_map<std::string, istat::Bucket> counters;
+    std::tr1::unordered_map<std::string, Bucketizer> buckets;
     {
         grab aholdof(forwardMutex_);
-        counters.swap(forwardCounters_);
+        buckets.swap(forwardBuckets_);
     }
-    if (forward_->opened() && counters.size())
+    if (forward_->opened() && buckets.size())
     {
         //  if not opened, then we lose this bucket
         std::stringstream ss;
-        for (std::tr1::unordered_map<std::string, istat::Bucket>::iterator
-            ptr(counters.begin()), end (counters.end());
+        for (std::tr1::unordered_map<std::string, Bucketizer>::iterator
+            ptr(buckets.begin()), end (buckets.end());
             ptr != end;
             ++ptr)
         {
-            istat::Bucket &b((*ptr).second);
+            Bucketizer &bizer((*ptr).second);
             if ((*ptr).first[0] == '*')
             {
-                ss << (*ptr).first << " " << b.time() << " " << b.sum() << "\r\n";
+                for (unsigned int i = 0 ; i < bizer.BUCKET_COUNT; i++) {
+                    istat::Bucket b = bizer.get(i);
+                    if (b.count() > 0) {
+                        ss << (*ptr).first << " " << b.time() << " " << b.sum() << "\r\n";
+                    }
+                }
             }
             else
             {
-                ss << (*ptr).first << " " << b.time() << " " << b.sum() << " " <<
-                    b.sumSq() << " " << b.min() << " " << b.max() << " " << b.count() << "\r\n";
+                for (unsigned int i = 0 ; i < bizer.BUCKET_COUNT; i++) {
+                    istat::Bucket b = bizer.get(i);
+                    if (b.count() > 0) {
+                        ss << (*ptr).first << " " << b.time() << " " << b.sum() << " " <<
+                            b.sumSq() << " " << b.min() << " " << b.max() << " " << b.count() << "\r\n";
+                    }
+                }
             }
         }
         std::string str(ss.str());

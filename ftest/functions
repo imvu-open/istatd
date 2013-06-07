@@ -261,14 +261,19 @@ function purge_istatd {
 function check_get {
     PORT="$1"; shift
     QUERY="$1"; shift
+    num=0
+    while [ -f "${DBDIR}/curl.out.${num}" ] ; do
+        let num=num+1
+    done
+    OUTFILE="${DBDIR}/curl.out.${num}"
     echo -n "check GET $PORT $QUERY "
-    curl -s "http://localhost:$PORT/$QUERY" > "$DBDIR/curl.out"
+    curl -s "http://localhost:$PORT/$QUERY" > "$OUTFILE"
     while [ "$#" -ne "0" ]; do
         NAME="$1"; shift
-        if grep "$NAME" "$DBDIR/curl.out" > /dev/null; then
+        if grep "$NAME" "$OUTFILE" > /dev/null; then
             true
         else
-            failure "Did not find pattern $NAME on port $PORT (see $DBDIR/curl.out)"
+            failure "Did not find pattern $NAME on port $PORT (see $OUTFILE)"
         fi
     done
     echo ""
@@ -278,14 +283,20 @@ function check_post {
     PORT="$1"; shift
     QUERY="$1"; shift
     DATA="$1"; shift
+    num=0
+    while [ -f "${DBDIR}/curl.out.${num}" ] ; do
+        let num=num+1
+    done
+    OUTFILE="${DBDIR}/curl.out.${num}"
+
     echo -n "check POST $PORT $QUERY "
-    curl -s -d "$DATA" "http://localhost:$PORT/$QUERY" > "$DBDIR/curl.out"
+    curl -s -d "$DATA" "http://localhost:$PORT/$QUERY" > "$OUTFILE"
     while [ "$#" -ne "0" ]; do
         NAME="$1"; shift
-        if grep "$NAME" "$DBDIR/curl.out" > /dev/null; then
+        if grep "$NAME" "$OUTFILE" > /dev/null; then
             true
         else
-            failure "Did not find pattern $NAME on port $PORT (see $DBDIR/curl.out)"
+            failure "Did not find pattern $NAME on port $PORT (see $OUTFILE)"
         fi
     done
     echo ""
