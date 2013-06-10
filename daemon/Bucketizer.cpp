@@ -26,7 +26,7 @@ void Bucketizer::update(istat::Bucket const &o) {
     // time
     // 10 --> 0
     // 50 --> 4
-    LogWarning << "Bucketizer::updating offset time:" << time << " with value " << o.sum() << "at offset" << offset << "delta" << (time - now);
+    LogDebug << "Bucketizer::updating offset time:" << time << " with value " << o.sum() << "at offset" << offset << "delta" << (time - now);
     if ((offset < 0) || (offset > ((int) BUCKET_COUNT-1))) {
         LogWarning << "Bucketizer::update bad time:" << time << "not close enough to " << now << "at offset" << offset << "delta" << (time - now);
         // error
