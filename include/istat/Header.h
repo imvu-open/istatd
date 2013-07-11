@@ -22,7 +22,7 @@ namespace istat
     {
         // COLLLATED is a flag to indicate that counter data is being stored in the lowest resolution bucket, e.g. 10s interval
         FILE_FLAG_IS_COLLATED = 0x1,
-        // 
+        // TRAILING means that a file is a trailing average (xn = (xn-1 * lambda + sample * (1 - lambda)))
         FILE_FLAG_IS_TRAILING = 0x2,
         // COUNTER_AGGREGATE is term to describe rollup data from COLLATED counter files, e.g. the 5m data stat files from 
         // a COLLATED 10s file

@@ -754,5 +754,79 @@ namespace istat
         }
         return true;
     }
+
+    int splitn(std::string const &s, char ch, std::string &o1, std::string &o2)
+    {
+        size_t p = s.find_first_of(ch);
+        if (p == s.npos)
+        {
+            o1 = s;
+            o2 = "";
+            return 1;
+        }
+        //  do it in reverse order, to support &o1 == &s
+        if (&o2 == &s)
+        {
+            throw std::runtime_error("unsupported argument aliasing in splitn()");
+        }
+        o2 = s.substr(p+1);
+        o1 = s.substr(0, p);
+        return 2;
+    }
+
+    int splitn(std::string const &s, char ch, std::string &o1, std::string &o2, std::string &o3)
+    {
+        if (splitn(s, ch, o1, o2) == 1)
+        {
+            return 1;
+        }
+        if (splitn(o2, ch, o2, o3) == 1)
+        {
+            return 2;
+        }
+        return 3;
+    }
+
+    int splitn(std::string const &s, char ch, std::string &o1, std::string &o2, std::string &o3, std::string &o4)
+    {
+        int n = splitn(s, ch, o1, o2, o3);
+        if (n < 3)
+        {
+            return n;
+        }
+        if (splitn(o3, ch, o3, o4) == 1)
+        {
+            return 3;
+        }
+        return 4;
+    }
+
+    int splitn(std::string const &s, char ch, std::string &o1, std::string &o2, std::string &o3, std::string &o4, std::string &o5)
+    {
+        int n = splitn(s, ch, o1, o2, o3, o4);
+        if (n < 4)
+        {
+            return n;
+        }
+        if (splitn(o4, ch, o4, o5) == 1)
+        {
+            return 4;
+        }
+        return 5;
+    }
+
+    int splitn(std::string const &s, char ch, std::string &o1, std::string &o2, std::string &o3, std::string &o4, std::string &o5, std::string &o6)
+    {
+        int n = splitn(s, ch, o1, o2, o3, o4, o5);
+        if (n < 5)
+        {
+            return n;
+        }
+        if (splitn(o5, ch, o5, o6) == 5)
+        {
+            return 5;
+        }
+        return 6;
+    }
 }
 

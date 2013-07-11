@@ -7,6 +7,26 @@
 namespace istat
 {
 
+    void test_splitn()
+    {
+        std::string a, b, c("foo"), d, e, f, g;
+        a = "x";
+        int n = splitn(a, ':', b, c, d, e, f, g);
+        assert_equal(n, 1);
+        assert_equal(b, a);
+        assert_equal(c, "");
+        a = "1:22:333:4444:555:66:7";
+        n = splitn(a, ':', b, c, d, e, f, g);
+        assert_equal(n, 6);
+        assert_equal(b, "1");
+        assert_equal(c, "22");
+        assert_equal(d, "333");
+        assert_equal(e, "4444");
+        assert_equal(f, "555");
+        assert_equal(g, "66:7");
+        assert_equal(splitn("", ':', a, b), 1);
+    }
+
     void test_split()
     {
         std::string a;
@@ -399,6 +419,7 @@ namespace istat
 
     void func()
     {
+        test_splitn();
         test_interval();
         test_combine();
         test_extract();

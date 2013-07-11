@@ -55,6 +55,12 @@ namespace istat
     std::string iso_8601_datetime(int64_t t = 0);
 
     bool is_valid_settings_name(std::string const &str);
+
+    int splitn(std::string const &s, char ch, std::string &o1, std::string &o2);
+    int splitn(std::string const &s, char ch, std::string &o1, std::string &o2, std::string &o3);
+    int splitn(std::string const &s, char ch, std::string &o1, std::string &o2, std::string &o3, std::string &o4);
+    int splitn(std::string const &s, char ch, std::string &o1, std::string &o2, std::string &o3, std::string &o4, std::string &o5);
+    int splitn(std::string const &s, char ch, std::string &o1, std::string &o2, std::string &o3, std::string &o4, std::string &o5, std::string &o6);
 }
 #endif
 

@@ -51,7 +51,7 @@ namespace istat
         StatFile(std::string const &path, Stats const &stats, Settings const &init, Mmap *mm, bool forceCreate = false);
         ~StatFile();
 
-        const std::string getPath();
+        std::string getPath();
         
         bool updateBucket(Bucket const &data);
         void flush();

@@ -455,6 +455,11 @@ namespace istat
         return (Bucket *)mapped;
     }
 
+    std::string StatFile::getPath()
+    {
+        return std::string(fileHeader_ ? fileHeader_->name : "");
+    }
+
     bool StatFile::updateBucket(Bucket const &data)
     {
         return rawUpdateBucket(data, istat::RAWUP_AGGREGATE);
@@ -545,6 +550,7 @@ namespace istat
 
     Bucket *StatFile::getTrailingBucket(time_t time)
     {
+        Log(LL_Debug, "istat") << "StatFile::getTrailingBucket()" << time << getPath();
         size_t n = sizeof(expBucket)/sizeof(expBucket[0]);
         for (size_t i = 0; i != n; ++i)
         {
@@ -563,7 +569,7 @@ namespace istat
     {
         //  flush the bucket being shifted out, but nothing else
         Bucket &eb0(expBucket[0]);
-        Log(LL_Debug, "istat") << "StatFile::flushOneExpBucket()" << eb0.time();
+        Log(LL_Debug, "istat") << "StatFile::flushOneExpBucket()" << eb0.time() << getPath();
         if (eb0.time() > 0)
         {
             int64_t ix = mapTimeToBucketIndex(eb0.time());
@@ -589,7 +595,10 @@ namespace istat
     {
         Log(LL_Debug, "istat") << "StatFile::flush()";
         //  Flush at most one expBucket, because the test may still be waiting for data.
-        flushOneExpBucket();
+        if (fileHeader_->flags & FILE_FLAG_IS_TRAILING)
+        {
+            flushOneExpBucket();
+        }
         mm_->flush(fileHeader_, sizeof(Header), false);
         for (size_t i = 0; i != sizeof(pages) / sizeof(pages[0]); ++i)
         {

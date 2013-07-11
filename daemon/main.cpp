@@ -167,7 +167,7 @@ Argument<int> loglevel("log-level", 2, "How chatty to be on stdout/stderr. Highe
 Argument<bool> testMode("test", false, "When specified, run unit tests built into executable; don't start program.");
 Argument<int> adminPort("admin-port", 0, "When specified, port that exposes an admin telnet interface");
 Argument<int> minimumRequiredSpace("min-space", -1, "When specified, minimum free space required (in bytes). When below this amount, error messages will be generated periodically.");
-Argument<std::string> retention("retention", "10s:10d,5m:1y9d,1h:6y12d", "When specified, adjusts number and size of retention times.");
+Argument<std::string> retention("retention", "10s:10d,5m:1y9d,1h:6y12d,5m:7d:ret-7d:0.9", "When specified, adjusts number and size of retention times.");
 Argument<std::string> debug("debug", "", "When specified, turns on specific debugging options (as comma separated list).");
 Argument<std::string> settings("settings", "/tmp", "Where to store settings (mostly used for HTTP app).");
 Argument<int> fakeTime("fake-time", 0, "Fake current time to UNIX epoch (for testing).");

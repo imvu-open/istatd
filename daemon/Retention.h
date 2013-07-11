@@ -12,6 +12,12 @@ struct RetentionInterval
     time_t interval;
     time_t samples;
     std::string name;
+    double lambda;
+
+    //  I need one place to store statistics for each 
+    //  retention interval. It might as well be this, 
+    //  as the parsed retention intervals live in a list
+    //  for the duration of the program lifetime.
     istat::RecordStats stats;
 };
 

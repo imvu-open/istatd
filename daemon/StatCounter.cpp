@@ -66,6 +66,17 @@ StatCounter::StatCounter(std::string const &pathName, bool isCollated, time_t ze
         {
             set.fixed_count = ri.interval / collationInterval_;
         }
+        if (ri.lambda > 0)
+        {
+            set.flags |= istat::FILE_FLAG_IS_TRAILING;
+            set.lambda = ri.lambda;
+            set.season = ri.samples * ri.interval;
+        }
+        else
+        {
+            set.flags &= ~istat::FILE_FLAG_IS_TRAILING;
+            set.lambda = 0;
+        }
 
         oc.suffix = ri.name;
         assert(ri.stats.statHit == &ri.stats.nHits);
@@ -398,7 +409,6 @@ boost::shared_ptr<istat::StatFile> StatCounter::pickStatFile(time_t startTime, t
     // if we are here, we are either to far in the future or too far 
     // in the past for the coarsest resolution of data we have.
     // if in the future, return the finest interval time.
-    // if in the past, return the coarsest interval time.
     if (startTime > counters_[0].file->lastBucketTime())
     {
         interval = counters_[0].file->settings().intervalTime;
