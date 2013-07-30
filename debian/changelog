@@ -1,3 +1,22 @@
+istatd (0.58-1) UNRELEASED; urgency=low
+
+  [ Jon Watte ]
+  * Fix the 32-bit compatibility problem.
+  * alternate URL for favicon.ico
+
+  [ Mitch Nibbelink ]
+  * fix vertical range bug where there are no differences for the entire
+    rage
+  * Rip out exponential moving average stub code ... nothing has been
+    done with this for over a year.
+  * Removing the Timing daemon package ... it is never used and was
+    added with the admin interface without documentation
+  * Add a bucketizer for the agents so they can pass through the times
+    reported to agents. Now tracking 5 buckets of time, up from 3. New
+    tests added to confirm that this works
+
+ -- Mitch Nibbelink <mnibbelink@imvu.com>  Mon, 10 Jun 2013 11:31:54 -0700
+
 istatd (0.57-1) unstable; urgency=low
 
   [ Jon Watte ]
@@ -33,7 +52,7 @@ istatd (0.56-1) UNRELEASED; urgency=low
   * builds on GCC 4.7.1
   * builds and passes tests on Arch / gcc 4.7
   * Fix a return value complaint.
-  * Additional make file cleanup 
+  * Additional make file cleanup
 
  -- Jon Watte <jwatte@imvu.com>  Mon, 24 Sep 2012 09:39:45 -0700
 
