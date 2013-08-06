@@ -1,3 +1,9 @@
+istatd (0.59-1) UNRELEASED; urgency=low
+
+  * change a couple of noisey warnings to notices
+
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 06 Aug 2013 09:29:20 -0700
+
 istatd (0.58-1) UNRELEASED; urgency=low
 
   [ Jon Watte ]
