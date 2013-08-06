@@ -115,10 +115,10 @@ bool EagerConnection::connected()
 
 size_t EagerConnection::pendingOut()
 {
-    //  vector may be implemented as "start" and "end" pointers 
-    //  which are not synchronously updated, and thus we could get 
+    //  vector may be implemented as "start" and "end" pointers
+    //  which are not synchronously updated, and thus we could get
     //  a wrong size if reading while someone else is mutating.
-    //  There's a separate race where the size may change after 
+    //  There's a separate race where the size may change after
     //  this function returns -- the lock doesn't solve that.
     grab aholdof(mutex_);
     return outgoing_.size();
@@ -126,10 +126,10 @@ size_t EagerConnection::pendingOut()
 
 size_t EagerConnection::pendingIn()
 {
-    //  vector may be implemented as "start" and "end" pointers 
-    //  which are not synchronously updated, and thus we could get 
+    //  vector may be implemented as "start" and "end" pointers
+    //  which are not synchronously updated, and thus we could get
     //  a wrong size if reading while someone else is mutating.
-    //  There's a separate race where the size may change after 
+    //  There's a separate race where the size may change after
     //  this function returns -- the lock doesn't solve that.
     grab aholdof(mutex_);
     return incoming_.size();
@@ -191,7 +191,7 @@ void EagerConnection::writeOut(void const *data, size_t size)
     if (outgoing_.size() > maxBufferSize)
     {
         bool found = false;
-        LogWarning << "warning: pruning pending outgoing buffer";
+        LogNotice << "notice: pruning pending outgoing buffer";
         //  find a line somewhere in the middle, and cut at that point
         for (std::vector<char>::iterator ptr(outgoing_.begin() + maxBufferSize/2),
             end(outgoing_.end()); ptr != end; ++ptr)
@@ -321,7 +321,7 @@ void EagerConnection::tryLater()
 void EagerConnection::startConnect(tcp::endpoint endpoint)
 {
     LogNotice << "Connecting to " << endpoint;
-    socket_.async_connect(endpoint, 
+    socket_.async_connect(endpoint,
         strand_.wrap(boost::bind(&EagerConnection::on_connect, Tramp(shared_from_this()),
             placeholders::error, endpoint)));
 }
