@@ -1,3 +1,14 @@
+istatd (0.60-1) UNRELEASED; urgency=low
+
+  [ Mitch Nibbelink ]
+  * Clarify what we mean by 'available data' for counters, when querying
+    istatd for counters (collated) between the time the counter was last
+    incremented / triggered and 'now'.  Basically, we infer that there
+    are zeroes for all intermediate buckets, even though no data has
+    been recorded in this case
+
+ -- Mitch Nibbelink <mnibbelink@imvu.com>  Fri, 23 Aug 2013 11:12:50 -0700
+
 istatd (0.59-1) UNRELEASED; urgency=low
 
   * change a couple of noisey warnings to notices
