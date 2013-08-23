@@ -305,6 +305,7 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         time_t t = boost::lexical_cast<time_t>(args[0]);
         istat::Env::get<istat::FakeTime>().set(t);
         ec_->writeOut("ok\r\n");
+        return;
     }
     if (cmd == "loglevel")
     {

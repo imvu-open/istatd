@@ -68,6 +68,7 @@ namespace istat
         time_t lastBucketTime() const;
         Bucket const &bucket(int64_t ix) const;
         int64_t readBuckets(Bucket *o, int cnt, int64_t offsetBack) const;
+        time_t mapBucketIndexToTime(int64_t bucket_index) const;
         int64_t mapTimeToBucketIndex(time_t time, bool round_up=false) const;
         int64_t mapBucketIndexToFileIndex(int64_t bucketIndex) const;
         bool isBucketIndexInFile(int64_t bucketIndex) const;

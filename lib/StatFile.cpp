@@ -623,6 +623,15 @@ namespace istat
         return bucket_index;
     }
 
+    time_t StatFile::mapBucketIndexToTime(int64_t bucket_index) const
+    {
+        int interval = fileHeader_->cfg_interval;
+        time_t create_time = fileHeader_->file_create_time;
+
+        time_t bucket_time = create_time + (bucket_index * interval);
+        return bucket_time;
+    }
+
     bool StatFile::isBucketIndexInFile(int64_t bucket_index) const
     {
         int64_t num_buckets = settings_.numSamples;
@@ -636,6 +645,14 @@ namespace istat
 
         if (bucket_index > latest_bucket) 
         {
+            time_t now = istat::istattime(0);
+            time_t bucket_index_time = mapBucketIndexToTime(bucket_index);
+            // if we are collated, and the requested time is greater than latest bucket, and less than "now", return true 
+            if ( (settings_.flags & FILE_FLAG_IS_COLLATED)
+                 && (bucket_index_time < now)) {
+                return true;
+            } 
+            Log(LL_Debug, "istat") << "StatFile::isBucketIndexInFile(" << bucket_index << ") is greater than latest bucket .. rejecting.";
             return false;
         }
 
