@@ -20,12 +20,16 @@ Bucketizer::Bucketizer(time_t &time, istat::Bucket const &b) {
 void Bucketizer::update(istat::Bucket const &o) {
     time_t time = o.time();
     time = time - (time % 10); // make a 10 second offset bucket
+
     // this will be 0 for furthest back in time
-    int offset = ((time - now) / 10) + (BUCKET_COUNT-1);
-    // now == 50
+    int offset = ((time - now) / 10) + (BUCKET_COUNT-2);
+    // assume now is between 50 and 59, time is cast to "50", BUCKET_COUNT is 5
     // time
-    // 10 --> 0
-    // 50 --> 4
+    // 20 --> 0
+    // 30 --> 1
+    // 40 --> 2
+    // 50 --> 3
+    // 60 --> 4
     LogDebug << "Bucketizer::updating offset time:" << time << " with value " << o.sum() << "at offset" << offset << "delta" << (time - now);
     if ((offset < 0) || (offset > ((int) BUCKET_COUNT-1))) {
         LogNotice << "Bucketizer::update bad time:" << time << "not close enough to " << now << "at offset" << offset << "delta" << (time - now);

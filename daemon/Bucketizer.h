@@ -14,7 +14,7 @@ public:
     Bucketizer(time_t &time, istat::Bucket const &b);
     void update(istat::Bucket const &o);
     istat::Bucket const &get(int i);
-    static size_t const BUCKET_COUNT = 4;
+    static size_t const BUCKET_COUNT = 5;
 
 private:
     time_t now;
