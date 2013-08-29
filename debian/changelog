@@ -1,3 +1,13 @@
+istatd (0.61-1) UNRELEASED; urgency=low
+
+  [ Mitch Nibbelink ]
+  * Fix bug in bucketizer where data was discarded if it arrived more
+    than (n+10)%10 seconds after the first data for the bucket.  e.g. if
+    the first sample was 0:04, samples after 0:10 would be discarded
+    until 0:14.
+
+ -- Mitch Nibbelink <mnibbelink@imvu.com>  Thu, 29 Aug 2013 13:53:54 -0700
+
 istatd (0.60-1) UNRELEASED; urgency=low
 
   [ Mitch Nibbelink ]
