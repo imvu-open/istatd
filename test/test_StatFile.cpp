@@ -1,6 +1,8 @@
 
 #include "istat/StatFile.h"
+#include "istat/istattime.h"
 #include "istat/test.h"
+#include "istat/Header.h"
 #include "istat/IRecorder.h"
 #include <istat/Mmap.h>
 #include <stdexcept>
@@ -130,6 +132,31 @@ void setUp()
 
     assert_equal(rs.nHits.stat_, 3);
     assert_equal(rs.nMisses.stat_, 1);
+
+    // create a counter file, too.
+    unlink("created.cf");
+    StatFile::Settings csett;
+    csett.zeroTime = 1000000000;
+    csett.intervalTime = 10;
+    csett.numSamples = 10000;
+    csett.flags = FILE_FLAG_IS_COLLATED;
+    RecordStats crs;
+    StatFile cf("created.cf", crs, csett, mm, true);
+
+    b = Bucket(4, 16, 4, 4, 1, 1000000000);
+    cf.updateBucket(b);
+
+    b = Bucket(10, 50, 5, 5, 2, 1000000001);
+    cf.updateBucket(b);
+
+    b = Bucket(9, 16+25, 4, 5, 2, 1000000010);
+    cf.updateBucket(b);
+
+    b = Bucket(10, 9+9+16, 3, 4, 3, 1000000020);
+    cf.updateBucket(b);
+
+    assert_equal(crs.nHits.stat_, 3);
+    assert_equal(crs.nMisses.stat_, 1);
 }
 
 void func()
@@ -184,6 +211,45 @@ void func()
         assert_equal(1, sf.mapBucketIndexToFileIndex(1));
 
     }
+    mm->dispose();
+    mm = NewMmap();
+
+    // test mapBucketIndexToTime()
+    {
+        StatFile sf("created.sf", Stats(), mm);
+        assert_equal(2, sf.lastBucket());
+        int64_t ztime = 1000000000;
+
+        assert_equal(ztime, sf.mapBucketIndexToTime(0));
+        assert_equal(ztime + 10, sf.mapBucketIndexToTime(1));
+        assert_equal(ztime + 20, sf.mapBucketIndexToTime(2));
+        assert_equal(ztime + 990, sf.mapBucketIndexToTime(99));
+    }
+
+    mm->dispose();
+    mm = NewMmap();
+
+    // test isBucketIndexInFile()
+    {
+        StatFile sf("created.sf", Stats(), mm);
+        StatFile cf("created.cf", Stats(), mm);
+        assert_equal(2, sf.lastBucket());
+
+        // ensure that up from end of file to now is OK for counters (IS_COLLATED)
+        assert_equal(true, cf.isBucketIndexInFile(0));
+        assert_equal(true, cf.isBucketIndexInFile(1));
+        assert_equal(true, cf.isBucketIndexInFile(2));
+        assert_equal(true, cf.isBucketIndexInFile(1000));
+        assert_equal(true, cf.isBucketIndexInFile(cf.mapTimeToBucketIndex(istat::istattime(0) - 100, true)));
+        assert_equal(false, cf.isBucketIndexInFile(cf.mapTimeToBucketIndex(istat::istattime(0) + 100, true)));
+
+        // ensure that in index fails immediately outside of the range where values have been recorded for gauges (NON collated stat files)
+        assert_equal(true, sf.isBucketIndexInFile(0));
+        assert_equal(true, sf.isBucketIndexInFile(1));
+        assert_equal(true, sf.isBucketIndexInFile(2));
+        assert_equal(false, sf.isBucketIndexInFile(3));
+    }
+
     mm->dispose();
     mm = NewMmap();
 
