@@ -9,10 +9,70 @@
 #include <netdb.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 
 
 int verbose = 0;
+
+
+void send_all(int s, char const *data, size_t size)
+{
+    size_t q = 0;
+    int badcnt = 0;
+    while (q < size)
+    {
+        int r = ::send(s, data + q, size - q, 0);
+        if (r < 0)
+        {
+            perror("send()");
+            exit(2);
+        }
+        /*  As far as I understand it, send() shouldn't return 0 for a 
+            blocking TCP socket, but I've seen istatd_flush spin using 
+            100% of the CPU in VMWare at times. */
+        if (r == 0)
+        {
+            ++badcnt;
+            if (badcnt > 10)
+            {
+                fprintf(stderr, "send() could not make progress\n");
+                exit(2);
+            }
+            usleep(100000);
+        }
+        q += r;
+    }
+}
+
+void recv_all(int s, char *buf, size_t size)
+{
+    size_t q = 0;
+    int  badcnt = 0;
+    while (q < size)
+    {
+        int r = ::recv(s, &buf[q], size-q, 0);
+        if (r < 0)
+        {
+            perror("recv()");
+            exit(2);
+        }
+        /*  As far as I understand it, send() shouldn't return 0 for a 
+            blocking TCP socket, but I've seen istatd_flush spin using 
+            100% of the CPU in VMWare at times. */
+        if (r == 0)
+        {
+            ++badcnt;
+            if (badcnt > 10)
+            {
+                fprintf(stderr, "recv() could not make progress\n");
+                exit(2);
+            }
+            usleep(100000);
+        }
+        q = q + r;
+    }
+}
 
 
 int main(int argc, char const *argv[])
@@ -34,12 +94,14 @@ int main(int argc, char const *argv[])
         fprintf(stderr, "usage: istatd_flush host port\n");
         exit(1);
     }
+
     int s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (s < 0)
     {
         perror("socket()");
         exit(2);
     }
+
     if (verbose > 0)
     {
         fprintf(stderr, "looking up %s\n", argv[1]);
@@ -50,12 +112,14 @@ int main(int argc, char const *argv[])
         fprintf(stderr, "gethostbyname(%s) failed\n", argv[1]);
         exit(2);
     }
+
     int port = atoi(argv[2]);
     if (port < 1 || port > 65535)
     {
         fprintf(stderr ,"%s is a bad port\n", argv[2]);
         exit(2);
     }
+
     struct sockaddr_in inaddr;
     memset(&inaddr, 0, sizeof(inaddr));
     inaddr.sin_family = AF_INET;
@@ -71,43 +135,26 @@ int main(int argc, char const *argv[])
         perror("connect()");
         exit(2);
     }
-    int q = 0;
+
     if (verbose > 0)
     {
         fprintf(stderr, "sending flush\n");
     }
-    while (q < 6)
-    {
-        int r = ::send(s, "flush\n" + q, 6 - q, 0);
-        if (r < 0)
-        {
-            perror("send()");
-            exit(2);
-        }
-        q += r;
-    }
+    time_t startTime;
+    istat::istattime(&startTime);
+    send_all(s, "flush\n", 6);
+
     if (verbose > 0)
     {
         fprintf(stderr, "waiting for acknowledgement\n");
     }
-    time_t startTime;
-    istat::istattime(&startTime);
     char buf[10];
-    q = 0;
-    while (q < 3)
-    {
-        int r = ::recv(s, &buf[q], 1, 0);
-        if (r < 0)
-        {
-            perror("recv()");
-            exit(2);
-        }
-        q = q + r;
-    }
+    recv_all(s, buf, 3);
     if (verbose > 0)
     {
         fprintf(stderr, "acknowledgement received\n");
     }
+
     if (strncmp(buf, "ok", 2))
     {
         fprintf(stderr, "error flushing counters in istatd\n");
@@ -130,12 +177,14 @@ int main(int argc, char const *argv[])
         }
         exit(3);
     }
+
     time_t endTime;
     istat::istattime(&endTime);
     if (verbose >= 0)
     {
         fprintf(stdout, "flush took %ld seconds\n", (long)(endTime - startTime));
     }
+
     return 0;
 }
 

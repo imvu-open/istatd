@@ -483,7 +483,8 @@ namespace istat
         {
             //  Note: I don't clear the bucket here. It will contain
             //  old data. The user will have to detect this and discard
-            //  the data instead.
+            //  the data instead. This saves potentially tons of useless
+            //  writes, which is the scarce resource in this system.
             fileHeader_->last_bucket = targetBucketIndex;
             fileHeader_->last_time = targetBucketTime;
             if (fileHeader_->first_bucket + bucketCount_ <= fileHeader_->last_bucket)
@@ -499,7 +500,8 @@ namespace istat
             return false;
         }
 
-        if (targetBucketIndex < fileHeader_->first_bucket) {
+        if (targetBucketIndex < fileHeader_->first_bucket)
+        {
             fileHeader_->first_bucket = targetBucketIndex;
         }
 
@@ -621,6 +623,11 @@ namespace istat
         fileHeader_->last_cumulative_clear_time = lTime;
     }
 
+    /* Bucket indices are just quantized time -- they are not raw (physical) 
+       indices into the file, but have to be modulo-ed by file size to find 
+       actual location in file. This modulo has to happen at time-of-use. 
+       This is a good thing. 
+       See StatFile::mapBucketIndexToFileIndex() */
     int64_t StatFile::mapTimeToBucketIndex(time_t timestamp, bool round_up) const
     {
     	int interval = fileHeader_->cfg_interval;
@@ -646,9 +653,10 @@ namespace istat
         int64_t num_buckets = settings_.numSamples;
         int64_t latest_bucket = fileHeader_->last_bucket;
 
-        if (bucket_index < (latest_bucket-num_buckets)) 
+        if (bucket_index <= (latest_bucket-num_buckets)) 
         {
             //timestamp is older than anything in the file
+            Log(LL_Debug, "istat") << "StatFile::isBucketIndexInFile(" << bucket_index << ") is less than earliest bucket " << (latest_bucket) << "-" << num_buckets << " .. rejecting.";
             return false;
         }
 
@@ -661,7 +669,7 @@ namespace istat
                  && (bucket_index_time < now)) {
                 return true;
             } 
-            Log(LL_Debug, "istat") << "StatFile::isBucketIndexInFile(" << bucket_index << ") is greater than latest bucket .. rejecting.";
+            Log(LL_Debug, "istat") << "StatFile::isBucketIndexInFile(" << bucket_index << ") is greater than latest bucket " << latest_bucket << " .. rejecting.";
             return false;
         }
 

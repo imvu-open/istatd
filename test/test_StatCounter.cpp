@@ -715,6 +715,7 @@ void run_tests(void)
 
         time_t TIME_RECORD1 = 10000;
         time_t TIME_RECORD2 = 13600;
+        time_t TIME_RECORD3 = 13660;
         time_t TIME_NOW = 13720;
 
         FakeTime faketime(TIME_NOW);
@@ -722,6 +723,8 @@ void run_tests(void)
         counter->record(TIME_RECORD1, 1.0, 1.0, 1.0, 1.0, 1);
         counter->flush(ssp);
         counter->record(TIME_RECORD2, 2.0, 4.0, 2.0, 2.0, 1);
+        counter->flush(ssp);
+        counter->record(TIME_RECORD3, 2.0, 4.0, 2.0, 2.0, 1);
         counter->flush(ssp);
         counter->record(TIME_NOW, 0.0, 0.0, 0.0, 0.0, 0);
         counter->flush(ssp);
