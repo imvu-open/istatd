@@ -25,6 +25,7 @@ public:
     void flushAll(IComplete *cmp) { cmp->on_complete(); }
     void getUniqueId(UniqueId &oid) { memset(&oid, 0, sizeof(oid)); }
     void setAggregateCount(int ac) {};
+    void deleteCounter(std::string const &str, IComplete *complete) { complete->on_complete(); }
 
 };
 

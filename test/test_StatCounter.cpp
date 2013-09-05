@@ -16,6 +16,7 @@ Mmap *mm(NewMmap());
 
 RetentionPolicy rp("10s:1h,5m:1d");
 RetentionPolicy xrp("");
+RetentionPolicy trp("10s:1h,1m:1h:ma-1h:0.875");
 
 void run_tests(void)
 {
@@ -247,7 +248,7 @@ void run_tests(void)
         time_t normalized_end;
         time_t interval;
 
-        gauge->select(TIME_ZERO, TIME_120_SECONDS, buckets, normalized_start, normalized_end, interval, 0);
+        gauge->select(TIME_ZERO, TIME_120_SECONDS, false, buckets, normalized_start, normalized_end, interval, 0);
 
         assert_equal(TIME_ZERO, normalized_start);
         assert_equal(TIME_120_SECONDS, normalized_end);
@@ -265,7 +266,7 @@ void run_tests(void)
 
         std::vector<istat::Bucket> buckets;
         time_t normalized_start, normalized_end, interval;
-        gauge->select(0, 0, buckets, normalized_start, normalized_end, interval, 0);
+        gauge->select(0, 0, false, buckets, normalized_start, normalized_end, interval, 0);
 
         assert_equal(0, buckets.size());
     }
@@ -282,13 +283,13 @@ void run_tests(void)
 
         std::vector<istat::Bucket> buckets;
         time_t normalized_start, normalized_end, interval;
-        gauge->select(1000000010, 1000000022, buckets, normalized_start, normalized_end, interval, 0);
+        gauge->select(1000000010, 1000000022, false, buckets, normalized_start, normalized_end, interval, 0);
         assert_equal(2, buckets.size());
         assert_equal(1000000010, buckets[0].time());
         assert_equal(1000000020, buckets[1].time());
         assert_equal(10, interval);
 
-        gauge->select(1000000010, 1000000010, buckets, normalized_start, normalized_end, interval, 0);
+        gauge->select(1000000010, 1000000010, false, buckets, normalized_start, normalized_end, interval, 0);
         assert_equal(1, buckets.size());
         assert_equal(1000000010, buckets[0].time());
         assert_equal(10, interval);
@@ -345,7 +346,7 @@ void run_tests(void)
 
         std::vector<istat::Bucket> buckets;
 
-        gauge->select(1000000001, 1000000011, buckets, normalized_start, normalized_end, interval, 0);
+        gauge->select(1000000001, 1000000011, false, buckets, normalized_start, normalized_end, interval, 0);
 
         assert_equal(2, buckets.size());
         assert_equal(1000000000, buckets[0].time());
@@ -368,7 +369,7 @@ void run_tests(void)
         std::vector<istat::Bucket> buckets;
         time_t normalized_start, normalized_end, interval;
 
-        gauge->select(3590, 3620, buckets, normalized_start, normalized_end, interval, 0);
+        gauge->select(3590, 3620, false, buckets, normalized_start, normalized_end, interval, 0);
         assert_equal(10, interval);
         assert_equal(3, buckets.size());
         assert_equal(3590, buckets[0].time());
@@ -401,7 +402,7 @@ void run_tests(void)
         std::vector<istat::Bucket> buckets;
         time_t normalized_start, normalized_end, interval;
 
-        gauge->select(0, 0, buckets, normalized_start, normalized_end, interval, 0);
+        gauge->select(0, 0, false, buckets, normalized_start, normalized_end, interval, 0);
 
         assert_equal(normalized_start, FAKE_TIME - FIFTEEN_MINUTES);
         assert_equal(normalized_end, FAKE_TIME);
@@ -443,7 +444,7 @@ void run_tests(void)
         std::vector<istat::Bucket> buckets;
         time_t normalized_start, normalized_end, interval;
 
-        gauge->select(0, END_TIME, buckets, normalized_start, normalized_end, interval, 0);
+        gauge->select(0, END_TIME, false, buckets, normalized_start, normalized_end, interval, 0);
 
         assert_equal(EXPECTED_BUCKETS, buckets.size());
         assert_true(EXPECTED_BUCKETS < RECORDED_BUCKETS);
@@ -480,7 +481,7 @@ void run_tests(void)
         std::vector<istat::Bucket> buckets;
         time_t normalized_start, normalized_end, interval;
 
-        gauge->select(ORIGIN, 0, buckets, normalized_start, normalized_end, interval, 0);
+        gauge->select(ORIGIN, 0, false, buckets, normalized_start, normalized_end, interval, 0);
 
         assert_equal(EXPECTED_BUCKETS, buckets.size());
         assert_equal(INTERVAL, interval);
@@ -508,7 +509,7 @@ void run_tests(void)
         std::vector<istat::Bucket> buckets;
         time_t normalized_start, normalized_end, interval;
 
-        gauge->select(3580, 3610, buckets, normalized_start, normalized_end, interval, 1);
+        gauge->select(3580, 3610, false, buckets, normalized_start, normalized_end, interval, 1);
         //  interval will be 30 seconds (difference between counters)
         //  because the round-down of 3590 is 3570, and the round-up of 3620 is 3630, 
         //  the interval will be extended to 60 seconds to cover the entire range.
@@ -706,7 +707,30 @@ void run_tests(void)
         counter->record(TIME_RECORD2, 1.0, 1.0, 1.0, 1.0, 1);
 
         assert_equal(IStatCounter::recordsFromThePast_.getAggregate(), 0);
+    }
 
+    //  test trailing files
+    {
+        test_init_path("/tmp/test");
+
+        time_t TIME_RECORD1 = 10000;
+        time_t TIME_RECORD2 = 13600;
+        time_t TIME_NOW = 13720;
+
+        FakeTime faketime(TIME_NOW);
+        boost::shared_ptr<StatCounter> counter(new StatCounter("/tmp/test/trailertrash", false, TIME_RECORD1, mm, trp));
+        counter->record(TIME_RECORD1, 1.0, 1.0, 1.0, 1.0, 1);
+        counter->flush(ssp);
+        counter->record(TIME_RECORD2, 2.0, 4.0, 2.0, 2.0, 1);
+        counter->flush(ssp);
+        counter->record(TIME_NOW, 0.0, 0.0, 0.0, 0.0, 0);
+        counter->flush(ssp);
+
+        std::vector<istat::Bucket> oBucks;
+        time_t nstart(0), nend(0), ival(0);
+        counter->select(TIME_NOW-3600, TIME_NOW, true, oBucks, nstart, nend, ival, 100);
+        assert_equal(oBucks.size(), 1);
+        assert_equal(oBucks[0].sum(), (1.0 * 0.875 + 2.0 * (1 - 0.875)));
     }
 }
 

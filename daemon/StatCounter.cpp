@@ -21,6 +21,7 @@ LoopbackCounter IStatCounter::recordsFromTheFuture_("counter.from_future", TypeE
 LoopbackCounter IStatCounter::recordsFromThePast_("counter.from_past", TypeEvent);
 LoopbackCounter IStatCounter::eagerconns_("counter.eagerconns", TypeCounted);
 LoopbackCounter IStatCounter::recordsRejected_("counter.rejected", TypeEvent);
+LoopbackCounter IStatCounter::countersClosed_("counter.closed", TypeEvent);
 DebugOption debugRecord("record");
 DebugOption debugRejectedCounters("rejectedCounters");
 
@@ -116,6 +117,7 @@ StatCounter::StatCounter(boost::shared_ptr<istat::StatFile> file, time_t interva
 
 StatCounter::~StatCounter()
 {
+    ++countersClosed_;
     if(isCollated_)
     {
         time_t t = istat::istattime(0);
@@ -418,6 +420,38 @@ boost::shared_ptr<istat::StatFile> StatCounter::pickStatFile(time_t startTime, t
     
 }
 
+//  You can ask for a very long season, which won't be present. This 
+//  function will then return information about the longest season present.
+//  If asking for a season length of 0, then you get the shortest season.
+boost::shared_ptr<istat::StatFile> StatCounter::pickTrailingStatFile(time_t season, time_t &o_interval, time_t &o_season)
+{
+    o_interval = 0;
+    o_season = 0;
+
+    // it is assumed that elements for the vector are stat files sorted in 
+    // FINEST to COARSEST resolution order and that each files has 
+    // contemporaneous updates in their most recently updated buckets
+    for (std::vector<StatCounter::OneCounter>::iterator ptr(counters_.begin()), end(counters_.end()); ptr != end; ++ptr)
+    {
+        boost::shared_ptr<istat::StatFile> sf = (*ptr).file;
+        if (!sf->header().flags & istat::FILE_FLAG_IS_TRAILING)
+        {
+            continue;
+        }
+        //  return some information about found files
+        o_season = sf->header().season;
+        o_interval = sf->header().cfg_interval;
+        //  season is not big enough
+        if (sf->header().season < (uint64_t)season)
+        {
+            continue;
+        }
+        return sf;
+    }
+
+    return boost::shared_ptr<istat::StatFile>((istat::StatFile*)0);
+}
+
 //  Interval starts out as the native interval (bucket size) of the file, 
 //  and can be modified to the desired resolution to hit the number of 
 //  samples desired.
@@ -610,7 +644,7 @@ void StatCounter::reduce(std::vector<istat::Bucket> &buckets, time_t startTime, 
     result.swap(buckets);
 }
 
-void StatCounter::select(time_t start_time, time_t end_time, std::vector<istat::Bucket> &oBuckets, time_t &normalized_start, time_t &normalized_end, time_t &interval, size_t max_samples)
+void StatCounter::select(time_t start_time, time_t end_time, bool trailing, std::vector<istat::Bucket> &oBuckets, time_t &normalized_start, time_t &normalized_end, time_t &interval, size_t max_samples)
 {
     // Supply reasonable defaults if either start or end are zero.
     if (!end_time && !start_time) {
@@ -634,7 +668,9 @@ void StatCounter::select(time_t start_time, time_t end_time, std::vector<istat::
     normalized_start = start_time;
     normalized_end   = end_time;
 
-    boost::shared_ptr<istat::StatFile> sf = pickStatFile(start_time, end_time, interval);
+    boost::shared_ptr<istat::StatFile> sf = trailing ? 
+        pickTrailingStatFile(istat::istattime(0) - start_time, interval, end_time) :
+        pickStatFile(start_time, end_time, interval);
 
     normalizeRange(normalized_start, normalized_end, interval, max_samples);
 

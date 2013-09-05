@@ -336,6 +336,31 @@ void StatStore::listMatchingCounters(std::string const &pat, std::list<std::pair
     keys_.match(pat, oList);
 }
 
+class DeletedCounter : public IStatCounter
+{
+public:
+    DeletedCounter() {}
+    virtual bool isCollated() const { return false; }
+    virtual void record(time_t time, double value, double valueSq, double min, double max, size_t cnt) {}
+    virtual void flush(boost::shared_ptr<IStatStore> const &store) {}
+    virtual void forceFlush(boost::shared_ptr<IStatStore> const &store) {}
+    virtual void maybeShiftCollated(time_t t) {}
+    virtual void select(time_t start, time_t end, bool trailing, std::vector<istat::Bucket> &oBuckets, time_t &normalized_start, time_t &normalized_end, time_t &interval, size_t max_samples) {}
+
+};
+static boost::shared_ptr<DeletedCounter> theDeletedCounter(new DeletedCounter);
+
+void StatStore::deleteCounter(std::string const &ctr, IComplete *complete)
+{
+    boost::shared_ptr<StatStore::AsyncCounter> aCount = openCounter(ctr, false, 0);
+    if (!!aCount)
+    {
+        //  don't keep a reference to this counter anymore
+        aCount->statCounter_ = theDeletedCounter;
+    }
+    svc_.post(CallComplete(complete));
+}
+
 class Flusher
 {
 public:

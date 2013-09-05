@@ -45,6 +45,20 @@ static inline IComplete *heap_complete(Cls *cls)
     return new HeapCompleteFunc<Cls, Func>(cls);
 }
 
+class CallComplete
+{
+public:
+    CallComplete(IComplete *ic) :
+        ic_(ic)
+    {
+    }
+    void operator()() const
+    {
+        ic_->on_complete();
+    }
+    IComplete *ic_;
+};
+
 
 #endif  //  daemon_IComplete_h
 

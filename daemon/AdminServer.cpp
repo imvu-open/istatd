@@ -11,6 +11,7 @@
 #include "ReplicaOf.h"
 #include "Debug.h"
 #include "Settings.h"
+#include "DeleteCountersWorker.h"
 
 #include <istat/strfunc.h>
 #include <istat/istattime.h>
@@ -169,6 +170,7 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         ec_->writeOut("purge [maxOld[,maxAge]] - purge old connection info records\r\n");
         ec_->writeOut("debug [option[,on|off]] - display or toggle debug options\r\n");
         ec_->writeOut("loglevel [level[,stderrLevel]] - display or change logging verbosity\r\n");
+        ec_->writeOut("delete.ctr ctr.name ...- stop accepting data for a particular counter; close its files\r\n");
         ec_->writeOut("quit - disconnect from stat server\r\n");
         ec_->writeOut("ok\r\n");
         return;
@@ -346,6 +348,21 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         {
             ec_->writeOut(std::string("huh? ") + x.what() + "\r\n");
         }
+        return;
+    }
+    if (cmd == "delete.ctr")
+    {
+        if (args.size() < 1)
+        {
+            ec_->writeOut(std::string("huh? delete.ctr requires one or more counter names.\r\n"));
+            return;
+        }
+        if (!as_->ssp_)
+        {
+            ec_->writeOut("huh? no statstore to flush.\r\n");
+            return;
+        }
+        (new DeleteCountersWorker(&args.front(), &args.front() + args.size(), as_->ssp_, ec_))->go();
         return;
     }
     if (cmd == "quit")

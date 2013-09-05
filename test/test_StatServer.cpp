@@ -51,7 +51,7 @@ void test_counter() {
 
     std::vector<istat::Bucket> buckets;
     time_t normalized_start, normalized_end, interval;
-    statCounter->select(0, 0, buckets, normalized_start, normalized_end, interval, 0);
+    statCounter->select(0, 0, false, buckets, normalized_start, normalized_end, interval, 0);
     assert_equal(1, buckets.size());
     assert_equal(4242, buckets[0].sum());
 }
@@ -75,7 +75,7 @@ void test_multiple_counters() {
 
     std::vector<istat::Bucket> buckets;
     time_t normalized_start, normalized_end, interval;
-    statCounter->select(0, 0, buckets, normalized_start, normalized_end, interval, 0);
+    statCounter->select(0, 0, false, buckets, normalized_start, normalized_end, interval, 0);
     assert_equal(1, buckets.size());
     assert_equal(4242, buckets[0].sum());
 }
@@ -108,7 +108,7 @@ void test_collated_counters() {
     std::vector<istat::Bucket> buckets;
     time_t normalized_start, normalized_end, interval=0;
 
-    statCounter->select(now-900000,now+10,buckets, normalized_start, normalized_end, interval, 0);
+    statCounter->select(now-900000,now+10,false, buckets, normalized_start, normalized_end, interval, 0);
     assert_equal(interval, 60 * 60);
     assert_equal(251, buckets.size());
     size_t bucketSum = 0;
@@ -118,12 +118,12 @@ void test_collated_counters() {
     }
     assert_equal(4242*3/10, bucketSum);
 
-    statCounter->select(now-10,now+9,buckets, normalized_start, normalized_end, interval, 0);
+    statCounter->select(now-10,now+9,false, buckets, normalized_start, normalized_end, interval, 0);
     assert_equal(interval, 10);
     assert_equal(2, buckets.size());
     assert_equal(4242*3/10, (int)buckets[1].sum());
 
-    statCounter->select(now-90000,now+9,buckets, normalized_start, normalized_end, interval, 0);
+    statCounter->select(now-90000,now+9,false, buckets, normalized_start, normalized_end, interval, 0);
     assert_equal(interval, 5*60);
     assert_equal(301, buckets.size());
     bucketSum = 0;

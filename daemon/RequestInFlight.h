@@ -57,8 +57,8 @@ private:
         boost::shared_ptr<IStatStore> storePtr);
     void listAgentsMatching(std::string const &a);
 
-    void generateCounterJson(boost::shared_ptr<IStatCounter> statCounter, time_t startTime, time_t endTime, size_t sampleCount);
-    void generateCounterCSV(boost::shared_ptr<IStatCounter> statCounter, time_t startTime, time_t endTime, size_t sampleCount);
+    void generateCounterJson(boost::shared_ptr<IStatCounter> statCounter, time_t startTime, time_t endTime, size_t sampleCount, intmax_t trailing);
+    void generateCounterCSV(boost::shared_ptr<IStatCounter> statCounter, time_t startTime, time_t endTime, size_t sampleCount, intmax_t trailing);
 
     void getSettings(std::string const &settings, std::string const &key);
     void on_storeSettingsBody(std::string const &settings);

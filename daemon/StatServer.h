@@ -106,6 +106,7 @@ public:
     //  Copy data while the lock is held
     void getConnected(std::vector<MetaInfo> &oConnected);
     void purgeOldMetaRecords(size_t maxOld, time_t maxAge);
+    void deleteCounter(std::string const &ctr, IComplete *complete);
 private:
     typedef std::tr1::unordered_map<void *, boost::shared_ptr<MetaInfo> > InfoHashMap;
 

@@ -49,6 +49,8 @@ public:
 
     void getUniqueId(UniqueId &oid);
 
+    void deleteCounter(std::string const &ctr, IComplete *complete);
+
     struct AsyncCounter
     {
         AsyncCounter(boost::asio::io_service &svc,

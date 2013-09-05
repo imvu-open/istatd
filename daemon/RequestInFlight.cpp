@@ -183,10 +183,12 @@ class MultiCounterWorker
 {
 public:
     MultiCounterWorker(time_t start, time_t end, size_t maxSamples,
+        bool trailing,
         boost::shared_ptr<RequestInFlight> const &req) :
         start_(start),
         end_(end),
         maxSamples_(maxSamples),
+        trailing_(trailing),
         req_(req),
         num(0)
     {
@@ -194,16 +196,21 @@ public:
     time_t start_;
     time_t end_;
     size_t maxSamples_;
+    bool trailing_;
     boost::shared_ptr<RequestInFlight> req_;
     std::map<boost::shared_ptr<IStatCounter>, std::pair<boost::asio::strand *, std::string> > data;
     int64_t num;
     lock strmLock;
+    std::string delim;
+
     void add(boost::shared_ptr<IStatCounter> const &ctr, boost::asio::strand *strand, std::string const &name)
     {
         data[ctr] = std::pair<boost::asio::strand *, std::string>(strand, name);
     }
-    void go()
+
+    void go(std::string const &d)
     {
+        delim = d;
         if (!data.size())
         {
             req_->strm_ << "}";
@@ -221,6 +228,7 @@ public:
             }
         }
     }
+
     void workOne(boost::shared_ptr<IStatCounter> &counter, std::string const &name)
     {
         {
@@ -230,7 +238,7 @@ public:
             time_t normalized_end;
 
             time_t interval;
-            counter->select(start_, end_, buckets, normalized_start, normalized_end, interval, maxSamples_);
+            counter->select(start_, end_, trailing_, buckets, normalized_start, normalized_end, interval, maxSamples_);
 
             // this is crude, but effective.
             // all these values should be the same for all counters in the group
@@ -238,9 +246,10 @@ public:
             req_->multiget_stop_time_ = normalized_end;
             req_->multiget_interval_ = interval;
 
-            if (req_->strm_.str().length() > 1)
+            req_->strm_ << delim;
+            if (delim.empty())
             {
-                req_->strm_ << ",";
+                delim = ",";
             }
             req_->strm_ << "\"" << name << "\":{" 
                         << "\"start\":" << normalized_start
@@ -323,9 +332,16 @@ void RequestInFlight::on_multigetBody()
             reportError("Missing 'key' array of keys", 400);
             return;
         }
+        bool trailing = false;
+        Json::Value jTrailing = root["trailing"];
+        if (!jTrailing.isNull())
+        {
+            trailing = true;
+        }
         
         strm_ << "{";
-        MultiCounterWorker *mcw = new MultiCounterWorker(start, stop, maxSamples, shared_from_this());
+        std::string delim("");
+        MultiCounterWorker *mcw = new MultiCounterWorker(start, stop, maxSamples, trailing, shared_from_this());
         for (int i = 0, n = keys.size(); i != n; ++i)
         {
             std::string name(keys[i].asString());
@@ -335,11 +351,11 @@ void RequestInFlight::on_multigetBody()
             if (!counter)
             {
                 LogSpam << "Counter" << name << "not found";
-                if (strm_.str().length() > 1)
+                strm_ << delim;
+                if (delim.empty())
                 {
-                    strm_ << ", ";
+                    delim = ",";
                 }
-
                 strm_ << "\"" << name << "\":\"Not found.\"";
             }
             else
@@ -347,7 +363,7 @@ void RequestInFlight::on_multigetBody()
                 mcw->add(counter, strand, name);
             }
         }
-        mcw->go();
+        mcw->go(delim);
     }
     catch (std::exception const &x)
     {
@@ -567,11 +583,13 @@ void RequestInFlight::generateCounterData(
     intmax_t startTime = 0;
     intmax_t endTime = 0;
     intmax_t sampleCount = 1000;
+    intmax_t trailing = 0;
     std::string format = "json";
     getValue(params, "start", startTime);
     getValue(params, "end", endTime);
     getValue(params, "samples", sampleCount);
     getValue(params, "format", format);
+    getValue(params, "trailing", trailing);
     if (startTime < 0) {
         throw std::runtime_error("Invalid start parameter");
     }
@@ -611,20 +629,20 @@ void RequestInFlight::generateCounterData(
         reportError("No such counter " + cname, 404);
         return;
     }
-    if(format == "json") {
+    if (format == "json") {
         svc_.post(strand->wrap(
             boost::bind(&RequestInFlight::generateCounterJson,
-                shared_from_this(), statCounter, startTime, endTime, sampleCount)));
-    } else if(format == "csv") {
+                shared_from_this(), statCounter, startTime, endTime, sampleCount, trailing)));
+    } else if (format == "csv") {
         svc_.post(strand->wrap(
             boost::bind(&RequestInFlight::generateCounterCSV,
-                shared_from_this(), statCounter, startTime, endTime, sampleCount)));
+                shared_from_this(), statCounter, startTime, endTime, sampleCount, trailing)));
     } else {
         throw std::runtime_error("unrecognized format. must be 'json' or 'csv'.");
     }
 }
 
-void RequestInFlight::generateCounterJson(boost::shared_ptr<IStatCounter> statCounter, time_t startTime, time_t endTime, size_t sampleCount)
+void RequestInFlight::generateCounterJson(boost::shared_ptr<IStatCounter> statCounter, time_t startTime, time_t endTime, size_t sampleCount, intmax_t trailing)
 {
     std::vector<istat::Bucket> buckets;
     time_t intervalTime = 10;
@@ -634,7 +652,7 @@ void RequestInFlight::generateCounterJson(boost::shared_ptr<IStatCounter> statCo
     try
     {
 
-        statCounter->select(startTime, endTime, buckets, normalizedStart, normalizedEnd, intervalTime, sampleCount);
+        statCounter->select(startTime, endTime, trailing != 0, buckets, normalizedStart, normalizedEnd, intervalTime, sampleCount);
 
         Json::Value jsonRoot(Json::objectValue);
         
@@ -670,7 +688,7 @@ void RequestInFlight::generateCounterJson(boost::shared_ptr<IStatCounter> statCo
     }
 }
 
-void RequestInFlight::generateCounterCSV(boost::shared_ptr<IStatCounter> statCounter, time_t startTime, time_t endTime, size_t sampleCount)
+void RequestInFlight::generateCounterCSV(boost::shared_ptr<IStatCounter> statCounter, time_t startTime, time_t endTime, size_t sampleCount, intmax_t trailing)
 {
     std::vector<istat::Bucket> buckets;
     time_t intervalTime = 10;
@@ -678,7 +696,7 @@ void RequestInFlight::generateCounterCSV(boost::shared_ptr<IStatCounter> statCou
     time_t normalizedEnd;
     try
     {
-        statCounter->select(startTime, endTime, buckets, normalizedStart, normalizedEnd, intervalTime, sampleCount);
+        statCounter->select(startTime, endTime, trailing != 0, buckets, normalizedStart, normalizedEnd, intervalTime, sampleCount);
 
         strm_ << "ISO Time,Unix Timestamp,Sample Count,Minimum,Maximum,Sum,Sum Squared,Average,Standard Deviation\r\n";
 

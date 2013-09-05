@@ -221,6 +221,11 @@ void StatServer::purgeOldMetaRecords(size_t maxOld, time_t maxAge)
     }
 }
 
+void StatServer::deleteCounter(std::string const &ctr, IComplete *complete)
+{
+    statStore_->deleteCounter(ctr, complete);
+}
+
 void StatServer::startResolveAgent()
 {
     forward_->onData_.connect(boost::bind(&StatServer::on_forwardData, this));

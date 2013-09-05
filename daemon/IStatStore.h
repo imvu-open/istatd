@@ -44,6 +44,7 @@ public:
     boost::signal<void (istat::Header const &)> iterateSignal;
 
     virtual void setAggregateCount(int ac) = 0;
+    virtual void deleteCounter(std::string const &str, IComplete *complete) = 0;
 
 protected:
     friend class boost::detail::shared_count;
@@ -66,6 +67,7 @@ public:
     inline void flushAll(IComplete *cmp) {}
     inline void getUniqueId(UniqueId &out) { out = UniqueId(); }
     inline void setAggregateCount(int ac) {}
+    inline void deleteCounter(std::string const &, IComplete *cmp) {}
 };
 
 #endif  //  daemon_IStatStore_h

@@ -26,11 +26,12 @@ public:
     virtual void flush(boost::shared_ptr<IStatStore> const &store);
     virtual void forceFlush(boost::shared_ptr<IStatStore> const &store);
     virtual void maybeShiftCollated(time_t t);
-    virtual void select(time_t start, time_t end, std::vector<istat::Bucket> &oBuckets, 
+    virtual void select(time_t start, time_t end, bool trailing, std::vector<istat::Bucket> &oBuckets, 
                         time_t &normalized_start, time_t &normalized_end, time_t &interval, 
                         size_t max_samples);
 
     boost::shared_ptr<istat::StatFile> pickStatFile(time_t startTime, time_t endTime, time_t &interval);
+    boost::shared_ptr<istat::StatFile> pickTrailingStatFile(time_t season, time_t &o_interval, time_t &o_season);
     virtual void normalizeRange(time_t &start, time_t &end, time_t &interval, size_t maxSamples);
     
     friend void run_tests(void);

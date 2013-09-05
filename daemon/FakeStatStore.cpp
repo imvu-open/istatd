@@ -31,7 +31,7 @@ public:
     virtual void forceFlush(boost::shared_ptr<IStatStore> const &store) {}
     virtual void maybeShiftCollated(time_t t) {}
 
-    virtual void select(time_t start, time_t end, std::vector<istat::Bucket> &oBuckets, time_t &normalized_start, time_t &normalized_end, time_t &interval, size_t max_samples)
+    virtual void select(time_t start, time_t end, bool trailing, std::vector<istat::Bucket> &oBuckets, time_t &normalized_start, time_t &normalized_end, time_t &interval, size_t max_samples)
     {
         normalized_start = start;
         normalized_end = end;

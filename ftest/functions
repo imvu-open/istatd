@@ -1,5 +1,8 @@
 #!/bin/bash
 
+if [ -z "$DEBUG_ISTATD" ]; then
+    DEBUG_ISTATD=""
+fi
 set -e
 set -o nounset
 set +o histexpand
@@ -9,7 +12,7 @@ echo $FTEST_NAME
 
 # do a bit of a fail-safe to make sure we don't hang forever
 export ALARMPARENT=$$
-(sleep 30; echo "Test process timed out."; kill -9 $ALARMPARENT; killall -q -9 istatd; exit 1) &
+(sleep 30; echo "Test process timed out."; kill -9 $ALARMPARENT; [ -z "$DEBUG_ISTATD" ] && killall -q -9 istatd; exit 1) &
 ALARMCHILD=$!
 
 function failure {
@@ -117,8 +120,16 @@ function start_server {
        maybe_store=""
     fi
     [ -f ftest/$CONFIG.cfg ] || failure "cannot find config file ftest/$CONFIG.cfg"
-    bin/istatd --debug segv --config ftest/$CONFIG.cfg $maybe_store --settings $DBDIR/$CONFIG-settings --pid-file $DBDIR/$CONFIG-pid.pid --log-file $DBDIR/$CONFIG-log.log --daemonize $* > $DBDIR/$CONFIG-stdouterr 2>&1
-    istatd_launch=$?
+    if [ -z "$DEBUG_ISTATD" ]; then
+        bin/istatd --debug segv --config ftest/$CONFIG.cfg $maybe_store --settings $DBDIR/$CONFIG-settings --pid-file $DBDIR/$CONFIG-pid.pid --log-file $DBDIR/$CONFIG-log.log --daemonize $* > $DBDIR/$CONFIG-stdouterr 2>&1
+        istatd_launch=$?
+    else
+        echo "========= start istatd with these arguments =========="
+        echo --debug segv --config ftest/$CONFIG.cfg $maybe_store --settings $DBDIR/$CONFIG-settings --pid-file $DBDIR/$CONFIG-pid.pid --log-file $DBDIR/$CONFIG-log.log $*
+        echo "========= then press return                 =========="
+        read foo
+        istatd_launch=0
+    fi
     if [ ${istatd_launch} -eq 0 ] ; then
        STARTED_SERVERS="$STARTED_SERVERS $CONFIG"
        wait_for_file "$DBDIR/$CONFIG-pid.pid"
@@ -260,6 +271,10 @@ function purge_istatd {
 
 function set_faketime {
     echo -ne "faketime $2\n" | bin/istatd_netcat -q 1 localhost `admin_port_from_profile $1`
+}
+
+function delete_ctr {
+    echo -ne "delete.ctr $2\n" | bin/istatd_netcat -q 1 localhost `admin_port_from_profile $1`
 }
 
 function check_get {

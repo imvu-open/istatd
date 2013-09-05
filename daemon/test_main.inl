@@ -62,7 +62,7 @@ void test_RequestInFlight()
 
         rif.isComplete_ = true;
 
-        rif.generateCounterJson(statCounter, (time_t) 1000000000, (time_t) 1000000000, 1000);
+        rif.generateCounterJson(statCounter, (time_t) 1000000000, (time_t) 1000000000, 1000, 0);
         std::string resp = rif.getLastReply();
         assert_does_not_contain(resp, ".");
     }

@@ -19,6 +19,7 @@ public:
     static LoopbackCounter recordsFromThePast_;
     static LoopbackCounter eagerconns_;
     static LoopbackCounter recordsRejected_;
+    static LoopbackCounter countersClosed_;
 
     virtual ~IStatCounter() {};
 
@@ -27,7 +28,7 @@ public:
     virtual void flush(boost::shared_ptr<IStatStore> const &store) = 0;
     virtual void forceFlush(boost::shared_ptr<IStatStore> const &store) = 0;
     virtual void maybeShiftCollated(time_t t) = 0;
-    virtual void select(time_t start, time_t end, std::vector<istat::Bucket> &oBuckets, time_t &normalized_start, time_t &normalized_end, time_t &interval, size_t max_samples) = 0;
+    virtual void select(time_t start, time_t end, bool trailing, std::vector<istat::Bucket> &oBuckets, time_t &normalized_start, time_t &normalized_end, time_t &interval, size_t max_samples) = 0;
 
 };
 
