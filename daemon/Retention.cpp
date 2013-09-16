@@ -35,7 +35,6 @@ RetentionInterval const &RetentionPolicy::getInterval(size_t ix) const
 
 void RetentionPolicy::addInterval(RetentionInterval const &ri)
 {
-    LogDebug << "RetentionPolicy::addInterval()" << ri.interval << ri.samples << ri.name << ri.lambda;
     if (!intervals.empty())
     {
         if ((ri.lambda == 0) && (intervals.back().interval >= ri.interval))
