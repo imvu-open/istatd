@@ -57,6 +57,7 @@ public:
     RealSettingsFactory(boost::asio::io_service &svc, std::string const &path);
     void scandir();
     void flush(IComplete *complete);
+    void flush_one(std::string const &domain, IComplete *complete);
     void dispose();
     void loadSettingsPath(std::string const &path, std::string const &name);
     void open(std::string const &domain, bool allowCreate,
@@ -131,6 +132,21 @@ void RealSettingsFactory::flush(IComplete *complete)
     }
     //  this allows all settings to be re-loaded if edited
     files_.clear();
+    svc_.post(boost::bind(&IComplete::on_complete, complete));
+}
+
+void RealSettingsFactory::flush_one(std::string const &name, IComplete *complete)
+{
+    svc_.post(boost::bind(&IComplete::on_complete, complete));
+    (debugSettings ? LogNotice : LogDebug) << "RealSettingsFactory::flush()";
+    //  no need to asynchronize the actual work more than this
+    //  because file I/O is not async
+    grab aholdof(lock_);
+    std::map<std::string, boost::shared_ptr<ISettings> >::iterator ptr(files_.find(name));
+    if (ptr != files_.end()) {
+        static_cast<RealSettings *>((*ptr).second.get())->save((*ptr).second);
+        files_.erase(ptr);
+    }
     svc_.post(boost::bind(&IComplete::on_complete, complete));
 }
 
@@ -440,6 +456,10 @@ public:
         svc_.post(boost::bind(&IComplete::on_complete, complete));
     }
     void flush(IComplete *complete)
+    {
+        svc_.post(boost::bind(&IComplete::on_complete, complete));
+    }
+    void flush_one(std::string const &name, IComplete *complete)
     {
         svc_.post(boost::bind(&IComplete::on_complete, complete));
     }

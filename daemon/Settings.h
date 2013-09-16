@@ -29,6 +29,7 @@ public:
     virtual void open(std::string const &domain, bool allowCreate, boost::shared_ptr<ISettings> &settings,
         IComplete *complete) = 0;
     virtual void flush(IComplete *complete) = 0;
+    virtual void flush_one(std::string const &domain, IComplete *complete) = 0;
     virtual void dispose() = 0;
 protected:
     virtual ~ISettingsFactory() {}

@@ -105,6 +105,13 @@ void test_SettingsFactory(ISettingsFactory *fsf)
 
     fsf->flush(comp);
     pump_and_run();
+
+    //  Can I flush a particular counter that doesn't exist?
+    fsf->flush_one("blargh", comp);
+    pump_and_run();
+    //  Can I flush something that DOES exist?
+    fsf->flush_one("allowCreate", comp);
+    pump_and_run();
 }
 
 void func_fake()

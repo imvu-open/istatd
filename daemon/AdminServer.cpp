@@ -33,6 +33,7 @@ public:
     void settings_flush_complete();
     void flush_complete();
     void sync_complete();
+    void generic_complete();
 
     void doCmd(std::string const &cmd);
     void huh();
@@ -171,6 +172,7 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         ec_->writeOut("debug [option[,on|off]] - display or toggle debug options\r\n");
         ec_->writeOut("loglevel [level[,stderrLevel]] - display or change logging verbosity\r\n");
         ec_->writeOut("delete.ctr ctr.name ...- stop accepting data for a particular counter; close its files\r\n");
+        ec_->writeOut("flush.set name - flush (and later reload) settings file\r\n");
         ec_->writeOut("quit - disconnect from stat server\r\n");
         ec_->writeOut("ok\r\n");
         return;
@@ -365,6 +367,16 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         (new DeleteCountersWorker(&args.front(), &args.front() + args.size(), as_->ssp_, ec_))->go();
         return;
     }
+    if (cmd == "flush.set")
+    {
+        if (args.size() != 1)
+        {
+            ec_->writeOut(std::string("huh? flush.set needs exactly one settings file name. (no path)\r\n"));
+            return;
+        }
+        ISettingsFactory &sfac = istat::Env::get<ISettingsFactory>();
+        sfac.flush_one(args.front(), heap_complete<AdminConnection, &AdminConnection::generic_complete>(this));
+    }
     if (cmd == "quit")
     {
         ec_->close();
@@ -393,6 +405,12 @@ void AdminConnection::flush_complete()
 void AdminConnection::sync_complete()
 {
     LogDebug << "AdminConnection::sync_complete()";
+    ec_->writeOut("ok\r\n");
+}
+
+void AdminConnection::generic_complete()
+{
+    LogDebug << "AdminConnection::generic_complete()";
     ec_->writeOut("ok\r\n");
 }
 
