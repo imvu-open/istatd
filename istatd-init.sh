@@ -34,8 +34,6 @@ is_istatd_running() {
     #in shell land, 0 is true!
     if [ -s $PIDFILE ] && ps `cat $PIDFILE` | grep -q $DAEMON > /dev/null ; then
         return 0
-    elif ps -FC $NAME | grep -q $DAEMON > /dev/null ; then
-        return 0
     else
         return 1
     fi
@@ -65,8 +63,6 @@ stop_istatd() {
 
     if [ -s $PIDFILE ] && ps `cat $PIDFILE` | grep -q $DAEMON > /dev/null ; then
         kill -TERM `cat $PIDFILE`
-    elif ps -FC $NAME | grep -q $DAEMON > /dev/null ; then
-        kill -TERM `ps -FC $NAME | grep $DAEMON | awk '{print $2}'`
     fi
 
     if ! is_istatd_running ; then
