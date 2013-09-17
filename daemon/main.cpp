@@ -329,6 +329,42 @@ private:
     }
 };
 
+class LogRolloverTimer 
+{
+public:
+    LogRolloverTimer(boost::asio::io_service &svc, int interval) :
+        svc_(svc),
+        timer_(svc),
+        interval_(interval)
+    {
+        scheduleNext();
+    }
+private:
+    boost::asio::io_service &svc_;
+    boost::asio::deadline_timer timer_;
+    int interval_;
+    void timerFunc(boost::system::system_error const &err)
+    {
+        if (debugAudit.enabled())
+        {
+            LogNotice << "LogRolloverTimer::threadFunc() thread" << boost::this_thread::get_id();
+        }
+        else
+        {
+            LogSpam << "threadFunc() calling rollOver()" << getpid();
+        }
+        istat::LogConfig::rollOver();
+        scheduleNext();
+    }
+
+    void scheduleNext()
+    {
+        timer_.expires_from_now(boost::posix_time::seconds(interval_));
+        timer_.async_wait(
+            boost::bind(&LogRolloverTimer::timerFunc, this, boost::asio::placeholders::error));
+    }
+};
+
 void thread_fn()
 {
     volatile bool do_retry = true;
@@ -354,6 +390,7 @@ void thread_fn()
 void mainThread_fn(StatServer *ss)
 {
     boost::shared_ptr<AuditTimer> aTimer(new AuditTimer(g_service, mm, ss));
+    boost::shared_ptr<LogRolloverTimer> lTimer(new LogRolloverTimer(g_service, 300));
     volatile bool do_retry = true;
     while (do_retry)
     {
