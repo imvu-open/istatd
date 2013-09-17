@@ -5,11 +5,12 @@ istatd (0.62-1) UNRELEASED; urgency=low
   * Ability to remove counter (references) while up.
   * Add a test that multiple counters with a leading star all gets the
     right file collation mode.
+  * Add ability to flush one settings file.
 
   [ Jon Schedler ]
   * do not use ps to find running instance of istatd
 
- -- Jon Schedler <jschedler@imvu.com>  Mon, 16 Sep 2013 08:56:03 -0700
+ -- Jon Schedler <jschedler@imvu.com>  Mon, 16 Sep 2013 12:33:03 -0700
 
 istatd (0.61-1) UNRELEASED; urgency=low
 
