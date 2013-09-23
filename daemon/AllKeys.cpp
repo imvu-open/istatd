@@ -107,7 +107,7 @@ void KeyMatch::extract(std::string const &pat, std::list<std::pair<std::string, 
     {
         if (istat::str_pat_match((*ptr).first, pat))
         {
-            if (allKeys)
+            if (allKeys.enabled())
             {
                 LogNotice << "allKeys match " << (*ptr).first << "as" << ((*ptr).second ? "leaf" : "branch");
             }
@@ -115,7 +115,7 @@ void KeyMatch::extract(std::string const &pat, std::list<std::pair<std::string, 
         }
         else
         {
-            if (allKeys)
+            if (allKeys.enabled())
             {
                 LogNotice << "allKeys no match " << (*ptr).first;
             }

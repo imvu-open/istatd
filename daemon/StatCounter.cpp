@@ -52,7 +52,11 @@ StatCounter::StatCounter(std::string const &pathName, bool isCollated, time_t ze
     {
         set.flags |= istat::FILE_FLAG_IS_COLLATED;
     }
-    
+
+    if(!boost::filesystem::exists(pathName))
+    {
+        LogNotice << "Creating new StatCounter:" << pathName;
+    }
     if(!boost::filesystem::create_directories(pathName) && !boost::filesystem::exists(pathName))
     {
         throw std::runtime_error("Could not create counter directory: " + pathName);
@@ -122,7 +126,7 @@ StatCounter::~StatCounter()
     {
         time_t t = istat::istattime(0);
         if(t - collations_[BUCKETS_PER_COLLATION_WINDOW - 1].time > 60 * 5)
-        {        
+        {
             // Must be recording in the past, or there was a fake time
             // but it was recently destructed. Just force shift ahead
             // by the collation length.
@@ -161,7 +165,7 @@ void StatCounter::record(time_t time, double value, double valueSq, double min, 
             ++recordsFromTheFuture_;
             if (debugRejectedCounters)
             {
-                LogWarning << "StatCounter::record rejected counter from the future: " << time << " > " << nowTime << ": " << 
+                LogWarning << "StatCounter::record rejected counter from the future: " << time << " > " << nowTime << ": " <<
                     counters_[0].file->header().name;
             }
             return;
@@ -172,9 +176,9 @@ void StatCounter::record(time_t time, double value, double valueSq, double min, 
             if (debugRejectedCounters)
             {
                 LogWarning << "StatCounter::record rejected counter from the past: " << time
-                           << " < " << collations_[0].time 
-                           << " < " << collations_[1].time 
-                           << " < " << collations_[2].time 
+                           << " < " << collations_[0].time
+                           << " < " << collations_[1].time
+                           << " < " << collations_[2].time
                            << ": " <<  counters_[0].file->header().name;
             }
             return;
@@ -186,7 +190,7 @@ void StatCounter::record(time_t time, double value, double valueSq, double min, 
         {
             if (debugRejectedCounters)
             {
-                LogWarning << "StatCounter::record rejected counter from the future: " << time << " > " << nowTime << ": " << 
+                LogWarning << "StatCounter::record rejected counter from the future: " << time << " > " << nowTime << ": " <<
                     counters_[0].file->header().name;
             }
             ++recordsFromTheFuture_;
@@ -205,7 +209,7 @@ void StatCounter::record(time_t time, double value, double valueSq, double min, 
             if(collations_[0].time == 0)
             {
                 for(size_t i = 0; i != BUCKETS_PER_COLLATION_WINDOW; ++i)
-                { 
+                {
                     collations_[(BUCKETS_PER_COLLATION_WINDOW - 1) - i] = CollationInfo(time - (i * collationInterval_));
                 }
             }
@@ -242,7 +246,7 @@ void StatCounter::record(time_t time, double value, double valueSq, double min, 
         }
         double avg = value / double(cnt);
         // Ensure the value ranges are sensible, or reject them.
-        // We allow a small amount of epsilon (0.01%) here before rejecting counters due to double vs. float 
+        // We allow a small amount of epsilon (0.01%) here before rejecting counters due to double vs. float
         // conversion in Buckets transferred from istatd agents to the master
         if (min > (max + fabs(max) * 0.0001) || (avg + fabs(avg) * 0.0001) < min || avg > (max + fabs(max) * 0.0001))
         {
@@ -368,8 +372,8 @@ void StatCounter::flush(boost::shared_ptr<IStatStore> const &store)
 
 void StatCounter::forceFlush(boost::shared_ptr<IStatStore> const &store)
 {
-    if(isCollated_)    
-    {    
+    if(isCollated_)
+    {
         fullyShiftCollated();
     }
     flush(store);
@@ -395,8 +399,8 @@ boost::shared_ptr<istat::StatFile> StatCounter::pickStatFile(time_t startTime, t
         endTime = now;
     }
 
-    // it is assumed that elements for the vector are stat files sorted in 
-    // FINEST to COARSEST resolution order and that each files has 
+    // it is assumed that elements for the vector are stat files sorted in
+    // FINEST to COARSEST resolution order and that each files has
     // contemporaneous updates in their most recently updated buckets
     for (std::vector<StatCounter::OneCounter>::iterator ptr(counters_.begin()), end(counters_.end()); ptr != end; ++ptr)
     {
@@ -408,7 +412,7 @@ boost::shared_ptr<istat::StatFile> StatCounter::pickStatFile(time_t startTime, t
         }
     }
 
-    // if we are here, we are either to far in the future or too far 
+    // if we are here, we are either to far in the future or too far
     // in the past for the coarsest resolution of data we have.
     // if in the future, return the finest interval time.
     if (startTime > counters_[0].file->lastBucketTime())
@@ -417,10 +421,10 @@ boost::shared_ptr<istat::StatFile> StatCounter::pickStatFile(time_t startTime, t
     }
 
     return boost::shared_ptr<istat::StatFile>((istat::StatFile*)0);
-    
+
 }
 
-//  You can ask for a very long season, which won't be present. This 
+//  You can ask for a very long season, which won't be present. This
 //  function will then return information about the longest season present.
 //  If asking for a season length of 0, then you get the shortest season.
 boost::shared_ptr<istat::StatFile> StatCounter::pickTrailingStatFile(time_t season, time_t &o_interval, time_t &o_season)
@@ -428,8 +432,8 @@ boost::shared_ptr<istat::StatFile> StatCounter::pickTrailingStatFile(time_t seas
     o_interval = 0;
     o_season = 0;
 
-    // it is assumed that elements for the vector are stat files sorted in 
-    // FINEST to COARSEST resolution order and that each files has 
+    // it is assumed that elements for the vector are stat files sorted in
+    // FINEST to COARSEST resolution order and that each files has
     // contemporaneous updates in their most recently updated buckets
     for (std::vector<StatCounter::OneCounter>::iterator ptr(counters_.begin()), end(counters_.end()); ptr != end; ++ptr)
     {
@@ -452,8 +456,8 @@ boost::shared_ptr<istat::StatFile> StatCounter::pickTrailingStatFile(time_t seas
     return boost::shared_ptr<istat::StatFile>((istat::StatFile*)0);
 }
 
-//  Interval starts out as the native interval (bucket size) of the file, 
-//  and can be modified to the desired resolution to hit the number of 
+//  Interval starts out as the native interval (bucket size) of the file,
+//  and can be modified to the desired resolution to hit the number of
 //  samples desired.
 void StatCounter::normalizeRange(time_t &start, time_t &end, time_t &interval, size_t maxSamples)
 {
@@ -483,7 +487,7 @@ void StatCounter::normalizeRange(time_t &start, time_t &end, time_t &interval, s
 
     static time_t reductions[] =
     {
-        10, 20, 30, 60, 120, 300, 600, 900, 1200, 1800, 
+        10, 20, 30, 60, 120, 300, 600, 900, 1200, 1800,
         3600, 2*3600, 3*3600, 4*3600, 6*3600, 8*3600, 12*3600,
         86400   /* refuse to reduce to greater-than-day granularity */
     };
@@ -509,7 +513,7 @@ void StatCounter::normalizeRange(time_t &start, time_t &end, time_t &interval, s
 
     if (!targetInterval)
     {
-        LogNotice << "cannot reduce evenly samples of interval " << interval 
+        LogNotice << "cannot reduce evenly samples of interval " << interval
                   << " in range " << start
                   << " to " << end
                   << " to be less than max sample count " << maxSamples;
@@ -598,7 +602,7 @@ namespace
                 reduction.update(istat::Bucket(0, 0, 0, 0, 0, currentTime));
             }
             reduction.setCount(collatedBucketCount);
-        }    
+        }
         result.push_back(reduction);
     }
 }
@@ -668,7 +672,7 @@ void StatCounter::select(time_t start_time, time_t end_time, bool trailing, std:
     normalized_start = start_time;
     normalized_end   = end_time;
 
-    boost::shared_ptr<istat::StatFile> sf = trailing ? 
+    boost::shared_ptr<istat::StatFile> sf = trailing ?
         pickTrailingStatFile(istat::istattime(0) - start_time, interval, end_time) :
         pickStatFile(start_time, end_time, interval);
 
