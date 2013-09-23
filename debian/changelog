@@ -1,3 +1,13 @@
+istatd (0.63-1) UNRELEASED; urgency=low
+
+  [ Jon Watte ]
+  * make the log file get closed/opened every five minutes
+
+  [ Jon Schedler ]
+  * log when a new counter is created
+
+ -- Jon Schedler <jschedler@imvu.com>  Mon, 23 Sep 2013 15:12:12 -0700
+
 istatd (0.62-1) UNRELEASED; urgency=low
 
   [ Jon Watte ]
