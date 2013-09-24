@@ -686,7 +686,7 @@ void StatCounter::select(time_t start_time, time_t end_time, bool trailing, std:
     readBucketsFromFile(sf, normalized_start, normalized_end, oBuckets);
 
     if (sf->settings().intervalTime < interval) {
-        LogNotice << "reducing from interval" << sf->settings().intervalTime << "to" << interval;
+        LogDebug << "reducing from interval" << sf->settings().intervalTime << "to" << interval;
 
         // Force collated counters to have the exact number of collationInterval_ samples,
         int collatedBucketCount = 0;
