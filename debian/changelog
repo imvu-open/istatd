@@ -5,8 +5,9 @@ istatd (0.63-1) UNRELEASED; urgency=low
 
   [ Jon Schedler ]
   * log when a new counter is created
+  * write sighandler message to syslog too
 
- -- Jon Schedler <jschedler@imvu.com>  Mon, 23 Sep 2013 15:12:12 -0700
+ -- Jon Schedler <jschedler@imvu.com>  Tue, 24 Sep 2013 10:48:14 -0700
 
 istatd (0.62-1) UNRELEASED; urgency=low
 
