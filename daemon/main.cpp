@@ -18,6 +18,7 @@
 #include <sys/resource.h>
 #include <pwd.h>
 #include <signal.h>
+#include <syslog.h>
 #include <cstdlib>
 #include <ctime>
 #include <boost/filesystem.hpp>
@@ -329,7 +330,7 @@ private:
     }
 };
 
-class LogRolloverTimer 
+class LogRolloverTimer
 {
 public:
     LogRolloverTimer(boost::asio::io_service &svc, int interval) :
@@ -645,10 +646,10 @@ void handle_pid_daemon(std::string const &pidf, bool daemon)
     }
 }
 
-//  Use the 
+//  Use the
 void unblock_waiter()
 {
-    //  If I have the "waiting" fd pipe open, then unblock the 
+    //  If I have the "waiting" fd pipe open, then unblock the
     //  parent process waiting for me by writing on the pipe.
     if (waitFdPair[0] != waitFdPair[1])
     {
@@ -708,6 +709,8 @@ void signalHandler(int sig)
         segvError[24] = ' ';
     }
     ssize_t n = write(2, segvError, segvLen);
+    syslog(LOG_CRIT, "%s", segvError);
+
     if (sig == SIGINT || sig == SIGHUP || sig == SIGTERM) {
         // "graceful" exit
         exit(0);
@@ -854,13 +857,17 @@ int main(int argc, char const *argv[])
         std::cerr << "Command line error near " << argv[ix] << std::endl;
         usage();
     }
+
+    // open syslog
+    openlog(argv[0], LOG_NDELAY|LOG_NOWAIT|LOG_PID, LOG_USER);
+
     setupDebug();
     setupSignals();
     LogConfig::setLogLevel((LogLevel)loglevel.get());
 
     // test convert the address to ensure it's convertable without exceptions before entering main code
     if (listenAddress.get().length() > 0) {
-        try 
+        try
         {
             boost::asio::ip::address::from_string(listenAddress.get().c_str());
         }
@@ -870,7 +877,7 @@ int main(int argc, char const *argv[])
             return 2;
         }
     }
-    
+
     //  set the working directory to the parent of the store file, if specified
     if (store.get().size())
     {
@@ -899,7 +906,7 @@ int main(int argc, char const *argv[])
         istat::Env::set<istat::FakeTime>(*ft);
         LogDebug << "Started with fake time value =" << istattime(0);
     }
-   
+
 
     if (testMode.get())
     {
