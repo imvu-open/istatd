@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
@@ -508,6 +509,7 @@ void StatServer::handle_record(std::string const &ctr, time_t time, double val, 
 void StatServer::handle_forward(std::string const &ctr, time_t time, double val, double sumSq, double min, double max, size_t n)
 {
     time_t now;
+    std::string update_err_msg;
     istat::istattime(&now);
 
     if (time == 0)
@@ -520,10 +522,16 @@ void StatServer::handle_forward(std::string const &ctr, time_t time, double val,
     if (buckets == forwardBuckets_.end())
     {
         forwardBuckets_[ctr] = Bucketizer(now, istat::Bucket(val, sumSq, min, max, n, time));
+        update_err_msg = forwardBuckets_[ctr].getUpdateErrMsg();
     }
     else
     {
         (*buckets).second.update(istat::Bucket(val, sumSq, min, max, n, time));
+        update_err_msg = (*buckets).second.getUpdateErrMsg();
+    }
+    if (update_err_msg != "")
+    {
+        LogNotice << "StatServer::handle_forwarded for" << ctr << update_err_msg;
     }
 }
 

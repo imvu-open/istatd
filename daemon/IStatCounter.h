@@ -20,6 +20,7 @@ public:
     static LoopbackCounter eagerconns_;
     static LoopbackCounter recordsRejected_;
     static LoopbackCounter countersClosed_;
+    static LoopbackCounter countersCreated_;
 
     virtual ~IStatCounter() {};
 

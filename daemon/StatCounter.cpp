@@ -22,6 +22,7 @@ LoopbackCounter IStatCounter::recordsFromThePast_("counter.from_past", TypeEvent
 LoopbackCounter IStatCounter::eagerconns_("counter.eagerconns", TypeCounted);
 LoopbackCounter IStatCounter::recordsRejected_("counter.rejected", TypeEvent);
 LoopbackCounter IStatCounter::countersClosed_("counter.closed", TypeEvent);
+LoopbackCounter IStatCounter::countersCreated_("counter.created", TypeEvent);
 DebugOption debugRecord("record");
 DebugOption debugRejectedCounters("rejectedCounters");
 
@@ -56,6 +57,7 @@ StatCounter::StatCounter(std::string const &pathName, bool isCollated, time_t ze
     if(!boost::filesystem::exists(pathName))
     {
         LogNotice << "Creating new StatCounter:" << pathName;
+        ++countersCreated_;
     }
     if(!boost::filesystem::create_directories(pathName) && !boost::filesystem::exists(pathName))
     {

@@ -15,9 +15,11 @@ public:
     void update(istat::Bucket const &o);
     istat::Bucket const &get(int i);
     static size_t const BUCKET_COUNT = 5;
+    inline std::string const & getUpdateErrMsg() {return update_err_msg_;}
 
 private:
     time_t now;
+    std::string update_err_msg_;
     istat::Bucket buckets[BUCKET_COUNT];
 };
 
