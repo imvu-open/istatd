@@ -1,3 +1,11 @@
+istatd (0.64-1) UNRELEASED; urgency=low
+
+  * demote a LogNotice message to a LogDebug
+  * Bucketizer has new method that returns last error message.
+    StatCounter increments loopback counter when new counter created.
+
+ -- Jon Schedler <jschedler@imvu.com>  Mon, 07 Oct 2013 09:41:01 -0700
+
 istatd (0.63-1) UNRELEASED; urgency=low
 
   [ Jon Watte ]
