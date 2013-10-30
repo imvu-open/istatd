@@ -304,7 +304,7 @@ function xrefSelectDialog(prmp, cb) {
     $input = $("<select id=\"xrefFrom\"><option selected=\"selected\">Xref From</option></select>");
     $input.appendTo($inputs);
     $inputs.append(' to ');
-    $input = $("<select id=\"xrefTo\"><option selected=\"selected\">Xref To</option></select>");
+    $input = $("<select multiple size=10 id=\"xrefTo\"><option selected=\"selected\">Xref To</option></select>");
     $input.appendTo($inputs);
 
     $div.prependTo($('body'));
@@ -323,17 +323,24 @@ function xrefSelectDialog(prmp, cb) {
             targ = targ.parentNode;
         }
 
-        if (targ.id == "prompt_change") {
-            do_add = 0;
-        } else {
-            do_add = 1;
-        }
-
         var xref_from = document.getElementById('xrefFrom');
         var xref_from_selected = xref_from.options[xref_from.selectedIndex].text;
         var xref_to = document.getElementById('xrefTo');
-        var xref_to_selected = xref_to.options[xref_to.selectedIndex].text;
-        cb(xref_from_selected + ":" + xref_to_selected, do_add);
+
+        if (targ.id == "prompt_change") {
+            var xref_to_selected = xref_to.options[xref_to.selectedIndex].text;
+            cb(xref_from_selected + ":" + xref_to_selected, 0);
+        } else {
+            // iterate over all selections when adding and add them individually
+            for (x=0 ; x < xref_to.options.length ; x++)
+            {
+                if (xref_to.options[x].selected)
+                {
+                    cb(xref_from_selected + ":" + xref_to.options[x].text, 1);
+                }
+            }
+        }
+
         $div.remove();
     });
     $('.tbutton', $div).click(eHandler);
