@@ -38,7 +38,6 @@ send_stat trailing a 107500 1
 send_stat trailing a 107560 1
 flush_istatd trailing
 
-
 test_counter trailing a.ma-1h 2 2 2.3 3.17 5 1 1 1
 
 cleanup_test

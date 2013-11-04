@@ -1,0 +1,1 @@
+{"foo.bar":{"start":900,"end":1800,"interval":300,"data":[{"time":900,"count":11,"min":1,"max":1,"sum":11,"sumsq":11,"avg":1,"sdev":0},{"time":1200,"count":22,"min":1,"max":1,"sum":22,"sumsq":22,"avg":1,"sdev":0},{"time":1500,"count":20,"min":1,"max":1,"sum":20,"sumsq":20,"avg":1,"sdev":0}]},"start":900,"stop":1800,"interval":300}

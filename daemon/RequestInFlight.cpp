@@ -93,7 +93,7 @@ void RequestInFlight::go()
         }
     }
     catch (std::runtime_error const &re) {
-        LogDebug << std::string("HTTP exception: ") + re.what(); 
+        LogDebug << std::string("HTTP exception: ") + re.what();
         reportError(std::string("HTTP exception: ") + re.what());
     }
 }
@@ -112,7 +112,7 @@ void RequestInFlight::do_GET(std::string const &url, std::map<std::string, std::
     boost::shared_ptr<IStatStore> storePtr(ss_->store());
     std::map<std::string, std::string>::iterator param_val;
 
-    if (debugHttp.enabled()) 
+    if (debugHttp.enabled())
     {
         LogNotice << "http do_GET" << url;
     }
@@ -152,13 +152,13 @@ void RequestInFlight::do_GET(std::string const &url, std::map<std::string, std::
 
 void RequestInFlight::do_POST(std::string const &url, std::map<std::string, std::string> &params)
 {
-    if (debugHttp.enabled()) 
+    if (debugHttp.enabled())
     {
         LogNotice << "http do_POST" << url;
     }
     std::map<std::string, std::string>::iterator pval;
 
-    if (url == "/*")
+    if ((url == "/*") || (url == "/%2A"))
     {
         req_->onBody_.connect(boost::bind(&RequestInFlight::on_multigetBody, shared_from_this()));
         req_->readBody();
@@ -251,7 +251,7 @@ public:
             {
                 delim = ",";
             }
-            req_->strm_ << "\"" << name << "\":{" 
+            req_->strm_ << "\"" << name << "\":{"
                         << "\"start\":" << normalized_start
                         << ",\"end\":" << normalized_end
                         << ",\"interval\":" << interval
@@ -334,11 +334,11 @@ void RequestInFlight::on_multigetBody()
         }
         bool trailing = false;
         Json::Value jTrailing = root["trailing"];
-        if (!jTrailing.isNull())
+        if (!jTrailing.isNull() && jTrailing.isInt() && jTrailing.asInt())
         {
             trailing = true;
         }
-        
+
         strm_ << "{";
         std::string delim("");
         MultiCounterWorker *mcw = new MultiCounterWorker(start, stop, maxSamples, trailing, shared_from_this());
@@ -502,7 +502,7 @@ void RequestInFlight::listCountersMatching(std::string const &pattern,
         {
             comma = true;
         }
-        strm_ << "{\"is_leaf\":" << ((*ptr).second ? "true" : "false") << 
+        strm_ << "{\"is_leaf\":" << ((*ptr).second ? "true" : "false") <<
             ",\"name\":\"" << js_quote((*ptr).first) << "\"}";
     }
     strm_ << "]}";
@@ -525,7 +525,7 @@ void RequestInFlight::listAgentsMatching(std::string const &pattern)
     for (std::vector<MetaInfo>::iterator ptr(agents.begin()), end(agents.end());
         ptr != end; ++ptr)
     {
-        if (comma) 
+        if (comma)
         {
             strm_ << ",";
         }
@@ -648,14 +648,14 @@ void RequestInFlight::generateCounterJson(boost::shared_ptr<IStatCounter> statCo
     time_t intervalTime = 10;
     time_t normalizedStart;
     time_t normalizedEnd;
-    
+
     try
     {
 
         statCounter->select(startTime, endTime, trailing != 0, buckets, normalizedStart, normalizedEnd, intervalTime, sampleCount);
 
         Json::Value jsonRoot(Json::objectValue);
-        
+
         jsonRoot["start"] = static_cast<Json::UInt64>(normalizedStart);
         jsonRoot["end"] = static_cast<Json::UInt64>(normalizedEnd);
         jsonRoot["interval"] = static_cast<Json::UInt64>(intervalTime);
