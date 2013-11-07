@@ -15,10 +15,10 @@ Description: IMVU Statistics gathering/forwarding/aggregating/storage Server
  The istatd-server package is installed on the host that servers as the
  datastore for data gathered by istatd agents and forwarded to the istatd 
  server.
-
+ .
  The istatd-server also includes an http html ui and json interface to view
  collected system data.
- 
+ .
  It is recommended that the istatd-agent package also be instead on the 
  istatd server host so that system data about the istatd server host can
  be stored in istatd datastore.
