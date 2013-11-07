@@ -1,0 +1,39 @@
+# istatd-server configuration for a typical server installation 
+--stat-port 18001
+--store /var/db/istatd/store
+--num-files 945000
+--flush 300
+--retention 10s:10d,5m:1y9d,1h:6y12d
+--local-stats ""
+--rollup 0
+--min-space -1
+
+# replicate
+--replica-of ""
+--replica-port 0 
+--agent ""
+--agent-interval 10
+
+# http interface
+--files-dir /usr/share/istatd/files
+--http-port 8011
+
+# daemon configuration
+--user istatd
+--debug ""
+--fake-time 0
+--thread-count 8
+--daemonize
+--settings /var/db/istatd/settings
+--pid-file /var/run/istatd-server.pid
+--admin-port 8031
+
+# log file configuration; 
+#   log levels 
+#      0 == only bad errors 
+#      1 == warnings 
+#      2 == notice
+#      3 == debug
+#      4 == spam
+--log-file /var/log/istatd-server.log
+--log-level 2

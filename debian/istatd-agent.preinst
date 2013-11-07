@@ -3,11 +3,24 @@
 # default data dir
 DATADIR=/var/db/istatd
 
+# Prior to istatd-agent_0.65-1, istatd agent and server
+# was in one debian pacakge.  This bit below, ensures
+# that the old istatd is stopped.
 if [ -x "/etc/init.d/istatd" ]; then
     if [ -x /usr/sbin/invoke-rc.d ]; then
             invoke-rc.d istatd stop || true
     else
             /etc/init.d/istatd stop || true
+    fi
+fi
+
+# For istatd-agent_0.65-1 and later, stop the agent
+# in the event this is an upgrade.
+if [ -x "/etc/init.d/istatd-agent" ]; then
+    if [ -x /usr/sbin/invoke-rc.d ]; then
+            invoke-rc.d istatd-agent stop || true
+    else
+            /etc/init.d/istatd-agent stop || true
     fi
 fi
 
@@ -38,9 +51,9 @@ if [ ! -d $DATADIR ] ; then
   /bin/chmod 775 $DATADIR
 fi
 
-if [ ! -f /var/log/istatd.log ] ; then
-  /bin/touch /var/log/istatd.log
-  chown istatd.istatd /var/log/istatd.log
+if [ ! -f /var/log/istatd-agent.log ] ; then
+  /bin/touch /var/log/istatd-agent.log
+  chown istatd.istatd /var/log/istatd-agent.log
 fi
 
 

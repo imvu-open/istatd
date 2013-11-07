@@ -1,0 +1,5 @@
+#!/bin/sh
+# 0: enable istatd agent when the /etc/init.d/istatd-agent script is invoked 
+# default: 0
+ENABLE_ISTATD=0
+EXTRA_ARGS=""

@@ -1,0 +1,4 @@
+usr/bin/istatd-agent
+etc/init.d/istatd-agent
+etc/default/istatd-agent
+etc/istatd-agent.cfg

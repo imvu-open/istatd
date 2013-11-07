@@ -3,5 +3,5 @@
 set -e
 
 if [ "$1" = purge ]; then
-    update-rc.d istatd remove
+    update-rc.d istatd-server remove
 fi

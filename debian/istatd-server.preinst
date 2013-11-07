@@ -1,0 +1,60 @@
+#!/bin/sh -e
+
+# default data dir
+DATADIR=/var/db/istatd
+
+# Prior to istatd-server_0.65-1, istatd agent and server
+# was in one debian pacakge.  This bit below, ensures
+# that the old istatd is stopped.
+if [ -x "/etc/init.d/istatd" ]; then
+    if [ -x /usr/sbin/invoke-rc.d ]; then
+            invoke-rc.d istatd stop || true
+    else
+            /etc/init.d/istatd stop || true
+    fi
+fi
+
+# For istatd-server_0.65-1 and later, stop the agent
+# in the event this is an upgrade.
+if [ -x "/etc/init.d/istatd-server" ]; then
+    if [ -x /usr/sbin/invoke-rc.d ]; then
+            invoke-rc.d istatd-server stop || true
+    else
+            /etc/init.d/istatd-server stop || true
+    fi
+fi
+
+# Let's ensure we have an istatd user to use to run stuff
+# /etc/passwd: istatd:x:100:101:Istatd Server:/var/db/istatd:/bin/false
+# /etc/group:  istatd:x:101:
+
+# create istatd group if necessary
+if ! getent group istatd >/dev/null; then
+  addgroup --system istatd >/dev/null
+fi
+
+# create istatd user if necessary
+if ! getent passwd istatd >/dev/null; then
+  adduser \
+    --system \
+    --disabled-login \
+    --ingroup istatd \
+    --home $DATADIR \
+    --gecos "Istatd Server" \
+    --shell /bin/false \
+    istatd  >/dev/null
+fi
+
+if [ ! -d $DATADIR ] ; then
+  /bin/mkdir -p $DATADIR
+  /bin/chown istatd.istatd $DATADIR
+  /bin/chmod 775 $DATADIR
+fi
+
+if [ ! -f /var/log/istatd-server.log ] ; then
+  /bin/touch /var/log/istatd-server.log
+  chown istatd.istatd /var/log/istatd-server.log
+fi
+
+
+#DEBHELPER#

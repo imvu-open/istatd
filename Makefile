@@ -75,7 +75,8 @@ obj/libistatdaemon.a:	$(DAEMON_OBJS)
 
 bin/istatd:	$(DAEMON_MAIN_OBJ) $(LIB_DEPS)
 	$(CXX) -g $(DAEMON_MAIN_OBJ) -o $@ $(LXXFLAGS) $(SYS_LIBS)
-$(eval $(call add_install,bin/istatd,$(USR_PREFIX)/bin/istatd,775))
+$(eval $(call add_install,bin/istatd,$(USR_PREFIX)/bin/istatd-server,775))
+$(eval $(call add_install,bin/istatd,$(USR_PREFIX)/bin/istatd-agent,775))
 bin/splitd:	$(SPLITTER_MAIN_OBJ) $(LIB_DEPS)
 	$(CXX) -g $(SPLITTER_MAIN_OBJ) -o $@ $(LXXFLAGS) $(SYS_LIBS)
 $(eval $(call add_install,bin/splitd,$(USR_PREFIX)/bin/splitd,775))
@@ -99,10 +100,13 @@ ftests: $(DIR_DEPS) $(BINS) tests $(FTEST_FILES)
 
 -include $(DEPS)
 
-$(eval $(call add_install,istatd.default,$(ETC_PREFIX)/default/istatd,755))
-$(eval $(call add_install,istatd-init.sh,$(ETC_PREFIX)/init.d/istatd,755))
+$(eval $(call add_install,istatd-server.default,$(ETC_PREFIX)/default/istatd-server,755))
+$(eval $(call add_install,istatd-server-init.sh,$(ETC_PREFIX)/init.d/istatd-server,755))
+$(eval $(call add_install,istatd-agent.default,$(ETC_PREFIX)/default/istatd-agent,755))
+$(eval $(call add_install,istatd-agent-init.sh,$(ETC_PREFIX)/init.d/istatd-agent,755))
 $(foreach set,$(SETTINGS_SRCS),$(eval $(call add_precious_install,$(set),$(VAR_PREFIX)/db/istatd/$(set),664)))
-$(eval $(call add_precious_install,istatd.settings,$(ETC_PREFIX)/istatd.cfg,644))
+$(eval $(call add_precious_install,istatd-server.settings,$(ETC_PREFIX)/istatd-server.cfg,644))
+$(eval $(call add_precious_install,istatd-agent.settings,$(ETC_PREFIX)/istatd-agent.cfg,644))
 $(foreach file,$(FILES_SRCS),$(eval $(call add_install,$(file),$(USR_PREFIX)/share/istatd/files/$(notdir $(file)),664)))
 
 # add install must go before make directories

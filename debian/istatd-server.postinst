@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+if [ "$1" != "configure" ]; then
+        exit 0
+fi
+
+if [ -x "/etc/init.d/istatd-server" ]; then
+        update-rc.d istatd-server defaults
+        if [ -x /usr/sbin/invoke-rc.d ]; then
+                invoke-rc.d istatd-server start ||true
+        else
+                /etc/init.d/istatd-server start ||true
+        fi
+fi
+
+#DEBHELPER#
+
+exit 0

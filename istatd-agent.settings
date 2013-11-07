@@ -1,0 +1,43 @@
+# istatd-agent configuration for a typical agent installation 
+--stat-port 8001
+--store ""
+--num-files 1024
+--local-stats ""
+--rollup 0
+--min-space -1
+
+# replicate to a host name istatd-master
+--replica-of ""
+--replica-port 0 
+--agent istatd-master:18001
+--agent-interval 10
+
+# http interface
+--http-port 0
+
+# daemon configuration
+--user istatd
+--debug ""
+--fake-time 0
+--thread-count 1
+--daemonize
+--pid-file /var/run/istatd-agent.pid
+--admin-port 0
+
+# log file configuration; 
+#   log levels 
+#      0 == only bad errors 
+#      1 == warnings 
+#      2 == notice
+#      3 == debug
+#      4 == spam
+--log-file /var/log/istatd-agent.log
+--log-level 1
+
+# irrelevant agent configurations, but they are explictly stated 
+# here to ensure all defaults are listed in this file
+--flush 300
+--retention 10s:10d,5m:1y9d,1h:6y12d
+--files-dir files
+--settings /tmp
+

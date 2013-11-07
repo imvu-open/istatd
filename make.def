@@ -40,7 +40,7 @@ endef
 define build_tool
 bin/$(1):	obj/tool/$(1).o $(LIB_DEPS)
 	$(CXX) -o $$@ $$< $(LXXFLAGS) $(SYS_LIBS)
-$(eval $(call add_install,bin/$(1),$(VAR_PREFIX)/lib/istatd/bin/$(1),775))
+$(eval $(call add_install,bin/$(1),$(USR_PREFIX)/bin/$(1),775))
 endef
 
 define build_dir

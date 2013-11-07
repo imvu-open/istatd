@@ -15,17 +15,17 @@ if [ `whoami` != 'root' ]; then
     exit 1
 fi
 
-DESC="IMVU Statistics Daemon"
-NAME=istatd
+DESC="IMVU Statistics Server Daemon"
+NAME=istatd-server
 PIDFILE=/var/run/$NAME.pid
 HOSTNAME=`hostname -s`
 LOCALSTATS="^host.$HOSTNAME"
-DAEMON="/usr/bin/istatd"
-CONFIG=/etc/istatd.cfg
-LOGFILE=/var/log/istatd.log
+DAEMON="/usr/bin/istatd-server"
+CONFIG=/etc/istatd-server.cfg
+LOGFILE=/var/log/istatd-server.log
 
 #source defaults file
-[ -f /etc/default/istatd ] && . /etc/default/istatd 
+[ -f /etc/default/istatd-server ] && . /etc/default/istatd-server
 
 # first, cd to a "safe" place
 cd /var/tmp
@@ -33,6 +33,8 @@ cd /var/tmp
 is_istatd_running() {
     #in shell land, 0 is true!
     if [ -s $PIDFILE ] && ps `cat $PIDFILE` | grep -q $DAEMON > /dev/null ; then
+        return 0
+    elif ps -FC $NAME | grep -q $DAEMON > /dev/null ; then
         return 0
     else
         return 1
@@ -51,7 +53,7 @@ start_istatd() {
         echo -n "$NAME."
         echo
     else
-        echo "ISTATD is not enabled. Modify /etc/default/istatd to enable."
+        echo "ISTATD Server is not enabled. Modify /etc/default/istatd-server to enable."
     fi
 }
 
@@ -63,6 +65,8 @@ stop_istatd() {
 
     if [ -s $PIDFILE ] && ps `cat $PIDFILE` | grep -q $DAEMON > /dev/null ; then
         kill -TERM `cat $PIDFILE`
+    elif ps -FC $NAME | grep -q $DAEMON > /dev/null ; then
+        kill -TERM `ps -FC $NAME | grep $DAEMON | awk '{print $2}'`
     fi
 
     if ! is_istatd_running ; then
