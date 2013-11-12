@@ -645,69 +645,64 @@ div.graph span.closebox {
     z-index: 110;
 }
 
-span.closebox {
+span.buttonbox {
     display: block;
     position: absolute;
     width: 16px;
     height: 16px;
+    cursor: pointer;
+    background: #f2f2f2;
+}
+span.buttonbox:before {
+    content: "";
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 16px;
+    height: 16px;
+}
+span.buttonbox:hover:before {
+    opacity: 0.75;
+}
+span.buttonbox:active:before {
+    opacity: 0.5;
+}
+div.graph.selected span.buttonbox {
+    background: #FFFFF5;
+}
+
+span.closebox {
     right: 5px;
     top: 5px;
-    cursor: pointer;
-    background: #FFFFFF;
 }
 div.dialog span.closebox {
     right: 10px;
     top: 10px;
 }
-div.graph.selected span.closebox {
-    background: #FFFFF5;
-}
 span.closebox:before {
-    content: "";
     background: transparent url('/files/graph-close.png') no-repeat;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    width: 16px;
-    height: 16px;
-}
-span.closebox:hover:before {
-    opacity: 0.75;
-}
-span.closebox:active:before {
-    opacity: 0.5;
 }
 
 div.graph span.zoomoutbox {
     z-index: 110;
 }
-div.graph.selected span.closebox {
-    background: #FFFFF5;
-}
 span.zoomoutbox {
-    display: block;
-    position: absolute;
-    width: 16px;
-    height: 16px;
     right: 25px;
     top: 5px;
-    cursor: pointer;
-    background: #FFFFFF;
 }
 span.zoomoutbox:before {
-    content: "";
     background: transparent url('/files/graph-zoomout.png') no-repeat;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    width: 16px;
-    height: 16px;
 }
-span.zoomoutbox:hover:before {
-    opacity: 0.75;
+
+div.graph span.settingsbox {
+    z-index: 120;
 }
-span.zoomoutbox:active:before {
-    opacity: 0.5;
+span.settingsbox {
+    right: 45px;
+    top: 5px;
+}
+span.settingsbox:before {
+    background: transparent url('/files/graph-settings.png') no-repeat;
 }
 
 

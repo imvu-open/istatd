@@ -21,13 +21,25 @@ if(!console.log) {
     }
 }
 
+/* Event handlers and other calls into this application
+   from the surrounding DOM should be wrapped in guard().
+   This lets us display error messages and track exceptions 
+   in an explicit way that improves user experience and 
+   makes the app easier to debug.
+
+   Guard takes a function, and returns a function that does 
+   whatever the original function did, with appropriate 
+   wrapping for error/exception handling.
+ */
 function guard(f) {
     return function() {
         try {
             return f.apply(this, arguments);
         }
         catch (e) {
-            console.log(e.message);
+            if (typeof(console) !== 'undefined') {
+                console.log(e.message);
+            }
 
             var stack = e.stack;
             if(typeof(stack) === 'undefined') {
@@ -45,7 +57,6 @@ function guard(f) {
 
             var str = 'Error in ' + f.name + ':\n' + e.message + '\n\n' + stack;
             errorDialog(str);
-            //throw new Error(str);
         }
     }
 }
@@ -75,7 +86,7 @@ function errorDialog(str, container) {
     var $div = $('.dialog.error');
     var append = false;
     if (!$div || $div.length == 0) {
-        $div = $("<div class='dialog error'><span class='closebox'/><div class='scroll'><span class='text'/></div></div>");
+        $div = $("<div class='dialog error'><span class='closebox buttonbox'/><div class='scroll'><span class='text'/></div></div>");
     }
     else {
         append = true;
@@ -88,6 +99,7 @@ function errorDialog(str, container) {
     }
     $span.html(str);
     $div.prependTo(container);
+    //  can't use guard() in error because of recursion
     $('span.closebox', $div).click(function() {
         $div.remove();
     });
@@ -103,7 +115,7 @@ function promptDialog(prmp, cb) {
     console.log('prompt: ' + prmp);
 
     $('.dialog.prompt').detach();
-    var $div = $("<div class='dialog prompt'><span class='closebox'></span><div class='text'></div>" +
+    var $div = $("<div class='dialog prompt'><span class='closebox buttonbox'></span><div class='text'></div>" +
         "<input type='text' class='answer'/><div class='tbutton' name='prompt_done'>OK</div></div>");
     str = htmlescape(prmp);
     $('div.text', $div).html(str);
@@ -135,7 +147,7 @@ function choiceDialog(text, options, cb) {
         buttons.push("<div class='tbutton' name='" + k + "'>" + htmlescape(options[k]) + "</div>");
     }
     buttons = buttons.join("");
-    var $div = $("<div class='dialog prompt'><span class='closebox'></span><div class='text'></div>" +
+    var $div = $("<div class='dialog prompt'><span class='closebox buttonbox'></span><div class='text'></div>" +
         "<div class='buttonrow choices'>" + buttons + "</div></div>");
     str = htmlescape(text);
     $('div.text', $div).html(str);
@@ -161,7 +173,7 @@ function promptDialogN(prmp, fields, submitCallback) {
     console.log('prompt: ' + prmp);
 
     $('.dialog.prompt').detach();
-    var $div = $("<div class='dialog prompt'><span class='closebox'></span><div class='text'></div>" +
+    var $div = $("<div class='dialog prompt'><span class='closebox buttonbox'></span><div class='text'></div>" +
         "<div class='inputs'></div><div class='tbutton' name='prompt_done'>OK</div></div>");
     str = htmlescape(prmp);
     $('div.text', $div).html(str);
@@ -287,7 +299,7 @@ function select_daterange() {
 
 function xref_change()
 {
-    xrefSelectDialog('Alter graph to use cross-references instead.', change_counters);
+    xrefSelectDialog('Alter graph to use cross-references instead. See source for more details.', change_counters);
 }
 
 
@@ -295,7 +307,7 @@ function xrefSelectDialog(prmp, cb) {
     console.log('xrefSelect: ' + prmp);
 
     $('.dialog.prompt').detach();
-    var $div = $("<div class='dialog prompt'><span class='closebox'></span><div class='text'></div>" +
+    var $div = $("<div class='dialog prompt'><span class='closebox buttonbox'></span><div class='text'></div>" +
         "<div class='inputs'></div><div class='tbutton' id='prompt_change' name='prompt_change'>Change</div><div class='tbutton' id='prompt_add' name='prompt_add'>Add</div></div>");
     str = htmlescape(prmp);
     $('div.text', $div).html(str);
@@ -598,8 +610,8 @@ function countChildren(obj) {
 }
 
 function createElement(k, path, $parent) {
-    var $div = $("<div class='counter'><div class='name'></span><br/></div>");
-    $('div.name', $div).text(k);
+    var $div = $("<div class='counter'><span class='name'></span><br/></div>");
+    $('span.name', $div).text(k);
     $div.attr('title', path);
     $parent.append($div);
     return $div;
@@ -646,18 +658,18 @@ function Widget(obj, $obj, owner) {
     if (owner) {
         owner.children.push(this);
     }
-    obj.$self.mousedown(function(ev) {
+    obj.$self.mousedown(guard(function(ev) {
         self.objForward(ev, 'mousedown');
-    });
-    obj.$self.mouseup(function(ev) {
+    }));
+    obj.$self.mouseup(guard(function(ev) {
         self.objForward(ev, 'mouseup');
-    });
-    obj.$self.mousemove(function(ev) {
+    }));
+    obj.$self.mousemove(guard(function(ev) {
         self.objForward(ev, 'mousemove');
-    });
-    obj.$self.click(function(ev) {
+    }));
+    obj.$self.click(guard(function(ev) {
         self.objForward(ev, 'click');
-    });
+    }));
 }
 Widget.prototype.objForward = guard(function Widget_objForward(ev, name) {
     if (this.obj[name]) {
@@ -682,12 +694,16 @@ function GraphSurface($self, parWig) {
     this._series = {};
     this._lastRenderData = {};
     this._dygraph = null;
-    $('span.closebox', $self).click(function() {
+    this._format = 'customBars';
+    $('span.closebox', $self).click(guard(function() {
         self.close();
-    });
-    $('span.zoomoutbox', $self).click(function() {
+    }));
+    $('span.zoomoutbox', $self).click(guard(function() {
         zoomOutIntervals();
-    });
+    }));
+    $('span.settingsbox', $self).click(guard(function() {
+        self.showSettings();
+    }));
     new Widget(this, $self, parWig);
     theGrid.add(this);
 }
@@ -722,6 +738,7 @@ GraphSurface.prototype.reload = function GraphSurface_reload() {
         }
     );
 }
+
 GraphSurface.prototype.renderData = function GraphSurface_renderData(seriesKeys, data) {
     if (seriesKeys.length == 0) {
         //  removed -- don't do more
@@ -748,44 +765,100 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     // about to do a bad thing with the plot array.  assuming data
     // arrays are the same length and has same start time and interval
     var data = this._lastRenderData;
-    var plots = [];
+    var plotTimes = [];
     var labels = ['time'];
 
     var interval = data.interval;
     var start = data.start;
     var stop = data.stop;
+    var format = this._format || 'noBars';
+    var lockatzero = true;
 
     // initialize data array with Date objects
     var i = start;
     while ( i < stop ) {
-        plots.push([new Date(i*1000)]);
+        plotTimes.push([new Date(i*1000)]);
         i += interval;
     }
+    if(plotTimes.length == 0) {
+        return;
+    }
 
+
+    var minimum = Math.pow(2,100) - 1; // pick a really big minimum to start
+    var maximum = 0;
+    var minVal = minimum;
+    var gotdata = false;
+    var pushfn = null;
+    //  "errorBars" really means sdev
+    //  "customBars" really means min/max
+    //  "noBars" means no bars :-)
+    if (format == 'noBars') {
+        pushfn = function(plot, bucket) {
+            if (!bucket) {
+                plot.push([NaN]);
+            }
+            else {
+                plot.push([bucket.avg]);
+                minimum = Math.min(bucket.avg, minimum);
+                maximum = Math.max(bucket.avg, maximum);
+                minVal = Math.min(bucket.avg, minVal);
+                gotdata = true;
+            }
+        };
+    }
+    else if (format == 'errorBars') {
+        pushfn = function(plot, bucket) {
+            if (!bucket) {
+                plot.push([NaN, NaN]);
+            }
+            else {
+                plot.push([bucket.avg, bucket.sdev]);
+                minimum = Math.min(bucket.avg-bucket.sdev, minimum);
+                maximum = Math.max(bucket.avg+bucket.sdev, maximum);
+                minVal = Math.min(bucket.avg, minVal);
+                gotdata = true;
+            }
+        };
+    }
+    else {
+        pushfn = function(plot, bucket) {
+            if (!bucket) {
+                plot.push([NaN, NaN, NaN]);
+            }
+            else {
+                plot.push([bucket.min, bucket.avg, bucket.max]);
+                minimum = Math.min(bucket.min, minimum);
+                maximum = Math.max(bucket.max, maximum);
+                minVal = Math.min(bucket.min, minVal);
+                gotdata = true;
+            }
+        };
+    }
     jQuery.each(data, function(key,value) {
-        if (key !== "start" && key !== "stop" && key !== "interval") {
-            var buckets = data[key]['data'];
-
+        var buckets = data[key]['data'];
+        if (buckets) {
             var bidx = 0;
-            jQuery.each(plots, function(i, plot) {
+            jQuery.each(plotTimes, function(i, plot) {
                 // get next bucket of data to insert
                 while ((bidx < buckets.length) && (buckets[bidx].time == 0)) {
                     bidx++;
                 }
 
                 if (bidx >= buckets.length) {
-                    plot.push([NaN,NaN]);
+                    pushfn(plot, null);
                 }
                 else {
-                    var btime = buckets[bidx].time*1000;
+                    var bucket = buckets[bidx];
+                    var btime = bucket.time*1000;
                     var timestamp = plot[0].getTime();
 
                     if (btime == timestamp) {
-                        plot.push([buckets[bidx].avg,buckets[bidx].sdev]);
+                        pushfn(plot, bucket);
                         bidx += 1;
                     }
                     else {
-                        plot.push([NaN,NaN]);
+                        pushfn(plot, null);
                     }
                 }
             });
@@ -793,39 +866,15 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
         }
     });
 
-    if(plots.length == 0) {
-        return;
-    }
-
     // Doing Dygraph's job of calculating the data range properly,
     // so that error bars don't go outside the plotted data set.
-    var minimum = Math.pow(2,32) - 1; // bit a really big minimum to start
-    var maximum = 0;
-    var adjustments = 0;
-    for(var i = 0; i < plots.length; i++) {
-        var graph_count = plots[i].length;
-        // Starts at 1, because we want to skip the x axis.
-        for(var j = 1; j < graph_count; j++) {
-            var plot = plots[i][j];
-            var avg = plot[0];
-            var sdev = plot[1]
-            if(!isNaN(plot[0])) {
-                minimum = Math.min(avg - sdev * 2.0, minimum);
-                adjustments = adjustments + 1;
-            }
-            if(!isNaN(plot[1])) {
-                maximum = Math.max(sdev * 2.0 + avg, maximum);
-                adjustments = adjustments + 1;
-            }
-        }
-    }
-
-    if (adjustments == 0) {
+    if (!gotdata) {
         // bah!  got no data!
         // make the empty graph show the range from 0-1 so at least we get some y axis labels
         minimum = 0;
         maximum = 1.1;
-    } else {
+    }
+    else {
         // need to add % above the ends of of range for easy selection of zoom ranges
         range_slop = (maximum - minimum) * 0.05;
         if (range_slop == 0.0) {
@@ -833,6 +882,13 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
         }
         maximum = maximum + (range_slop * 2); // 10% extra on top
         minimum = minimum - range_slop;       // 5% extra on bottom!
+    }
+    /* Does the sdev range go negative, but no value goes negative? Clamp to 0. */
+    if (minVal >= 0 && minimum < 0) {
+        minimum = 0;
+    }
+    if (lockatzero) {
+        minimum = 0;
     }
 
     // If we have no interaction model yet, define one, by copying the default dygraph.
@@ -849,31 +905,26 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
         // The mouse up event tracks the domain of the graph,
         // so we can use that for a zoomCallback that will fire directly after.
         model.lastDomain = {};
-        model.mouseup = function(event, g, context) {
+        model.mouseup = guard(function(event, g, context) {
             model.lastDomain[g] = g.xAxisRange().slice(0);
             defaultModel.mouseup(event, g, context);
-        }
+        });
 
         // Double click to restore zoom *AND* restore original time interval.
-        model.dblclick = function(event, g, context) {
+        model.dblclick = guard(function(event, g, context) {
             zoomOutIntervals();
             defaultModel.dblclick(event, g, context);
-        }
+        });
     }
 
     theGrid.$self.find('canvas').css('opacity', 1.0);
 
     this._destroyDygraph();
-    var g = this._dygraph = new Dygraph(
-        // containing div
-        $div[0],
-        plots,
-        {
+    var params = {
             'valueRange': [minimum, maximum],
             'labelsDiv': $div.parents('.graph').find('.legend').get()[0],
             'legend': 'always',
             'labels': labels,
-            'errorBars': true,
             'showLabelsOnHighlight': false,
             'zoomCallback': function(minX, maxX, yRanges) {
                 // We need to use the interactionModel's stored domain to check if the X axis is changed.
@@ -893,8 +944,21 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
                 }
             },
             'interactionModel': theInteractionModel,
-            'labelsKMG2': true
-        }
+            'labelsKMB': true,
+            'pixelsPerYLabel': 20
+        };
+    if (format == 'errorBars') {
+        params.errorBars = true;
+    }
+    else if (format == 'customBars') {
+        params.customBars = true;
+    }
+
+    var g = this._dygraph = new Dygraph(
+        // containing div
+        $div[0],
+        plotTimes,
+        params
     );
 });
 GraphSurface.prototype.close = guard(function GraphSurface_close() {
@@ -910,6 +974,21 @@ GraphSurface.prototype.getSeries = function GraphsSurface_getSeries() {
     }
     return ret;
 }
+GraphSurface.prototype.showSettings = function GraphSurface_showSettings() {
+    var self = this;
+    choiceDialog(    "Choose display format for these graphs.",
+    {
+        'noBars': "Lines",
+        'errorBars': "StdDev",
+        'customBars': "Min/Max"
+    },
+    function(v) {
+        console.log("Selected format: " + v);
+        self._format = v;
+        self.repaint();
+    });
+}
+
 
 function CounterHierarchy(id, parWig) {
     new Widget(this, $('#' + id), parWig);
@@ -1078,12 +1157,12 @@ TabCollection.prototype.rebuildTabs = function TabCollection_rebuildTabs() {
         }
         $labels.append($tab);
 
-        $tab.click(function() {
+        $tab.click(guard(function() {
             $('>div', $labels).removeClass('active');
             $tab.addClass('active');
             $('>div.tab', $el.parent()).removeClass('active');
             $el.addClass('active');
-        });
+        }));
     });
 }
 
@@ -1092,7 +1171,7 @@ function GraphGrid(id) {
     new Widget(this, $('#' + id), null);
 }
 GraphGrid.prototype.newGraph = guard(function GraphGrid_newGraph() {
-    var $ret = $("<div class='graph'><span title='Restore default zoom' class='zoomoutbox'/><span title='Close' class='closebox'/><div class='legend'/><div class='graphdiv'></div></div>");
+    var $ret = $("<div class='graph'><span title='Settings for display' class='settingsbox buttonbox'/><span title='Restore default zoom' class='zoomoutbox buttonbox'/><span title='Close' class='closebox buttonbox'/><div class='legend'/><div class='graphdiv'></div></div>");
     $ret.width(theGraphSize.width);
 
     this.$self.append($ret);
@@ -1101,10 +1180,9 @@ GraphGrid.prototype.newGraph = guard(function GraphGrid_newGraph() {
     $ret.find('.legend').mouseover(function() {
         $('span', this).each(function(i, elem) {
             $(elem).unbind();
-            $(elem).click(function () {
-                //alert($(this).html().slice(1));
+            $(elem).click(guard(function () {
                 surface.toggleSeries($(this).html().slice(1));
-            });
+            }));
         });
     });
 
@@ -1161,14 +1239,16 @@ GraphGrid.prototype.getDashboard = function GraphGrid_getDashboard() {
         timeInterval: (theCurrentDates.stop.getTime() - theCurrentDates.start.getTime())/1000,
         timeSlider: theTimeSlider.isManual() ? 'manual' : theTimeSlider.getIndex(),
         sizeDropdown: typeof(theSizeDropdownValue) == 'number' ? theSizeDropdownValue : 'manual'
-
     };
     var graphs = [];
+    var formats = [];
     for (var g in this._allGraphs) {
         var graph = this._allGraphs[g];
         graphs.push(graph.getSeries());
+        formats.push(bars_fmt_to_ix[graph._format]);
     }
     ret.graphs = graphs;
+    ret.formats = formats;
     return ret;
 }
 GraphGrid.prototype.clear = function GraphGrid_clear() {
@@ -1812,6 +1892,7 @@ function auto_refresh() {
     }
 }
 
+//  Also look at load_hash(), the other way to get state in.
 function openDashboard(scope, dashboard, json) {
     json = JSON.parse(json["dashboard." + dashboard]);
     $('input#arg_filename').val(dashboard);
@@ -1825,9 +1906,11 @@ function openDashboard(scope, dashboard, json) {
         }
         graph_size(json.size.width, json.size.height, $item);
     }
+    console.log(json);
     var graphs = json.graphs;
     for (var k in graphs) {
         var nu = theGrid.newGraph();
+        nu._format = bars_ix_to_fmt[json.formats[k]] || "customBars";
         var serii = graphs[k];
         for (var i in serii) {
             var ser = serii[i];
@@ -1869,14 +1952,31 @@ function load_dashboard(args, contexts, cb) {
         });
 }
 
+
+var bars_ix_to_fmt = {
+    1: 'noBars',
+    2: 'errorBars',
+    3: 'customBars'
+};
+
+var bars_fmt_to_ix = {
+    'noBars': 1,
+    'errorBars': 2,
+    'customBars': 3
+};
+
 function load_state(state, _ctx, cb) {
     //  clear windows
     theGrid.clear();
     //  load counter sets
     var graphs = state.graphs.split(';');
     for (var k in graphs) {
+        var vals = graphs[k].split(',');
+        var graph_ix = vals[0];
+        var fmt = bars_ix_to_fmt[vals[1]] || "errorBars";
         var nu = theGrid.newGraph();
-        var serii = state[graphs[k]].split(';');
+        nu._format = fmt;
+        var serii = state[graph_ix].split(';');
         for (var i in serii) {
             var ser = serii[i];
             nu.toggleSeries(ser);
@@ -1888,6 +1988,7 @@ function load_state(state, _ctx, cb) {
     cb();
 }
 
+//  Also look at openDashboard(), the other way to get state in.
 var load_hash = guard(function _load_hash(hash) {
     var keyvals = hash.split('&');
     var func = null;
@@ -1946,7 +2047,8 @@ function packup_state_as_hash() {
     for (var k in theDash.graphs) {
         var sers = theDash.graphs[k].join(';');
         state[k] = sers;
-        graphs.push(k);
+        var grix = '' + k + ',' + theDash.formats[k];
+        graphs.push(grix);
     }
     state.graphs = graphs.join(';');
     var qstr = '#?';
