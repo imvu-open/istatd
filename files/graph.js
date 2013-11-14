@@ -1910,7 +1910,12 @@ function openDashboard(scope, dashboard, json) {
     var graphs = json.graphs;
     for (var k in graphs) {
         var nu = theGrid.newGraph();
-        nu._format = bars_ix_to_fmt[json.formats[k]] || "customBars";
+        if (json.formats) {
+            nu._format = bars_ix_to_fmt[json.formats[k]] || "errorBars";
+        }
+        else {
+            nu._format = "errorBars";
+        }
         var serii = graphs[k];
         for (var i in serii) {
             var ser = serii[i];
