@@ -772,7 +772,7 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     var start = data.start;
     var stop = data.stop;
     var format = this._format || 'noBars';
-    var lockatzero = true;
+    var lockatzero = false;
 
     // initialize data array with Date objects
     var i = start;
