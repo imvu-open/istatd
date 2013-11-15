@@ -14,6 +14,11 @@ rm -f makevars.config
 /usr/bin/env python -V
 /usr/bin/env python2 -V
 
+if curl --help >/dev/null 2>&1; then echo "Found curl in path."; else
+    echo "You need to install the command-line tool 'curl'."
+    exit 1
+fi
+
 echo "# makevars.config for istatd generated on " `date` > makevars.config
 
 BOOST_SYSTEM=""
