@@ -786,10 +786,11 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
 
 
     var minimum = Math.pow(2,100) - 1; // pick a really big minimum to start
-    var maximum = 0;
+    var maximum = -minimum;
     var minVal = minimum;
     var gotdata = false;
     var pushfn = null;
+
     //  "errorBars" really means sdev
     //  "customBars" really means min/max
     //  "noBars" means no bars :-)
@@ -835,9 +836,14 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
             }
         };
     }
+    var annotations = [];
     jQuery.each(data, function(key,value) {
         var buckets = data[key]['data'];
         if (buckets) {
+            var ann_min = Math.pow(2, 100);
+            var ann_max = -ann_min;
+            var ann_min_ts = null;
+            var ann_max_ts = null;
             var bidx = 0;
             jQuery.each(plotTimes, function(i, plot) {
                 // get next bucket of data to insert
@@ -852,6 +858,14 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
                     var bucket = buckets[bidx];
                     var btime = bucket.time*1000;
                     var timestamp = plot[0].getTime();
+                    if (bucket.min < ann_min) {
+                        ann_min = bucket.min;
+                        ann_min_ts = timestamp;
+                    }
+                    if (bucket.max > ann_max) {
+                        ann_max = bucket.max;
+                        ann_max_ts = timestamp;
+                    }
 
                     if (btime == timestamp) {
                         pushfn(plot, bucket);
@@ -863,6 +877,18 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
                 }
             });
             labels.push(key);
+            annotations.push({
+                series: key,
+                x: ann_min_ts,
+                shortText: ann_min.toString(),
+                text: "Minimum: " + ann_min.toString()
+            });
+            annotations.push({
+                series: key,
+                x: ann_max_ts,
+                shortText: ann_max.toString(),
+                text: "Maximum: " + ann_max.toString()
+            });
         }
     });
 
@@ -960,6 +986,7 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
         plotTimes,
         params
     );
+    g.setAnnotations(annotations);
 });
 GraphSurface.prototype.close = guard(function GraphSurface_close() {
     this._destroyDygraph();
