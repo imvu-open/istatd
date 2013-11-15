@@ -75,6 +75,12 @@ function arrayKeys(a) {
    return ret;
 }
 
+/* Actually show data from a little while ago, to avoid showing 
+   current, possibly not-yet-full, buckets. */
+function getAdjustedNow() {
+    return new Date((new Date().getTime())-10*1000);
+}
+
 function errorDialog(str, container) {
     console.log('errorDialog ' + str);
     if (!container) {
@@ -239,7 +245,7 @@ function resetDateRange(dFrom, dTo) {
     var ft = dFrom.getTime();
     var tt = dTo.getTime();
     if (tt < 1000000000) {
-        tt = (new Date()).getTime();
+        tt = getAdjustedNow().getTime();
     }
     if (ft >= tt || ft < tt - 5 * 366 * 25 * 60 * 60 * 1000) {
         ft = tt - 15 * 60 * 1000;
@@ -1442,7 +1448,7 @@ Loader.prototype.addToNextGet = guard(function Loader_addToNextGet(keys, maxTime
         //  recycle IDs at some point
         this._id = 0;
     }
-    var now = new Date();
+    var now = getAdjustedNow();
     var deadline = now.getTime() + maxTime;
     var cbObj = { keys: keys, cb: cb, id: this._id, maxSamples: maxSamples };
     this._cbObjs[cbObj.id] = cbObj;
@@ -1634,7 +1640,8 @@ var theLoader = null;
 var theTimeSlider = null;
 var theSizeDropdownValue = null;
 
-var theOriginalDates = { 'start': new Date((new Date()).getTime() - 3600*1000), 'stop': new Date() };
+var tmpDate = getAdjustedNow();
+var theOriginalDates = { 'start': new Date(tmpDate.getTime() - 3600*1000), 'stop': tmpDate };
 var theCurrentDates = { 'start': theOriginalDates.start, 'stop': theOriginalDates.stop };
 var theGraphSize = { width: 600, height: 240 };
 var theGraphMaxSamples = null;
@@ -1885,7 +1892,7 @@ var autoRefreshTimer = null;
 
 var refresh = guard(function _refresh() {
     var end = begin();
-    var date = new Date();
+    var date = getAdjustedNow();
     console.log('refresh; auto reload interval=' + theReloadInterval + ' date is ' + date);
     var delta = theCurrentDates.stop.getTime() - theCurrentDates.start.getTime();
     if ((theCurrentDates.stop - theCurrentDates.start) == (theOriginalDates.stop - theOriginalDates.start)) {
