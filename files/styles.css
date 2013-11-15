@@ -631,6 +631,19 @@ div.graph div.legend b:first-child:last-child span:before {
     height: 0px;
 }
 
+div.graph div.summary {
+    display: none;
+    background: transparent;
+    font-size: 90%;
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+    margin-left: 3em;
+}
+
+div.graph div.summary.visible {
+    display: block;
+}
+
 div.prompt {
     background-color: #676767; 
 }
@@ -703,6 +716,17 @@ span.settingsbox {
 }
 span.settingsbox:before {
     background: transparent url('/files/graph-settings.png') no-repeat;
+}
+
+div.graph span.summarybox {
+    z-index: 130;
+}
+span.summarybox {
+    right: 65px;
+    top: 5px;
+}
+span.summarybox:before {
+    background: transparent url('/files/graph-summary.png') no-repeat;
 }
 
 
@@ -966,4 +990,9 @@ span.color16 {
 }
 span.color17 {
     color: #803060;
+}
+
+span.nobreak {
+    display: inline-block;
+    margin-right: 0.75em;
 }

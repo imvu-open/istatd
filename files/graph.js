@@ -704,6 +704,9 @@ function GraphSurface($self, parWig) {
     $('span.settingsbox', $self).click(guard(function() {
         self.showSettings();
     }));
+    $('span.summarybox', $self).click(guard(function() {
+        self.toggleSummary();
+    }));
     new Widget(this, $self, parWig);
     theGrid.add(this);
 }
@@ -790,6 +793,10 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     var minVal = minimum;
     var gotdata = false;
     var pushfn = null;
+    var ann_maxval = maximum;
+    var ann_maxtime = null;
+    var ann_minval = minimum;
+    var ann_mintime = null;
 
     //  "errorBars" really means sdev
     //  "customBars" really means min/max
@@ -889,6 +896,14 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
                 shortText: ann_max.toString(),
                 text: key + " max " + ann_max.toString()
             });
+            ann_minval = Math.min(ann_min, ann_minval);
+            if (ann_minval == ann_min) {
+                ann_mintime = ann_min_ts;
+            }
+            ann_maxval = Math.max(ann_max, ann_maxval);
+            if (ann_maxval == ann_max) {
+                ann_maxtime = ann_max_ts;
+            }
         }
     });
 
@@ -987,6 +1002,9 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
         params
     );
     g.setAnnotations(annotations);
+    $('.summary', this.$self).html("<span class='nobreak'>Maximum: " + ann_maxval + " at " +
+        (new Date(ann_maxtime)).toLocaleDateString() + "</span><span class='nobreak'> Minimum: " + 
+        ann_minval + " at " + (new Date(ann_mintime)).toLocaleDateString() + "</span>");
 });
 GraphSurface.prototype.close = guard(function GraphSurface_close() {
     this._destroyDygraph();
@@ -1014,6 +1032,9 @@ GraphSurface.prototype.showSettings = function GraphSurface_showSettings() {
         self._format = v;
         self.repaint();
     });
+}
+GraphSurface.prototype.toggleSummary = function GraphSurface_toggleSummary() {
+    $('.summary', this.$self).toggleClass('visible');
 }
 
 
@@ -1198,7 +1219,7 @@ function GraphGrid(id) {
     new Widget(this, $('#' + id), null);
 }
 GraphGrid.prototype.newGraph = guard(function GraphGrid_newGraph() {
-    var $ret = $("<div class='graph'><span title='Settings for display' class='settingsbox buttonbox'/><span title='Restore default zoom' class='zoomoutbox buttonbox'/><span title='Close' class='closebox buttonbox'/><div class='legend'/><div class='graphdiv'></div></div>");
+    var $ret = $("<div class='graph'><span title='Show/Hide summary' class='summarybox buttonbox'/><span title='Settings for display' class='settingsbox buttonbox'/><span title='Restore default zoom' class='zoomoutbox buttonbox'/><span title='Close' class='closebox buttonbox'/><div class='legend'/><div class='graphdiv'></div><div class='summary'></div></div>");
     $ret.width(theGraphSize.width);
 
     this.$self.append($ret);
