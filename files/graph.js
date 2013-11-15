@@ -881,13 +881,13 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
                 series: key,
                 x: ann_min_ts,
                 shortText: ann_min.toString(),
-                text: "Minimum: " + ann_min.toString()
+                text: key + " min " + ann_min.toString()
             });
             annotations.push({
                 series: key,
                 x: ann_max_ts,
                 shortText: ann_max.toString(),
-                text: "Maximum: " + ann_max.toString()
+                text: key + " max " + ann_max.toString()
             });
         }
     });
