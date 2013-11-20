@@ -22,4 +22,7 @@ bin/
 obj/
 debian/files
 debian/istatd/
+debian/istatd-agent/
+debian/istatd-server/
+debian/tmp/
 python
