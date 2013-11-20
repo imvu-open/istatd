@@ -1,3 +1,17 @@
+istatd (0.71-1) UNRELEASED; urgency=low
+
+  [ Jon Watte ]
+  * min / max display in graphs
+  * fix bug in loading old dashboards
+  * Don't lock all graphs at zero.
+  * Plug another dependency that configure missed.
+  * Also call out minimum and maximum
+  * also tell which series is what
+  * Add ability to call out minimum/maximum
+  * Don't show the noisiest, current-time bucket data.
+
+ -- Jon Schedler <jschedler@imvu.com>  Wed, 20 Nov 2013 12:52:13 -0800
+
 istatd (0.70-1) UNRELEASED; urgency=low
 
   [ Mitch Nibbelink ]
