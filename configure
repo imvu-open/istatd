@@ -100,17 +100,24 @@ if [ ! -r /usr/include/statgrab.h -a ! -r /usr/local/include/statgrab.h ]; then
 fi
 
 
+function findone() {
+    libs=$*
+    mkdir -p tmp
+    fn=tmp/tt$$.c
+    echo "int main() { return 0; }" > "$fn"
+    for i in $libs; do
+        if gcc -o tmp/tt "$fn" $i > /dev/null 2>&1; then
+            echo -n $i
+            rm -rf tmp
+            return
+        fi
+    done
+}
+
 # boost_system is a pain across versions
 if [ -z "$BOOST_SYSTEM" ]; then
-    if [ -r /usr/lib64/libboost_system.so ]; then
-        BOOST_SYSTEM=-lboost_system
-    elif [ -r /usr/lib/libboost_system.so ]; then
-        BOOST_SYSTEM=-lboost_system
-    elif [ -r /usr/lib64/libboost_system-mt.so ]; then
-        BOOST_SYSTEM=-lboost_system-mt.so
-    elif [ -r /usr/lib/libboost_system-mt.so ]; then
-        BOOST_SYSTEM=-lboost_system-mt.so
-    else
+    BOOST_SYSTEM=`findone -lboost_system -lboost_system-mt`
+    if [ -z "$BOOST_SYSTEM" ]; then
         echo "Cannot find boost_system-mt.so (or boost_system.so)"
         echo "Specify it with --boost_system or install libboost-dev-all."
         exit 1
@@ -118,15 +125,8 @@ if [ -z "$BOOST_SYSTEM" ]; then
 fi
 # boost_filesystem is also somewhat a pain
 if [ -z "$BOOST_FILESYSTEM" ]; then
-    if [ -r /usr/lib64/libboost_filesystem.so ]; then
-        BOOST_FILESYSTEM=-lboost_filesystem
-    elif [ -r /usr/lib/libboost_filesystem.so ]; then
-        BOOST_FILESYSTEM=-lboost_filesystem
-    elif [ -r /usr/lib64/libboost_filesystem-mt.so ]; then
-        BOOST_FILESYSTEM=-lboost_filesystem-mt
-    elif [ -r /usr/lib/libboost_filesystem-mt.so ]; then
-        BOOST_FILESYSTEM=-lboost_filesystem-mt
-    else
+    BOOST_FILESYSTEM=`findone -lboost_filesystem -lboost_filesystem-mt`
+    if [ -z "$BOOST_FILESYSTEM" ]; then
         echo "Cannot find boost_filesystem-mt.so (or boost_filesystem.so)"
         echo "Specify it with --boost_filesystem or install libboost-dev-all."
         exit 1
@@ -135,15 +135,8 @@ fi
 
 # RHEL can't find boost_thread on its own.
 if [ -z "$BOOST_THREAD" ]; then
-    if [ -r /usr/lib64/libboost_thread.so ]; then
-        BOOST_THREAD=-lboost_thread
-    elif [ -r /usr/lib/libboost_thread.so ]; then
-        BOOST_THREAD=-lboost_thread
-    elif [ -r /usr/lib64/libboost_thread-mt.so ]; then
-        BOOST_THREAD=-lboost_thread-mt
-    elif [ -r /usr/lib/libboost_thread-mt.so ]; then
-        BOOST_THREAD=-lboost_thread-mt
-    else
+    BOOST_THREAD=`findone -lboost_thread -lboost_thread-mt`
+    if [ -z "$BOOST_THREAD" ]; then
         echo "Cannot find boost_thread-mt.so (or boost_thread.so)"
         echo "Specify it with --boost_thread or install libboost-dev-all."
         exit 1
@@ -151,21 +144,15 @@ if [ -z "$BOOST_THREAD" ]; then
 fi
 
 if [ -z "$STATGRAB" ]; then
-    if [ -r /usr/lib64/libstatgrab.so ]; then
-        STATGRAB=-lstatgrab
-    elif [ -r /usr/lib/libstatgrab.so ]; then
-        STATGRAB=-lstatgrab
-    elif [ -r /usr/local/lib64/libstatgrab.so ]; then
-        STATGRAB=-lstatgrab
-    elif [ -r /usr/local/lib/libstatgrab.so ]; then
-        STATGRAB=-lstatgrab
-    else
+    STATGRAB=`findone -lstatgrab`
+    if [ -z "$STATGRAB" ]; then
         echo "Cannot find libstatgrab.so"
         echo "Specify it with --statgrab or install libstatgrab-dev."
         echo "Or try https://github.com/imvu-open/libstatgrab"
         exit 1
     fi
 fi
+
 if [ -z "$LIBRT" ]; then
     mkdir -p tmp
     fn=tmp/tt$$.c

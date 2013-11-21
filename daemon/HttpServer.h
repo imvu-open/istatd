@@ -111,7 +111,7 @@ struct HttpServerInfo
     }
     HttpServerInfo &operator=(HttpServerInfo const &o)
     {
-        memcpy(this, &o, sizeof(this));
+        memcpy(this, &o, sizeof(*this));
         return *this;
     }
     unsigned int port;
