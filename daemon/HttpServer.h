@@ -107,7 +107,7 @@ struct HttpServerInfo
         numErrors("http.errors.server", TypeEvent),
         httpErrors("http.errors.http", TypeEvent)
     {
-        memcpy(this, &o, sizeof(this));
+        memcpy(this, &o, sizeof(*this));
     }
     HttpServerInfo &operator=(HttpServerInfo const &o)
     {
