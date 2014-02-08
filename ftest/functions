@@ -237,6 +237,16 @@ function stat_port_from_profile {
     grep stat-port ftest/$1.cfg | sed -e 's/.* //'
 }
 
+function test_counter_does_not_exist {
+    PROFILE=$1
+    COUNTER=$2
+    shift 2
+    FILENAME=$DBDIR/$PROFILE-store/`echo $COUNTER | tr [.] [/]`
+    if [ -s "$FILENAME" ]; then
+        failure "File exists! $FILENAME ."
+    fi
+}
+
 function test_counter {
     PROFILE=$1
     COUNTER=$2

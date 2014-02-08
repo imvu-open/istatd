@@ -38,6 +38,7 @@
 #include "LoopbackCounter.h"
 #include "Debug.h"
 #include "Settings.h"
+#include "Blacklist.h"
 
 
 
@@ -174,6 +175,8 @@ Argument<std::string> settings("settings", "/tmp", "Where to store settings (mos
 Argument<int> fakeTime("fake-time", 0, "Fake current time to UNIX epoch (for testing).");
 Argument<int> agentInterval("agent-interval", 10, "Interval for batching values when forwarding.");
 Argument<int> rollup("rollup", 0, "How many levels to roll up counter values.");
+Argument<std::string> blacklist_path("blacklist-path", "", "Where to look for blacklisted hosts");
+Argument<int> blacklist_period("blacklist-period", 60, "How often to check the file");
 
 
 void usage()
@@ -964,7 +967,10 @@ int main(int argc, char const *argv[])
             statStore = boost::shared_ptr<IStatStore>(ss);
         }
 
-        StatServer ss(statPort.get(), listenAddress.get(), agent.get(), std::max(agentInterval.get(), 1), g_service, statStore);
+        Blacklist::Configuration cfg = {};
+        cfg.path = blacklist_path.get();
+        cfg.period = blacklist_period.get();
+        StatServer ss(statPort.get(), listenAddress.get(), agent.get(), std::max(agentInterval.get(), 1), cfg, g_service, statStore);
         if (replicaPort.get())
         {
             reps = new ReplicaServer(replicaPort.get(), listenAddress.get(), g_service, statStore);

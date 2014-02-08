@@ -73,6 +73,7 @@ size_t to_size_t(std::string const &str)
 StatServer::StatServer(int statPort, std::string listenAddress,
     std::string const &agentFw,
     time_t agentInterval,
+    Blacklist::Configuration &blacklistCfg,
     boost::asio::io_service &svc,
     boost::shared_ptr<IStatStore> &statStore) :
     port_(statPort),
@@ -103,6 +104,12 @@ StatServer::StatServer(int statPort, std::string listenAddress,
 
     hasStatStore_ = true;
     bool gotSomething = false;
+
+    if (blacklistCfg.use())
+    {
+        blacklist_ = boost::shared_ptr<Blacklist>(new Blacklist(svc, blacklistCfg));
+    }
+
     if (hasAgent())
     {
         startResolveAgent();
@@ -299,6 +306,7 @@ void StatServer::on_connection()
         {
             break;
         }
+
         ++nConnects_;
         istat::atomic_add(&numConnected_, 1);
         LogNotice << "new StatServer connection from" << ec->endpointName();
@@ -308,9 +316,31 @@ void StatServer::on_connection()
     }
 }
 
+bool StatServer::checkBlacklist(boost::shared_ptr<ConnectionInfo> const &ec)
+{
+    LogDebug << "StatServer::checkBlacklist()";
+    grab aholdof(metaMutex_);
+    void *key = ec->asEagerConnection();
+    InfoHashMap::iterator mit(metaInfo_.find(key));
+    if (mit != metaInfo_.end())
+    {
+        boost::shared_ptr<MetaInfo> mi = (*mit).second;
+        std::tr1::unordered_map<std::string, std::string>::iterator ptr(mi->info_.find("hostname"));
+        if (ptr != mi->info_.end()){
+            if (blacklist_->check((*ptr).second)) {
+                close_connection(ec);
+                metaInfo_.erase(metaInfo_.find(key));
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void StatServer::on_inputData(boost::shared_ptr<ConnectionInfo> ec)
 {
     LogDebug << "StatServer::on_inputData()";
+
     size_t sz = ec->pendingIn();
     if (sz == 0)
     {
@@ -332,6 +362,11 @@ void StatServer::on_inputData(boost::shared_ptr<ConnectionInfo> ec)
 void StatServer::handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec)
 {
     LogSpam << "StatServer::handleCmd(" << cmd << ")";
+    if (blacklist_ && checkBlacklist(ec))
+    {
+        return;
+    }
+
     if (!cmd.size())
     {
         return;
@@ -462,6 +497,8 @@ bool StatServer::handle_meta_info(std::string const &cmd, boost::shared_ptr<Conn
         ++badCommands_;
         return false;
     }
+    istat::trim(left);
+    istat::trim(right);
     metaInfo(ec)->info_[left.substr(1)] = right;
     if (forward_->opened())
     {
@@ -613,12 +650,17 @@ size_t StatServer::agentQueueSize()
     return forward_->pendingOut();
 }
 
-void StatServer::on_inputLost(boost::shared_ptr<ConnectionInfo> ec)
+void StatServer::close_connection(boost::shared_ptr<ConnectionInfo> const &ec)
 {
-    LogWarning << "Lost connection from" << ec->endpointName();
     ec->close();
     ++nDrops_;
     istat::atomic_add(&numConnected_, -1);
+}
+
+void StatServer::on_inputLost(boost::shared_ptr<ConnectionInfo> ec)
+{
+    LogWarning << "Lost connection from" << ec->endpointName();
+    close_connection(ec);
     grab aholdof(metaMutex_);
     metaInfo(ec)->online_ = false;
 }

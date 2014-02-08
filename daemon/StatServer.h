@@ -19,7 +19,7 @@
 #include "LoopbackCounter.h"
 #include "MetaInfo.h"
 #include "IStatStore.h"
-
+#include "Blacklist.h"
 
 class IStatStore;
 class IComplete;
@@ -90,6 +90,7 @@ class StatServer : IStatServer
 public:
     StatServer(int statPort, std::string listenAddr, std::string const &agentFw,
         time_t agentInterval,
+        Blacklist::Configuration &blacklistCfg,
         boost::asio::io_service &svc,
         boost::shared_ptr<IStatStore> &statStore);
     ~StatServer();
@@ -123,6 +124,9 @@ private:
     size_t agentQueueSize();
     void startReport();
     void onReport(boost::system::error_code const &err);
+
+    bool checkBlacklist(boost::shared_ptr<ConnectionInfo> const &ec);
+    void close_connection(boost::shared_ptr<ConnectionInfo> const &ec);
 
     void handle_counter_cmd(std::string const &cmd);
     bool handle_event_cmd(std::string const &cmd);
@@ -170,6 +174,7 @@ private:
     ::lock forwardMutex_;
     std::tr1::unordered_map<std::string, Bucketizer> forwardBuckets_;
     boost::asio::deadline_timer forwardTimer_;
+    boost::shared_ptr<Blacklist> blacklist_;
 };
 
 #endif  //  daemon_StatServer_h
