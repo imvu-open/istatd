@@ -60,8 +60,10 @@ public:
     void flush_one(std::string const &domain, IComplete *complete);
     void dispose();
     void loadSettingsPath(std::string const &path, std::string const &name);
+    void reloadSettings(std::string const &domain, IComplete *complete);
     void open(std::string const &domain, bool allowCreate,
         boost::shared_ptr<ISettings> &settings, IComplete *complete);
+    void get(std::string const &domain, boost::shared_ptr<ISettings> &settings);
 
     boost::asio::io_service &svc_;
     std::string path_;
@@ -156,6 +158,22 @@ void RealSettingsFactory::dispose()
     delete this;
 }
 
+void RealSettingsFactory::reloadSettings(std::string const &domain, IComplete *complete)
+{
+    (debugSettings ? LogNotice : LogDebug) << "RealSettingsFactory::reloadSettings( " << domain << " )";
+    std::string fullPath(path_ + "/" + domain + ".set");
+    grab aholdof(lock_);
+    try
+    {
+        loadSettingsPath(fullPath, domain);
+    }
+    catch (std::exception const &x)
+    {
+        LogError << "settings: cannot load:" << domain << ":" << x.what();
+    }
+    svc_.post(boost::bind(&IComplete::on_complete, complete));
+}
+
 void RealSettingsFactory::loadSettingsPath(std::string const &path, std::string const &name)
 {
     (debugSettings ? LogNotice : LogDebug) << "RealSettingsFactory::loadSettingsPath(" << path << "," << name << ")";
@@ -224,6 +242,17 @@ void RealSettingsFactory::loadSettingsPath(std::string const &path, std::string 
             }
             base = cur + 1;
         }
+    }
+}
+
+void RealSettingsFactory::get(std::string const &domain, boost::shared_ptr<ISettings> &settings)
+{
+    (debugSettings ? LogNotice : LogDebug) << "RealSettingsFactory::get( " << domain << " )";
+    settings = boost::shared_ptr<ISettings>((ISettings *)0);
+    std::map<std::string, boost::shared_ptr<ISettings> >::iterator ptr(files_.find(domain));
+    if (ptr != files_.end())
+    {
+        settings = (*ptr).second;
     }
 }
 
@@ -418,7 +447,9 @@ public:
     {
     }
     FakeSettingsFactory *fac_;
+    lock lock_;
     std::string fileName_;
+    std::map<std::string, std::string> settings_;
     void match(std::string const &pattern, std::vector<std::string> &oKeys);
     void get(std::string const &key, std::string &oValue, bool &wasSet, std::string const &dflt);
     void set(std::string const &key, std::string const &value);
@@ -441,8 +472,10 @@ public:
         grab aholdof(lock_);
         boost::shared_ptr<ISettings>((ISettings *)0).swap(settings);
         std::map<std::string, boost::shared_ptr<ISettings> >::iterator ptr(settings_.find(domain));
+        std::map<std::string, boost::shared_ptr<ISettings> >::iterator saved(saved_.find(domain));
         if (ptr != settings_.end())
         {
+            LogDebug << "FakeSettingsFactory::open(" << domain << ") getting from settings!";
             settings = (*ptr).second;
         }
         else if (allowCreate)
@@ -452,15 +485,39 @@ public:
             {
                 settings_[domain] = settings = boost::shared_ptr<ISettings>(new FakeSettings(this, domain));
             }
+        }else if(saved != saved_.end())
+        {
+            LogDebug << "FakeSettingsFactory::open(" << domain << ") getting from saved";
+            settings_[domain] = settings = (*saved).second;
         }
         svc_.post(boost::bind(&IComplete::on_complete, complete));
     }
+
+    void reloadSettings(std::string const &domain , IComplete *complete)
+    {
+        std::map<std::string, boost::shared_ptr<ISettings> >::iterator saved(saved_.find(domain));
+        if(saved != saved_.end())
+        {
+            settings_[domain] = (*saved).second;
+            LogDebug << "FakeSettingsFactory::reloadSettings(" << domain << ") moving from saved to settings";
+        }
+        svc_.post(boost::bind(&IComplete::on_complete, complete));
+    }
+
     void flush(IComplete *complete)
     {
         svc_.post(boost::bind(&IComplete::on_complete, complete));
     }
     void flush_one(std::string const &name, IComplete *complete)
     {
+        grab aholdof(lock_);
+        std::map<std::string, boost::shared_ptr<ISettings> >::iterator ptr = settings_.find(name);
+        if (ptr != settings_.end())
+        {
+            saved_[name] = (*ptr).second;
+            settings_.erase(ptr);
+            LogDebug << "FakeSettingsFactory::flush_one(" << name << ") deleting old and adding to saved";
+        }
         svc_.post(boost::bind(&IComplete::on_complete, complete));
     }
     void dispose()
@@ -482,37 +539,29 @@ public:
     {
         grab aholdof(lock_);
         preCreate(fileName);
-        actions_.push_back(FakeSettingInfo(true, fileName, name, value));
+        settings_[fileName]->set(name, value);
     }
-    void get(std::string const &fileName, std::string const &name, std::string &oVal, bool &oSet, std::string const &dflt)
+
+    void get(std::string const &domain, boost::shared_ptr<ISettings> &settings)
     {
-        grab aholdof(lock_);
-        oVal = dflt;
-        for (std::vector<FakeSettingInfo>::iterator ptr(actions_.begin()), end(actions_.end());
-            ptr != end; ++ptr)
+        settings = boost::shared_ptr<ISettings>((ISettings*)0);
+        std::map<std::string, boost::shared_ptr<ISettings> >::iterator ptr(settings_.find(domain));
+        if (ptr != settings_.end())
         {
-            if ((*ptr).opIsSet && (*ptr).fileName == fileName && (*ptr).name == name)
-            {
-                oVal = (*ptr).value;
-                oSet = true;
-            }
+            settings = (*ptr).second;
         }
-        actions_.push_back(FakeSettingInfo(false, fileName, name, oVal, dflt));
     }
-    void get(std::vector<FakeSettingInfo> &oAction)
-    {
-        oAction = actions_;
-    }
+
     void clear()
     {
-        actions_.clear();
         settings_.clear();
+        saved_.clear();
         allowCreate_.clear();
     }
     boost::asio::io_service &svc_;
     lock lock_;
-    std::vector<FakeSettingInfo> actions_;
     std::map<std::string, boost::shared_ptr<ISettings> > settings_;
+    std::map<std::string, boost::shared_ptr<ISettings> > saved_;
     std::set<std::string> allowCreate_;
 };
 
@@ -522,40 +571,47 @@ IFakeSettingsFactory * NewFakeSettingsFactory(boost::asio::io_service &svc)
 }
 
 
-FakeSettingInfo::FakeSettingInfo(bool o, std::string const &fn, std::string const &n, std::string const &v, std::string const &d)
-{
-    opIsSet = o;
-    fileName = fn;
-    name = n;
-    value = v;
-    dflt = d;
-}
-
 void FakeSettings::match(std::string const &pattern, std::vector<std::string> &oKeys)
 {
     std::set<std::string> strs;
-    grab aholdof(fac_->lock_);
-    for (std::vector<FakeSettingInfo>::iterator ptr(fac_->actions_.begin()), end(fac_->actions_.end());
+    grab aholdof(lock_);
+    for (std::map<std::string, std::string>::iterator ptr(settings_.begin()), end(settings_.end());
         ptr != end; ++ptr)
     {
-        if ((*ptr).opIsSet && istat::str_pat_match((*ptr).name, pattern))
+        if (istat::str_pat_match((*ptr).first, pattern))
         {
-            strs.insert((*ptr).name);
+            strs.insert((*ptr).first);
         }
     }
+
     oKeys.insert(oKeys.end(), strs.begin(), strs.end());
 }
 
 void FakeSettings::get(std::string const &key, std::string &oValue, bool &wasSet, std::string const &dflt)
 {
-    fac_->get(fileName_, key, oValue, wasSet, dflt);
+    grab aholdof(lock_);
+    oValue = dflt;
+    wasSet = false;
+
+    std::map<std::string, std::string>::iterator ptr(settings_.find(key));
+    if(ptr != settings_.end())
+    {
+        LogDebug << "FakeSettings::get ( " << key << (*ptr).second << " )";
+        oValue = (*ptr).second;
+        wasSet = true;
+    }
 }
 
 void FakeSettings::set(std::string const &key, std::string const &value)
 {
     if (is_valid_key(key))
     {
-        fac_->set(fileName_, key, value);
+        grab aholdof(lock_);
+        settings_[key] = value;
+        if (value.size() == 0)
+        {
+            settings_.erase(settings_.find(key));
+        }
     }
 }
 

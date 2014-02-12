@@ -28,9 +28,11 @@ class ISettingsFactory : public boost::noncopyable
 public:
     virtual void open(std::string const &domain, bool allowCreate, boost::shared_ptr<ISettings> &settings,
         IComplete *complete) = 0;
+    virtual void reloadSettings(std::string const &domain, IComplete *complete) = 0;
     virtual void flush(IComplete *complete) = 0;
     virtual void flush_one(std::string const &domain, IComplete *complete) = 0;
     virtual void dispose() = 0;
+    virtual void get(std::string const &domain, boost::shared_ptr<ISettings> &settings) = 0;
 protected:
     virtual ~ISettingsFactory() {}
 };
@@ -53,7 +55,6 @@ public:
     virtual void allowCreate(std::string const &fileName) = 0;
     virtual void preCreate(std::string const &fileName) = 0;
     virtual void set(std::string const &fileName, std::string const &name, std::string const &value) = 0;
-    virtual void get(std::vector<FakeSettingInfo> &oAction) = 0;
     virtual void clear() = 0;
 };
 

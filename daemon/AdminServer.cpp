@@ -377,6 +377,16 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         ISettingsFactory &sfac = istat::Env::get<ISettingsFactory>();
         sfac.flush_one(args.front(), heap_complete<AdminConnection, &AdminConnection::generic_complete>(this));
     }
+    if (cmd == "load.set")
+    {
+        if (args.size() != 1)
+        {
+            ec_->writeOut(std::string("huh? load.set needs exactly one settings file name. (no path)\r\n"));
+            return;
+        }
+        ISettingsFactory &sfac = istat::Env::get<ISettingsFactory>();
+        sfac.reloadSettings(args.front(), heap_complete<AdminConnection, &AdminConnection::generic_complete>(this));
+    }
     if (cmd == "quit")
     {
         ec_->close();

@@ -2,6 +2,8 @@
 #include "Blacklist.h"
 
 #include "Logs.h"
+#include <algorithm>
+#include <string>
 #include <sys/stat.h>
 #include <boost/filesystem.hpp>
 #include <boost/bind.hpp>
@@ -89,6 +91,7 @@ void Blacklist::load()
                 if (cur > base)
                 {
                     std::string name(base, cur);
+                    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
                     blacklistSet_.insert(name);
                     LogDebug << "Blacklist::load blackist host ( " << name << " ).";
                 }
@@ -109,6 +112,9 @@ bool Blacklist::check(std::string &host_name)
 {
     LogDebug << "Blacklist::check( " << host_name << " )";
     grab aholdof(lock_);
+
+    std::transform(host_name.begin(), host_name.end(), host_name.begin(), ::tolower);
+
     BlacklistSet::iterator fit = blacklistSet_.find(host_name);
     bool blacklisted = fit != blacklistSet_.end();
     if (blacklisted) { LogDebug << "Blacklist::check ( " << host_name << " ) BLACKLISTED!"; }

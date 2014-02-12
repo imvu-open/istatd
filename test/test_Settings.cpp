@@ -6,6 +6,8 @@
 #include <istat/Log.h>
 #include <sys/stat.h>
 
+using namespace istat;
+
 boost::asio::io_service svc;
 class complete : public IComplete
 {
@@ -112,6 +114,22 @@ void test_SettingsFactory(ISettingsFactory *fsf)
     //  Can I flush something that DOES exist?
     fsf->flush_one("allowCreate", comp);
     pump_and_run();
+
+    // after a flush we should have cleared this file
+    fsf->get("allowCreate", set);
+    assert_equal(set.get(), (ISettings*)0);
+
+    fsf->reloadSettings("allowCreate", comp);
+    pump_and_run();
+
+    fsf->open("allowCreate", false, set, comp);
+    pump_and_run();
+    assert_not_equal(set.get(), (ISettings *)0);
+    oValue = "";
+    wasSet = false;
+    set->get("qq", oValue, wasSet, "");
+    assert_equal(oValue, "pewpew");
+    assert_true(wasSet);
 }
 
 void func_fake()
@@ -154,6 +172,7 @@ void func()
 
 int main(int argc, char const *argv[])
 {
+    LogConfig::setLogLevel(istat::LL_Spam);
     return istat::test(&func, argc, argv);
 }
 
