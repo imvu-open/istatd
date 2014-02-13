@@ -172,7 +172,8 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         ec_->writeOut("debug [option[,on|off]] - display or toggle debug options\r\n");
         ec_->writeOut("loglevel [level[,stderrLevel]] - display or change logging verbosity\r\n");
         ec_->writeOut("delete.ctr ctr.name ...- stop accepting data for a particular counter; close its files\r\n");
-        ec_->writeOut("flush.set name - flush (and later reload) settings file\r\n");
+        ec_->writeOut("flush.setting name - flush (and later reload) settings file\r\n");
+        ec_->writeOut("load.setting name - (re)load settings file\r\n");
         ec_->writeOut("quit - disconnect from stat server\r\n");
         ec_->writeOut("ok\r\n");
         return;
@@ -367,21 +368,21 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         (new DeleteCountersWorker(&args.front(), &args.front() + args.size(), as_->ssp_, ec_))->go();
         return;
     }
-    if (cmd == "flush.set")
+    if (cmd == "flush.setting")
     {
         if (args.size() != 1)
         {
-            ec_->writeOut(std::string("huh? flush.set needs exactly one settings file name. (no path)\r\n"));
+            ec_->writeOut(std::string("huh? flush.setting needs exactly one settings file name. (no path)\r\n"));
             return;
         }
         ISettingsFactory &sfac = istat::Env::get<ISettingsFactory>();
         sfac.flush_one(args.front(), heap_complete<AdminConnection, &AdminConnection::generic_complete>(this));
     }
-    if (cmd == "load.set")
+    if (cmd == "load.setting")
     {
         if (args.size() != 1)
         {
-            ec_->writeOut(std::string("huh? load.set needs exactly one settings file name. (no path)\r\n"));
+            ec_->writeOut(std::string("huh? load.setting needs exactly one settings file name. (no path)\r\n"));
             return;
         }
         ISettingsFactory &sfac = istat::Env::get<ISettingsFactory>();

@@ -88,12 +88,15 @@ private:
 
     void init();
 
+    void resetBackoffOnSuccessfulWrites();
+
     bool opened_;
     bool writePending_;
     bool readPending_;
     bool tryingLater_;
     time_t tryLaterTime_;
     int backoff_;
+    int successfulWritesDuringBackoff_;
     boost::detail::atomic_count interlock_;
     boost::asio::ip::tcp::socket socket_;
     boost::asio::ip::tcp::resolver resolver_;

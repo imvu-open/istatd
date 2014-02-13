@@ -1,6 +1,7 @@
 
 #include "Blacklist.h"
 
+#include "LoopbackCounter.h"
 #include "Logs.h"
 #include <algorithm>
 #include <string>
@@ -8,6 +9,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/bind.hpp>
 
+LoopbackCounter countBlacklisted("blacklist.count", TypeEvent);
 
 using namespace istat;
 
@@ -15,7 +17,7 @@ Blacklist::Blacklist(boost::asio::io_service &svc, Configuration &cfg) :
     svc_(svc),
     tryReadBlacklistTimer_(svc),
     blacklistPath_(cfg.path),
-    lastWrite_(0),
+    lastModifiedTime_(0),
     period_(cfg.period)
 {
     LogDebug << "Blacklist::Blacklist being created ( " << cfg.path << " )";
@@ -55,9 +57,9 @@ void Blacklist::load()
 
         time_t modifiedTime = st.st_mtime;
 
-        if (modifiedTime <= lastWrite_)
+        if (modifiedTime <= lastModifiedTime_)
         {
-            LogDebug << "Blacklist::load modified time is not new enough ( " << modifiedTime << ", " << lastWrite_ << " )";
+            LogDebug << "Blacklist::load modified time is not new enough ( " << modifiedTime << ", " << lastModifiedTime_ << " )";
             return;
         }
 
@@ -83,6 +85,11 @@ void Blacklist::load()
         char *end = &buf[size];
 
         blacklistSet_.clear();
+
+        // file format: Newling delimited hostname
+        // host
+        // host
+        // host
         for (char *cur = base; cur <= end; ++cur)
         {
             if (*cur == '\n')
@@ -99,8 +106,8 @@ void Blacklist::load()
             }
         }
 
-        lastWrite_ = modifiedTime;
-        LogDebug << "Blacklist::load new mod time! ( " << lastWrite_ << " ).";
+        lastModifiedTime_ = modifiedTime;
+        LogDebug << "Blacklist::load new mod time! ( " << lastModifiedTime_ << " ).";
     }
     catch (std::exception const &x)
     {
@@ -117,7 +124,11 @@ bool Blacklist::check(std::string &host_name)
 
     BlacklistSet::iterator fit = blacklistSet_.find(host_name);
     bool blacklisted = fit != blacklistSet_.end();
-    if (blacklisted) { LogDebug << "Blacklist::check ( " << host_name << " ) BLACKLISTED!"; }
+    if (blacklisted)
+    {
+        ++countBlacklisted;
+        LogDebug << "Blacklist::check ( " << host_name << " ) BLACKLISTED!";
+    }
     return blacklisted;
 }
 

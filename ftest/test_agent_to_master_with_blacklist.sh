@@ -25,6 +25,8 @@ test_counter_does_not_exist master_w_blacklist "test/counter/a/10s" 42
 test_counter_does_not_exist master_w_blacklist "test/counter/b/10s" 42
 test_counter_does_not_exist master_w_blacklist "test/counter/c/10s" 42
 
+check_get_re 18011 "/?a=*" 'count.+1' 'hostname.+linu-sandbox.+blacklisted.+true.+_online.+false'
+
 kill_server agent
 sleep 1
 start_server agent
@@ -40,7 +42,7 @@ test_counter master_w_blacklist "test/postevent/10s" 99
 test_counter_does_not_exist master_w_blacklist "test/counter/10s" 42
 sleep 1 # terrible
 
-check_get 18011 "/?a=*" '"count":1' '"_online":true' '"version":"' '"proto":"x ' '"hostname":"'
+check_get_re 18011 "/?a=*" 'count.+2' 'hostname.+linu-sandbox.+_online.+true' 'hostname.+linu-sandbox.+blacklisted.+true.+_online.+false'
 
 rm -f /var/tmp/blacklist/ftest_blacklist.set
 sleep 2 # 2xterrible
@@ -52,7 +54,7 @@ flush_istatd master_w_blacklist
 test_counter master_w_blacklist "test/event/after/blacklist/delete/10s" 99
 sleep 1 # terrible
 
-check_get 18011 "/?a=*" '"count":1' '"_online":true' '"version":"' '"proto":"x ' '"hostname":"'
+check_get_re 18011 "/?a=*" 'count.+2' 'hostname.+linu-sandbox.+_online.+true' 'hostname.+linu-sandbox.+blacklisted.+true.+_online.+false'
 
 purge_istatd 18032
 

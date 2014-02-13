@@ -27,6 +27,7 @@ EagerConnection::EagerConnection(boost::asio::io_service &svc) :
     tryingLater_(false),
     tryLaterTime_(0),
     backoff_(1),
+    successfulWritesDuringBackoff_(1),
     interlock_(0),
     socket_(svc),
     resolver_(svc),
@@ -41,6 +42,7 @@ void EagerConnection::init()
 {
     opened_ = false;
     backoff_ = 1;
+    successfulWritesDuringBackoff_ = 1;
     writePending_ = false;
     readPending_ = false;
 }
@@ -71,6 +73,7 @@ void EagerConnection::open(std::string const &dest, std::string const &initialDa
         throw std::runtime_error("open() destination must be host:port");
     }
     backoff_ = 1;
+    successfulWritesDuringBackoff_ = 1;
     opened_ = true;
     if (initialData.size())
     {
@@ -163,6 +166,10 @@ size_t EagerConnection::peekIn(void *ptr, size_t maxSize)
 void EagerConnection::consume(size_t n)
 {
     LogSpam << "EagerConnection::consume(" << n << ")";
+    if (!opened_)
+    {
+        return;
+    }
     grab aholdof(mutex_);
     if (n > 0)
     {
@@ -285,6 +292,7 @@ void EagerConnection::on_resolve(boost::system::error_code const &err, tcp::reso
 void EagerConnection::tryLater()
 {
     LogDebug << "EagerConnection::tryLater()";
+    successfulWritesDuringBackoff_ = 1;
     if (resolveHost_.size() && resolvePort_.size())
     {
         if (tryingLater_)
@@ -331,7 +339,6 @@ void EagerConnection::on_connect(boost::system::error_code const &err, tcp::endp
     if (!err)
     {
         LogWarning << "Connected to " << endpoint;
-        backoff_ = 1;
         if (initialData_.size())
         {
             outgoing_.insert(outgoing_.begin(), initialData_.begin(), initialData_.end());
@@ -367,6 +374,18 @@ void EagerConnection::startWrite()
     }
 }
 
+void EagerConnection::resetBackoffOnSuccessfulWrites()
+{
+    if (backoff_ != 1)
+    {
+        ++successfulWritesDuringBackoff_;
+        if (successfulWritesDuringBackoff_ > 3)
+        {
+            backoff_ = 1;
+        }
+    }
+}
+
 void EagerConnection::on_write(boost::system::error_code const &err, size_t xfer)
 {
     LogSpam << "EagerConnection::on_write(" << xfer << ")";
@@ -380,6 +399,8 @@ void EagerConnection::on_write(boost::system::error_code const &err, size_t xfer
         tryLater();
         return;
     }
+    resetBackoffOnSuccessfulWrites();
+
     onWrite_(xfer);
     startWrite();
 }

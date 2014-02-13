@@ -77,16 +77,18 @@ namespace istat
     class CallCounter
     {
     public:
-        CallCounter() : count_(0), value_(0) {}
-        void reset() { count_ = 0; value_ = 0; str_ = ""; }
+        CallCounter() : count_(0), value_(0), ret_(false) {}
+        CallCounter(bool ret) : count_(0), value_(0), ret_(ret) {}
+        void reset() { count_ = 0; value_ = 0; str_ = ""; ret_ = false; }
         mutable int64_t count_;
         mutable int64_t value_;
+        mutable bool ret_;
         mutable std::string str_;
-        void operator()() const { call(); } 
+        bool operator()() const { call(); return ret_;} 
         void call() const { ++count_; }
-        void operator()(int64_t v) const { call(v); }
+        bool operator()(int64_t v) const { call(v); return ret_;}
         void call(int64_t v) const { ++count_; value_ += v; }
-        void operator()(std::string const &str) const { call(str); }
+        bool operator()(std::string const &str) const { call(str); return ret_;}
         void call(std::string const &str) const { ++count_; str_ += str; }
     };
 }

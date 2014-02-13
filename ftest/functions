@@ -308,6 +308,27 @@ function check_get {
     echo ""
 }
 
+function check_get_re {
+    PORT="$1"; shift
+    QUERY="$1"; shift
+    num=0
+    while [ -f "${DBDIR}/curl.out.${num}" ] ; do
+        let num=num+1
+    done
+    OUTFILE="${DBDIR}/curl.out.${num}"
+    echo -n "check GET $PORT $QUERY "
+    curl -s "http://localhost:$PORT/$QUERY" > "$OUTFILE"
+    while [ "$#" -ne "0" ]; do
+        NAME="$1"; shift
+        if grep -E "$NAME" "$OUTFILE" > /dev/null; then
+            true
+        else
+            failure "Did not find pattern $NAME on port $PORT (see $OUTFILE)"
+        fi
+    done
+    echo ""
+}
+
 function check_post {
     PORT="$1"; shift
     QUERY="$1"; shift

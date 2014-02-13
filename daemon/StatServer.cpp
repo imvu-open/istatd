@@ -33,6 +33,7 @@ void handle_inputData(std::string const &s, Consume const &c, Handle const &h)
 {
     size_t sz = s.size();
     size_t start = 0;
+    bool stop_handling = false;
     for (size_t pos = 0; pos != sz; ++pos)
     {
         //  protocol says: terminate at char(10), ignore any padding space
@@ -42,7 +43,8 @@ void handle_inputData(std::string const &s, Consume const &c, Handle const &h)
             std::string cmd(s.substr(start, pos-start));
             start = pos + 1;
             c(cmd.size()+1);
-            h(cmd);
+            if (!stop_handling)
+                stop_handling |= h(cmd);
         }
     }
 }
@@ -316,9 +318,9 @@ void StatServer::on_connection()
     }
 }
 
-bool StatServer::checkBlacklist(boost::shared_ptr<ConnectionInfo> const &ec)
+bool StatServer::checkBlacklistAndMaybeClose(boost::shared_ptr<ConnectionInfo> const &ec)
 {
-    LogDebug << "StatServer::checkBlacklist()";
+    LogDebug << "StatServer::checkBlacklistAndMaybeClose()";
     grab aholdof(metaMutex_);
     void *key = ec->asEagerConnection();
     InfoHashMap::iterator mit(metaInfo_.find(key));
@@ -328,8 +330,12 @@ bool StatServer::checkBlacklist(boost::shared_ptr<ConnectionInfo> const &ec)
         std::tr1::unordered_map<std::string, std::string>::iterator ptr(mi->info_.find("hostname"));
         if (ptr != mi->info_.end()){
             if (blacklist_->check((*ptr).second)) {
-                close_connection(ec);
-                metaInfo_.erase(metaInfo_.find(key));
+                if (ec->opened())
+                {
+                    close_connection(ec);
+                    metaInfo(ec)->info_["blacklisted"] = "true";
+                    metaInfo(ec)->online_ = false;
+                }
                 return true;
             }
         }
@@ -359,17 +365,17 @@ void StatServer::on_inputData(boost::shared_ptr<ConnectionInfo> ec)
         boost::bind(&StatServer::handleCmd, this, _1, ec));
 }
 
-void StatServer::handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec)
+bool StatServer::handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec)
 {
-    LogSpam << "StatServer::handleCmd(" << cmd << ")";
-    if (blacklist_ && checkBlacklist(ec))
+    LogDebug << "StatServer::handleCmd(" << cmd << ")";
+    if (blacklist_ && checkBlacklistAndMaybeClose(ec))
     {
-        return;
+        return true;
     }
 
     if (!cmd.size())
     {
-        return;
+        return false;
     }
     try
     {
@@ -400,6 +406,7 @@ void StatServer::handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionI
     {
         LogError << "Caught unknown exception in handleCmd(): " << cmd;
     }
+    return false;
 }
 
 void StatServer::handle_counter_cmd(std::string const &cmd)

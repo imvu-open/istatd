@@ -101,7 +101,7 @@ public:
         {
             return hasStatStore_ ? statStore_ : boost::shared_ptr<IStatStore>((IStatStore *)NULL);
         }
-    void handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec);
+    bool handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec);
     void counters(int64_t *oConnects, int64_t *oDrops);
     void syncAgent(IComplete *complete);
     //  Copy data while the lock is held
@@ -125,7 +125,7 @@ private:
     void startReport();
     void onReport(boost::system::error_code const &err);
 
-    bool checkBlacklist(boost::shared_ptr<ConnectionInfo> const &ec);
+    bool checkBlacklistAndMaybeClose(boost::shared_ptr<ConnectionInfo> const &ec);
     void close_connection(boost::shared_ptr<ConnectionInfo> const &ec);
 
     void handle_counter_cmd(std::string const &cmd);

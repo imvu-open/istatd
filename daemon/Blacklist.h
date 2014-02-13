@@ -40,7 +40,7 @@ private:
     BlacklistSet blacklistSet_;
     lock lock_;
     std::string blacklistPath_;
-    std::time_t lastWrite_;
+    std::time_t lastModifiedTime_;
     int16_t period_;
 
 };
