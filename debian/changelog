@@ -1,3 +1,17 @@
+istatd (0.72-1) UNRELEASED; urgency=low
+
+  [ Jon Watte ]
+  * Update a few build issues for Ubuntu 13.10.
+  * Another Ubuntu 13 GCC warning problem.
+
+  [ Leonidas Loucas ]
+  * Add blacklist by hostname functionality.
+  * Add admin server command to (re)load a settings file from disk.
+  * Code review and fixes for blacklist functionality: Including
+    requiring 3 successful messages for backoff of eagerconn to be
+
+ -- Leonidas Loucas <lloucas@imvu.com>  Fri, 14 Feb 2014 18:40:46 -0800
+
 istatd (0.71-1) UNRELEASED; urgency=low
 
   [ Jon Watte ]
