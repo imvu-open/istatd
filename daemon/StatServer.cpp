@@ -10,8 +10,10 @@
 #include "Debug.h"
 
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <string>
+#include <unistd.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
@@ -26,7 +28,6 @@ using namespace istat;
 
 DebugOption debugUdp("statUdp");
 DebugOption debugTcp("statTcp");
-
 
 template<typename Consume, typename Handle>
 void handle_inputData(std::string const &s, Consume const &c, Handle const &h)
@@ -95,6 +96,8 @@ StatServer::StatServer(int statPort, std::string listenAddress,
     nConnected_("statserver.connected", TypeGauge),
     reservedCommands_("statserver.commands.reserved", TypeEvent),
     badCommands_("statserver.commands.bad", TypeEvent),
+    totalMemoryGauge_("app.memory.vmsize", TypeGauge),
+    residentMemoryGauge_("app.memory.vmrss", TypeGauge),
     numConnected_(0),
     metaInterval_(0),
     forwardTimer_(svc)
@@ -172,9 +175,41 @@ void StatServer::onReport(boost::system::error_code const &err)
         purgeOldMetaRecords(100, 90000);
     }
     nConnected_.value(numConnected_);
+
+    reportMemory();
+
     startReport();
 }
 
+void StatServer::reportMemory()
+{
+    try
+    {
+        // In Pages: vmsize, vmrss, shared_pages, text/code, library, data+stack, dirty_pages
+        unsigned long vmsize, vmrss;
+        {
+            std::string ignore;
+            std::ifstream ifs("/proc/self/statm", std::ios_base::in);
+            ifs >> vmsize >> vmrss >> ignore >> ignore >> ignore >> ignore >> ignore;
+        }
+        long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
+        if (page_size_kb == -1)
+        {
+            return;
+        }
+
+        double vmsizeKb = vmsize * page_size_kb;
+        double vmrssKb = vmrss * page_size_kb;
+
+        totalMemoryGauge_.value(vmsizeKb);
+        residentMemoryGauge_.value(vmrssKb);
+
+    }
+    catch( std::exception const &x )
+    {
+
+    }
+}
 
 StatServer::~StatServer()
 {

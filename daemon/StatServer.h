@@ -124,6 +124,7 @@ private:
     size_t agentQueueSize();
     void startReport();
     void onReport(boost::system::error_code const &err);
+    void reportMemory();
 
     bool checkBlacklistAndMaybeClose(boost::shared_ptr<ConnectionInfo> const &ec);
     void close_connection(boost::shared_ptr<ConnectionInfo> const &ec);
@@ -165,6 +166,9 @@ private:
     LoopbackCounter nConnected_;
     LoopbackCounter reservedCommands_;
     LoopbackCounter badCommands_;
+    LoopbackCounter totalMemoryGauge_;
+    LoopbackCounter residentMemoryGauge_;
+
     int64_t numConnected_;
     ::lock agentMutex_;
     std::list<AgentFlushRequest *> agentFlushRequests_;
