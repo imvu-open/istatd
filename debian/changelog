@@ -1,3 +1,10 @@
+istatd (0.73-1) UNRELEASED; urgency=low
+
+  [ Leonidas Loucas ]
+  * track vmsize and vmrss in an internal counter
+
+ -- Leonidas Loucas <lloucas@imvu.com>  Wed, 19 Feb 2014 15:19:57 -0800
+
 istatd (0.72-1) UNRELEASED; urgency=low
 
   [ Jon Watte ]
