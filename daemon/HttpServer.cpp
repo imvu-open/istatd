@@ -262,6 +262,7 @@ std::string const *HttpRequest::header(std::string const &key) const
 {
     std::string copy(key);
     munge(copy);
+    std::transform(copy.begin(), copy.end(), copy.begin(), ::tolower);
     std::map<std::string, std::string>::const_iterator ptr(headers_.find(copy));
     if (ptr == headers_.end())
     {
@@ -288,6 +289,7 @@ void HttpRequest::parseHeader(std::string const &data)
     split(data, ':', left, right);
     munge(left);
     trim(right);
+    std::transform(left.begin(), left.end(), left.begin(), ::tolower);
     headers_[left] += right;
     LogSpam << "HttpRequest::parseHeader Appending to header " << left << "with data" << right;
 }
@@ -370,5 +372,86 @@ void HttpRequest::on_reply(boost::system::error_code const &err, size_t xfer)
     //  this should soon go away, as the stack reference will go away!
     socket_.close();
     onError_.disconnect_all_slots();
+}
+
+AcceptEncodingHeader::AcceptEncodingHeader(EncodingSet &ae, std::string const *header) :
+    acceptableEncodings_(ae),
+    header_(header)
+{
+    if(AcceptEncodingHeader::is_complete(parseAcceptEncoding()))
+    {
+        performAcceptEncodingRules();
+    }
+}
+
+AcceptEncodingHeader::HeaderStatus AcceptEncodingHeader::parseAcceptEncoding()
+{
+    LogDebug << "AcceptEncodingHeader:parseAcceptEncoding()";
+    if (!header_)
+    {
+        return updateStatusAndReturn(StatusMissing);
+    }
+    if (header_->empty())
+    {
+        return updateStatusAndReturn(StatusEmpty);
+    }
+
+    const int default_val = 100;
+    std::vector<std::string> content_encodings;
+    explode(*header_, ',', content_encodings);
+    for(std::vector<std::string>::iterator ptr(content_encodings.begin()), end(content_encodings.end());
+            ptr != end; ++ptr)
+    {
+        int val = default_val;
+        std::string type, qvalue, blackhole;
+        split(*ptr, ';', type, qvalue);
+        if (!qvalue.empty())
+        {
+            split(qvalue, '=', blackhole, qvalue);
+            trim(qvalue);
+            val = (int)(atof(qvalue.c_str()) * 100);
+        }
+        trim(type);
+        weights_.insert(EncodingWeightMap::value_type(val, type));
+        seen_.insert(type);
+    }
+    return updateStatusAndReturn(StatusComplete);
+}
+
+void AcceptEncodingHeader::performAcceptEncodingRules()
+{
+    LogDebug << "AcceptEncodingHeader:performAcceptEncodingRules()";
+    for(EncodingWeightMap::iterator ptr(weights_.begin()), end(weights_.end()); ptr != end; ++ptr)
+    {
+        if((*ptr).second == "*")
+        {
+            for(EncodingSet::iterator it(acceptableEncodings_.begin()), eit(acceptableEncodings_.end()); it != eit; ++it)
+            {
+                if (seen_.find((*it)) == seen_.end())
+                {
+                    (*ptr).second = (*it);
+                }
+            }
+        }
+
+    }
+    std::pair< EncodingWeightMap::iterator, EncodingWeightMap::iterator> ret = weights_.equal_range((*weights_.rbegin()).first);
+    for( EncodingWeightMap::iterator it = ret.first; it != ret.second; ++it)
+    {
+        if ((*it).first != 0)
+        {
+            codecs_.insert((*it).second);
+        }
+    }
+}
+
+bool AcceptEncodingHeader::should_send_gzip()
+{
+    return codecs_.find("gzip") != codecs_.end();
+}
+
+bool AcceptEncodingHeader::should_send_deflate()
+{
+    return codecs_.find("deflate") != codecs_.end();
 }
 

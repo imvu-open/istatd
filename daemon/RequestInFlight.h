@@ -9,7 +9,12 @@
 #include <istat/Env.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 #include <vector>
+#include <ostream>
+#include <set>
+
+class AcceptEncodingHeader;
 
 class RequestInFlight : public boost::enable_shared_from_this<RequestInFlight>
 {
@@ -22,6 +27,7 @@ public:
 protected:
     virtual void complete(int code, char const *type);
     std::stringstream strm_;
+    boost::iostreams::filtering_ostream strm_buffer_;
     time_t multiget_start_time_;
     time_t multiget_stop_time_;
     time_t multiget_interval_;
@@ -32,6 +38,7 @@ private:
     friend class GetSettingsWorker;
     friend class SetSettingsWorker;
     friend void test_RequestInFlight();
+    friend void test_choose_encoding();
     friend void func(); // unit test
 
     boost::shared_ptr<IHttpRequest> req_;
@@ -39,6 +46,7 @@ private:
     StatServer *ss_;
     boost::asio::io_service &svc_;
     std::string filesDir_;
+    AcceptEncodingHeader::EncodingSet acceptableEncodings_;
 
 
     void do_GET(std::string const &url, std::map<std::string, std::string> &params, std::string const &left);
@@ -52,7 +60,10 @@ private:
     void complete(int code);
     void serveFile(std::string const &name);
 
+    void chooseEncoding(AcceptEncodingHeader &codecs);
+    void prepareEncoding();
     void listCountersMatching(std::string const &url, boost::shared_ptr<IStatStore> storePtr);
+    void createCountersMatchingResponse(std::string const &pattern, std::list<std::pair<std::string, bool> > &results);
     void generateCounterData(std::string const &left, std::map<std::string, std::string> params,
         boost::shared_ptr<IStatStore> storePtr);
     void listAgentsMatching(std::string const &a);

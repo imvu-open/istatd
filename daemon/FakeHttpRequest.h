@@ -37,6 +37,7 @@ public:
     void readBody() {
         onBody_();
     }
+    std::string const *header(std::string const &key) const { return 0; }
 };
 
 

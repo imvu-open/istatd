@@ -4,6 +4,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 
 #include <json/json.h>
 
@@ -17,10 +18,10 @@ boost::asio::io_service svc;
 class Stubbed_RequestInFlight : public RequestInFlight
 {
 public:
-    Stubbed_RequestInFlight(boost::shared_ptr<IHttpRequest> &req, boost::asio::io_service &svc) : RequestInFlight(req, svc, "files") { };
+    Stubbed_RequestInFlight(boost::shared_ptr<IHttpRequest> &req, boost::asio::io_service &svc) : RequestInFlight(req, svc, "files") { strm_buffer_.push(strm_); }
     std::string getLastReply() { return strm_.str(); }
 protected:
-    virtual void complete(int code, char const *type) { }
+    virtual void complete(int code, char const *type) { boost::iostreams::close(strm_buffer_); }
 };
 
 boost::shared_ptr<StatFile> _create_stat_file(istat::StatFile::Settings &init, time_t intervalTime, time_t zeroTime, int64_t numSamples)

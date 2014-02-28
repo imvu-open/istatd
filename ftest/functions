@@ -287,6 +287,145 @@ function delete_ctr {
     echo -ne "delete.ctr $2\n" | bin/istatd_netcat -q 1 localhost `admin_port_from_profile $1`
 }
 
+function check_get_resp_size_zlib {
+    PORT="$1"; shift
+    QUERY="$1"; shift
+    num=0
+    while [ -f "${DBDIR}/curl.out.${num}" ] ; do
+        let num=num+1
+    done
+    OUTFILE="${DBDIR}/curl.out.${num}"
+#    echo -n "check GET $PORT $QUERY "
+    curl -s -H "Accept-encoding: deflate" "http://localhost:$PORT/$QUERY" > "$OUTFILE"
+    echo $(wc -c < "$OUTFILE")
+}
+
+function check_get_zlib {
+    PORT="$1"; shift
+    QUERY="$1"; shift
+    num=0
+    while [ -f "${DBDIR}/curl.out.${num}" ] ; do
+        let num=num+1
+    done
+    OUTFILE="${DBDIR}/curl.out.${num}"
+    echo -n "check GET $PORT $QUERY "
+    curl -s -H "Accept-encoding: deflate" "http://localhost:$PORT/$QUERY" > "$OUTFILE"
+    while [ "$#" -ne "0" ]; do
+        NAME="$1"; shift
+        if cat "$OUTFILE" | openssl zlib -d | grep "$NAME" > /dev/null; then
+            true
+        else
+            failure "Did not find pattern $NAME on port $PORT (see $OUTFILE)"
+        fi
+    done
+    echo ""
+}
+
+function check_post_zlib {
+    PORT="$1"; shift
+    QUERY="$1"; shift
+    DATA="$1"; shift
+    num=0
+    while [ -f "${DBDIR}/curl.out.${num}" ] ; do
+        let num=num+1
+    done
+    OUTFILE="${DBDIR}/curl.out.${num}"
+
+    echo -n "check POST $PORT $QUERY "
+    curl -s -H "Accept-encoding: deflate" -d "$DATA" "http://localhost:$PORT/$QUERY" > "$OUTFILE"
+    while [ "$#" -ne "0" ]; do
+        NAME="$1"; shift
+        if cat "$OUTFILE" | openssl zlib -d | grep "$NAME" > /dev/null; then
+            true
+        else
+            failure "Did not find pattern $NAME on port $PORT (see $OUTFILE)"
+        fi
+    done
+    echo ""
+}
+function check_counters_zlib {
+    PORT="$1"; shift
+    PATTERN="$1"; shift
+    check_get_zlib "$PORT" "?q=$PATTERN" $*
+}
+
+function check_counters_gzip {
+    PORT="$1"; shift
+    PATTERN="$1"; shift
+    check_get_gzip "$PORT" "?q=$PATTERN" $*
+}
+
+function check_get_resp_size_gzip {
+    PORT="$1"; shift
+    QUERY="$1"; shift
+    num=0
+    while [ -f "${DBDIR}/curl.out.${num}" ] ; do
+        let num=num+1
+    done
+    OUTFILE="${DBDIR}/curl.out.${num}"
+#    echo -n "check GET $PORT $QUERY "
+    curl -s -H "Accept-encoding: gzip,deflate" "http://localhost:$PORT/$QUERY" > "$OUTFILE"
+    echo $(wc -c < "$OUTFILE")
+}
+
+function check_get_gzip {
+    PORT="$1"; shift
+    QUERY="$1"; shift
+    num=0
+    while [ -f "${DBDIR}/curl.out.${num}" ] ; do
+        let num=num+1
+    done
+    OUTFILE="${DBDIR}/curl.out.${num}"
+    echo -n "check GET $PORT $QUERY "
+    curl -s -H "Accept-encoding: gzip,deflate" "http://localhost:$PORT/$QUERY" > "$OUTFILE"
+    while [ "$#" -ne "0" ]; do
+        NAME="$1"; shift
+        if cat "$OUTFILE" | gzip -d | grep "$NAME" > /dev/null; then
+            true
+        else
+            failure "Did not find pattern $NAME on port $PORT (see $OUTFILE)"
+        fi
+    done
+    echo ""
+}
+
+function check_post_gzip {
+    PORT="$1"; shift
+    QUERY="$1"; shift
+    DATA="$1"; shift
+    num=0
+    while [ -f "${DBDIR}/curl.out.${num}" ] ; do
+        let num=num+1
+    done
+    OUTFILE="${DBDIR}/curl.out.${num}"
+
+    echo -n "check POST $PORT $QUERY "
+    curl -s -H "Accept-encoding: gzip,deflate" -d "$DATA" "http://localhost:$PORT/$QUERY" > "$OUTFILE"
+    while [ "$#" -ne "0" ]; do
+        NAME="$1"; shift
+        if cat "$OUTFILE" | gzip -d | grep "$NAME" > /dev/null; then
+            true
+        else
+            failure "Did not find pattern $NAME on port $PORT (see $OUTFILE)"
+        fi
+    done
+    echo ""
+}
+
+
+function check_get_resp_size {
+    PORT="$1"; shift
+    QUERY="$1"; shift
+    num=0
+    while [ -f "${DBDIR}/curl.out.${num}" ] ; do
+        let num=num+1
+    done
+    OUTFILE="${DBDIR}/curl.out.${num}"
+#    echo -n "check GET $PORT $QUERY "
+    curl -s "http://localhost:$PORT/$QUERY" > "$OUTFILE"
+    echo $(wc -c < "$OUTFILE")
+}
+
 function check_get {
     PORT="$1"; shift
     QUERY="$1"; shift
@@ -328,6 +467,7 @@ function check_get_re {
     done
     echo ""
 }
+
 
 function check_post {
     PORT="$1"; shift

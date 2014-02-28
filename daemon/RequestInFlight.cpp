@@ -13,10 +13,13 @@
 #include <unistd.h>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/assign.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/foreach.hpp>
-
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
+#include <boost/iostreams/device/back_inserter.hpp>
 
 using namespace istat;
 
@@ -42,6 +45,7 @@ RequestInFlight::~RequestInFlight() {
 void RequestInFlight::init()
 {
     strm_.precision(4);
+    acceptableEncodings_ = boost::assign::list_of("gzip")("deflate");
 }
 
 void RequestInFlight::reportError(std::string const &error_description,
@@ -49,8 +53,42 @@ void RequestInFlight::reportError(std::string const &error_description,
 {
     Json::Value root;
     root["error"] = error_description;
-    strm_ << Json::FastWriter().write(root);
+    strm_buffer_ << Json::FastWriter().write(root);
     complete(error_code);
+}
+
+
+struct AddFilter
+{
+    AddFilter(boost::iostreams::filtering_ostream &ostr, std::ostream &str) : ostr_(ostr), str_(str) {}
+    ~AddFilter() { ostr_.push(str_); }
+    boost::iostreams::filtering_ostream& ostr_;
+    std::ostream& str_;
+};
+
+void RequestInFlight::prepareEncoding()
+{
+    LogDebug << "RequestInFlight:prepareEncoding()";
+    AddFilter ss_push(strm_buffer_, strm_);
+    AcceptEncodingHeader aeh(acceptableEncodings_, req_->header("Accept-encoding"));
+
+    chooseEncoding(aeh);
+}
+
+void RequestInFlight::chooseEncoding(AcceptEncodingHeader &aeh)
+{
+    LogDebug << "RequestInFlight:chooseEncoding()";
+    //prefer gzip if its there
+    if (aeh.should_send_gzip())
+    {
+        hdrs_["Content-encoding"] = "gzip";
+        strm_buffer_.push(boost::iostreams::gzip_compressor(boost::iostreams::gzip_params(boost::iostreams::gzip::best_compression)));
+    }
+    else if (aeh.should_send_deflate())
+    {
+        hdrs_["Content-encoding"] = "deflate";
+        strm_buffer_.push(boost::iostreams::zlib_compressor(boost::iostreams::zlib_params(boost::iostreams::zlib::best_compression)));
+    }
 }
 
 void RequestInFlight::go()
@@ -73,6 +111,8 @@ void RequestInFlight::go()
             reportError("Malformed url", 400);
             return;
         }
+
+        prepareEncoding();
 
         left = left.substr(1, std::string::npos);
         LogSpam << "left: " << left;
@@ -190,7 +230,8 @@ public:
         maxSamples_(maxSamples),
         trailing_(trailing),
         req_(req),
-        num(0)
+        num(0),
+        wrote_(false)
     {
     }
     time_t start_;
@@ -202,6 +243,7 @@ public:
     int64_t num;
     lock strmLock;
     std::string delim;
+    bool wrote_;
 
     void add(boost::shared_ptr<IStatCounter> const &ctr, boost::asio::strand *strand, std::string const &name)
     {
@@ -213,7 +255,7 @@ public:
         delim = d;
         if (!data.size())
         {
-            req_->strm_ << "}";
+            req_->strm_buffer_ << "}";
             req_->complete(200, "application/json");
             delete this;
         }
@@ -246,45 +288,47 @@ public:
             req_->multiget_stop_time_ = normalized_end;
             req_->multiget_interval_ = interval;
 
-            req_->strm_ << delim;
+            req_->strm_buffer_ << delim;
             if (delim.empty())
             {
                 delim = ",";
             }
-            req_->strm_ << "\"" << name << "\":{"
+            req_->strm_buffer_ << "\"" << name << "\":{"
                         << "\"start\":" << normalized_start
                         << ",\"end\":" << normalized_end
                         << ",\"interval\":" << interval
                         << ",\"data\":[";
+
+            wrote_ = true;
             bool first = true;
             for (std::vector<Bucket>::iterator ptr(buckets.begin()), end(buckets.end());
                 ptr != end; ++ptr)
             {
                 istat::Bucket const &b = *ptr;
-                req_->strm_ << (first ? "{" : ",{");
-                req_->strm_ << "\"time\":" << b.time();
-                req_->strm_ << ",\"count\":" << b.count();
-                req_->strm_ << ",\"min\":" << b.min();
-                req_->strm_ << ",\"max\":" << b.max();
-                req_->strm_ << ",\"sum\":" << b.sum();
-                req_->strm_ << ",\"sumsq\":" << b.sumSq();
-                req_->strm_ << ",\"avg\":" << b.avg();
-                req_->strm_ << ",\"sdev\":" << b.sdev();
-                req_->strm_ << "}";
+                req_->strm_buffer_ << (first ? "{" : ",{");
+                req_->strm_buffer_ << "\"time\":" << b.time();
+                req_->strm_buffer_ << ",\"count\":" << b.count();
+                req_->strm_buffer_ << ",\"min\":" << b.min();
+                req_->strm_buffer_ << ",\"max\":" << b.max();
+                req_->strm_buffer_ << ",\"sum\":" << b.sum();
+                req_->strm_buffer_ << ",\"sumsq\":" << b.sumSq();
+                req_->strm_buffer_ << ",\"avg\":" << b.avg();
+                req_->strm_buffer_ << ",\"sdev\":" << b.sdev();
+                req_->strm_buffer_ << "}";
                 first = false;
             }
-            req_->strm_ << "]}";
+            req_->strm_buffer_ << "]}";
         }
         if (0 == istat::atomic_add(&num, -1))
         {
-            if (req_->strm_.str().length() > 1)
+            if (wrote_)
             {
-                req_->strm_ << ",";
+                req_->strm_buffer_ << ",";
             }
-            req_->strm_ << "\"start\":" << req_->multiget_start_time_;
-            req_->strm_ << ",\"stop\":"  << req_->multiget_stop_time_;
-            req_->strm_ << ",\"interval\":" << req_->multiget_interval_;
-            req_->strm_ << "}";
+            req_->strm_buffer_ << "\"start\":" << req_->multiget_start_time_;
+            req_->strm_buffer_ << ",\"stop\":"  << req_->multiget_stop_time_;
+            req_->strm_buffer_ << ",\"interval\":" << req_->multiget_interval_;
+            req_->strm_buffer_ << "}";
             req_->complete(200, "application/json");
             delete this;
         }
@@ -339,7 +383,7 @@ void RequestInFlight::on_multigetBody()
             trailing = true;
         }
 
-        strm_ << "{";
+        strm_buffer_ << "{";
         std::string delim("");
         MultiCounterWorker *mcw = new MultiCounterWorker(start, stop, maxSamples, trailing, shared_from_this());
         for (int i = 0, n = keys.size(); i != n; ++i)
@@ -351,12 +395,12 @@ void RequestInFlight::on_multigetBody()
             if (!counter)
             {
                 LogSpam << "Counter" << name << "not found";
-                strm_ << delim;
+                strm_buffer_ << delim;
                 if (delim.empty())
                 {
                     delim = ",";
                 }
-                strm_ << "\"" << name << "\":\"Not found.\"";
+                strm_buffer_ << "\"" << name << "\":\"Not found.\"";
             }
             else
             {
@@ -376,6 +420,7 @@ void RequestInFlight::complete(int code, char const *type)
 {
     LogDebug << "RequestInFlight::complete(" << code << type << ")";
     if (!isComplete_) {
+        boost::iostreams::close(strm_buffer_);
         isComplete_ = true;
         std::string reply(strm_.str());
         std::stringstream hdrs;
@@ -473,7 +518,7 @@ void RequestInFlight::serveFile(std::string const &name)
         std::vector<char> ch;
         ch.resize(l);
         size_t n = fread(&ch[0], 1, l, f);
-        strm_.write(&ch[0], n);
+        strm_buffer_.write(&ch[0], n);
     }
     fclose(f);
     LogNotice << "serveFile(" << x << "): " << l << " bytes.";
@@ -487,7 +532,14 @@ void RequestInFlight::listCountersMatching(std::string const &pattern,
     std::list<std::pair<std::string, bool> > results;
     storePtr->listMatchingCounters(pattern, results);
 
-    strm_ << "{\"pattern\":\"" << js_quote(pattern) << "\",\"matching_names\":[";
+    createCountersMatchingResponse(pattern, results);
+    LogSpam << "RequestInFlight::listCountersMatching(" << pattern << ") - done";
+    complete(200, "application/json");
+}
+
+void RequestInFlight::createCountersMatchingResponse(std::string const &pattern, std::list<std::pair<std::string, bool> > &results)
+{
+    strm_buffer_ << "{\"pattern\":\"" << js_quote(pattern) << "\",\"matching_names\":[";
     bool comma = false;
     for (std::list<std::pair<std::string, bool> >::iterator
         ptr(results.begin()), end(results.end());
@@ -496,18 +548,16 @@ void RequestInFlight::listCountersMatching(std::string const &pattern,
     {
         if (comma)
         {
-            strm_ << ",";
+            strm_buffer_ << ",";
         }
         else
         {
             comma = true;
         }
-        strm_ << "{\"is_leaf\":" << ((*ptr).second ? "true" : "false") <<
+        strm_buffer_ << "{\"is_leaf\":" << ((*ptr).second ? "true" : "false") <<
             ",\"name\":\"" << js_quote((*ptr).first) << "\"}";
     }
-    strm_ << "]}";
-    LogSpam << "RequestInFlight::listCountersMatching(" << pattern << ") - done";
-    complete(200, "application/json");
+    strm_buffer_ << "]}";
 }
 
 
@@ -516,9 +566,9 @@ void RequestInFlight::listAgentsMatching(std::string const &pattern)
     std::vector<MetaInfo> agents;
     ss_->getConnected(agents);
     //  always list all agents -- ignore pattern
-    strm_ << "{";
-    strm_ << "\"count\":" << agents.size() << ",";
-    strm_ << "\"agents\":[";
+    strm_buffer_ << "{";
+    strm_buffer_ << "\"count\":" << agents.size() << ",";
+    strm_buffer_ << "\"agents\":[";
     bool comma = false;
     time_t now;
     istat::istattime(&now);
@@ -527,25 +577,25 @@ void RequestInFlight::listAgentsMatching(std::string const &pattern)
     {
         if (comma)
         {
-            strm_ << ",";
+            strm_buffer_ << ",";
         }
         else
         {
             comma = true;
         }
-        strm_ << "{";
+        strm_buffer_ << "{";
         for (std::tr1::unordered_map<std::string, std::string>::iterator
             iptr((*ptr).info_.begin()), iend((*ptr).info_.end());
             iptr != iend;
             ++iptr)
         {
-            strm_ << "\"" << js_quote((*iptr).first) << "\":\"" << js_quote((*iptr).second) << "\",";
+            strm_buffer_ << "\"" << js_quote((*iptr).first) << "\":\"" << js_quote((*iptr).second) << "\",";
         }
-        strm_ << "\"_online\":" << ((*ptr).online_ ? "true" : "false") << ",";
-        strm_ << "\"_connected\":\"" << iso_8601_datetime((*ptr).connected_) << "\",";
-        strm_ << "\"_idle\":" << (now - (*ptr).activity_) << "}";
+        strm_buffer_ << "\"_online\":" << ((*ptr).online_ ? "true" : "false") << ",";
+        strm_buffer_ << "\"_connected\":\"" << iso_8601_datetime((*ptr).connected_) << "\",";
+        strm_buffer_ << "\"_idle\":" << (now - (*ptr).activity_) << "}";
     }
-    strm_ << "]}";
+    strm_buffer_ << "]}";
     complete(200, "application/json");
 }
 
@@ -681,7 +731,7 @@ void RequestInFlight::generateCounterJson(boost::shared_ptr<IStatCounter> statCo
             jsonBuckets.append(jsonBucket);
         }
 
-        strm_ << Json::FastWriter().write(jsonRoot);
+        strm_buffer_ << Json::FastWriter().write(jsonRoot);
         complete(200, "application/json");
     } catch (std::runtime_error &re) {
         reportError(std::string("HTTP JSON exception:") + re.what());
@@ -698,12 +748,12 @@ void RequestInFlight::generateCounterCSV(boost::shared_ptr<IStatCounter> statCou
     {
         statCounter->select(startTime, endTime, trailing != 0, buckets, normalizedStart, normalizedEnd, intervalTime, sampleCount);
 
-        strm_ << "ISO Time,Unix Timestamp,Sample Count,Minimum,Maximum,Sum,Sum Squared,Average,Standard Deviation\r\n";
+        strm_buffer_ << "ISO Time,Unix Timestamp,Sample Count,Minimum,Maximum,Sum,Sum Squared,Average,Standard Deviation\r\n";
 
         for (std::vector<istat::Bucket>::iterator ptr(buckets.begin()), end(buckets.end()); ptr != end; ++ptr) {
             istat::Bucket b = *ptr;
 
-            strm_ << b.dateStr()
+            strm_buffer_ << b.dateStr()
                 << "," << b.time()
                 << "," << b.count()
                 << "," << b.min()
@@ -779,7 +829,7 @@ public:
         {
             root[(*ptr).first] = (*ptr).second;
         }
-        rif_->strm_ << Json::FastWriter().write(root);
+        rif_->strm_buffer_ << Json::FastWriter().write(root);
         rif_->complete(hasKeys ? 200 : 404, "application/json");
         delete this;
     }
@@ -867,7 +917,7 @@ public:
                 std::string valStr = json_string(val);
                 set_->set(*ptr, valStr);
             }
-            rif_->strm_ << "{\"success\":true}";
+            rif_->strm_buffer_ << "{\"success\":true}";
             rif_->complete(200, "application/json");
         }
         catch (std::exception const &x)

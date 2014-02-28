@@ -8,6 +8,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/detail/atomic_count.hpp>
+#include <set>
 #include "LoopbackCounter.h"
 
 class HttpServer;
@@ -38,6 +39,7 @@ public:
     virtual std::vector<char>::const_iterator bodyEnd() const = 0;
     boost::signal<void ()> onBody_;
     virtual void readBody() = 0;
+    virtual std::string const *header(std::string const &key) const = 0;
 };
 
 class HttpRequest : public IHttpRequest
@@ -148,6 +150,37 @@ private:
     boost::asio::io_service &svc_;
     boost::asio::ip::tcp::acceptor acceptor_;
     boost::asio::deadline_timer timer_;
+};
+
+class AcceptEncodingHeader
+{
+public:
+    typedef std::multimap<int, std::string> EncodingWeightMap;
+    typedef std::set<std::string> EncodingSet;
+    enum HeaderStatus
+    {
+        StatusMissing = 0,
+        StatusEmpty = 1,
+        StatusComplete = 2
+    };
+
+    AcceptEncodingHeader(EncodingSet &ae, std::string const *header);
+    bool should_send_gzip();
+    bool should_send_deflate();
+private:
+    friend void test_parse_encoding();
+    bool is_complete(HeaderStatus status) { return status == StatusComplete; }
+    HeaderStatus parseAcceptEncoding();
+    void performAcceptEncodingRules();
+
+    HeaderStatus updateStatusAndReturn(HeaderStatus status) { return status_ = status;}
+
+    EncodingSet acceptableEncodings_;
+    EncodingSet codecs_;
+    std::string const *header_;
+    EncodingWeightMap weights_;
+    EncodingSet seen_;
+    HeaderStatus status_;
 };
 
 inline HttpRequest *get_pointer(HttpRequestHolder const &hrh) { return static_cast<HttpRequest *>(hrh.p_.get()); }
