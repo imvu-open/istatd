@@ -161,12 +161,14 @@ public:
     {
         StatusMissing = 0,
         StatusEmpty = 1,
-        StatusComplete = 2
+        StatusComplete = 2,
+        StatusDisabled = 3
     };
 
     AcceptEncodingHeader(EncodingSet &ae, std::string const *header);
     bool should_send_gzip();
     bool should_send_deflate();
+    static bool disallow_compressed_responses;
 private:
     friend void test_parse_encoding();
     bool is_complete(HeaderStatus status) { return status == StatusComplete; }

@@ -374,6 +374,8 @@ void HttpRequest::on_reply(boost::system::error_code const &err, size_t xfer)
     onError_.disconnect_all_slots();
 }
 
+bool AcceptEncodingHeader::disallow_compressed_responses = false;
+
 AcceptEncodingHeader::AcceptEncodingHeader(EncodingSet &ae, std::string const *header) :
     acceptableEncodings_(ae),
     header_(header)
@@ -387,6 +389,10 @@ AcceptEncodingHeader::AcceptEncodingHeader(EncodingSet &ae, std::string const *h
 AcceptEncodingHeader::HeaderStatus AcceptEncodingHeader::parseAcceptEncoding()
 {
     LogDebug << "AcceptEncodingHeader:parseAcceptEncoding()";
+    if (AcceptEncodingHeader::disallow_compressed_responses)
+    {
+        return updateStatusAndReturn(StatusDisabled);
+    }
     if (!header_)
     {
         return updateStatusAndReturn(StatusMissing);

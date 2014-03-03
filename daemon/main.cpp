@@ -177,6 +177,7 @@ Argument<int> agentInterval("agent-interval", 10, "Interval for batching values 
 Argument<int> rollup("rollup", 0, "How many levels to roll up counter values.");
 Argument<std::string> blacklist_path("blacklist-path", "", "Where to look for blacklisted hosts");
 Argument<int> blacklist_period("blacklist-period", 60, "How often to check the file");
+Argument<bool> disallow_compressed_responses("disallow-compressed-responses", false, "Should istatd-server disallow compression of http responses by accept-encoding");
 
 
 void usage()
@@ -978,6 +979,11 @@ int main(int argc, char const *argv[])
         if (replicaOf.get() != "")
         {
             rof = new ReplicaOf(replicaOf.get(), g_service, statStore);
+        }
+
+        if (disallow_compressed_responses.get())
+        {
+            AcceptEncodingHeader::disallow_compressed_responses = disallow_compressed_responses.get();
         }
 
         if (httpPort.get())

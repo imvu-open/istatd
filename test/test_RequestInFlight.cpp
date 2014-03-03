@@ -182,6 +182,13 @@ void test_choose_encoding() {
     aeh = AcceptEncodingHeader(mm, &header);
     rif->chooseEncoding(aeh);
     assert_equal("deflate", rif->hdrs_["Content-encoding"]);
+
+    rif->hdrs_.clear();
+    header = "gzip,deflate,sdhc";
+    AcceptEncodingHeader::disallow_compressed_responses = true;
+    aeh = AcceptEncodingHeader(mm, &header);
+    rif->chooseEncoding(aeh);
+    assert_equal("", rif->hdrs_["Content-encoding"]);
 }
 
 void func() {
