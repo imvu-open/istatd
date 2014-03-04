@@ -1,3 +1,14 @@
+istatd (0.74-1) UNRELEASED; urgency=low
+
+  [ Leonidas Loucas ]
+  * Istatd will now parse the accept-encoding header and properly respond with
+  gzip, deflate, or non compressed content-encoding, preferring gzip.
+  * Configuration switch disallow-compressed-responses added to disable
+  compressing http responses.
+  * Add libboost-iostreams dependency
+
+ -- Leonidas Loucas <lloucas@imvu.com>  Mon, 03 Mar 2014 17:37:25 -0800
+
 istatd (0.73-1) UNRELEASED; urgency=low
 
   [ Leonidas Loucas ]
