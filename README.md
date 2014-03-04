@@ -29,7 +29,7 @@ Quickstart:
   
     Then open localhost:18011 in a browser.
 
-You may need to install libboost-dev-all (or whatever the boost headers 
+You may need to install libboost-all-dev (or whatever the boost headers 
 and libraries are called on your system) and libstatgrab-dev for the 
 build to succeed.
 
