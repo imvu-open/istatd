@@ -40,13 +40,13 @@ boost::shared_ptr<StatServer> makeServer(Mmap *mm, boost::asio::io_service &svc)
     return boost::shared_ptr<StatServer>(new StatServer(port, listenAddress, agent, 1, blacklistCfg, svc, statStore));
 }
 
-boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_service &svc) {
+boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_service &svc, int period) {
     int port = 0;
     std::string agent("");
     std::string blacklist();
     Blacklist::Configuration blacklistCfg = {};
     blacklistCfg.path = std::string("/tmp/test/blacklist/ss_blacklist.set");
-    blacklistCfg.period = 10;
+    blacklistCfg.period = period;
     std::string listenAddress("");
     std::string storePath("/tmp/test/testdir");
     //Mmap *mm(NewMmap());
@@ -183,7 +183,7 @@ void test_blacklist() {
     boost::asio::io_service svc;
     boost::shared_ptr<StatServer> server;
     Mmap *mm(NewMmap());
-    server = makeServerWithBlacklist(mm, svc);
+    server = makeServerWithBlacklist(mm, svc, 10);
     boost::shared_ptr<ConnectionInfo> ec(new FakeEagerConnection(svc));
 
     server->handleCmd("#hostname hostname1", ec);
@@ -249,7 +249,7 @@ void test_start_with_missing_blacklist() {
     boost::asio::io_service svc;
     boost::shared_ptr<StatServer> server;
     Mmap *mm(NewMmap());
-    server = makeServerWithBlacklist(mm, svc);
+    server = makeServerWithBlacklist(mm, svc, 10);
     boost::shared_ptr<ConnectionInfo> ec(new FakeEagerConnection(svc));
 
     boost::shared_ptr<IStatCounter> statCounter;
@@ -268,6 +268,15 @@ void test_start_with_missing_blacklist() {
     assert_equal(4242, buckets[0].sum());
 }
 
+void test_start_with_blacklist_disabled_due_to_0_period() {
+    istat::FakeTime ft(1329345880);
+    boost::asio::io_service svc;
+    boost::shared_ptr<StatServer> server;
+    Mmap *mm(NewMmap());
+    server = makeServerWithBlacklist(mm, svc, 0);
+    assert_equal(boost::shared_ptr<Blacklist>((Blacklist*)0), server->blacklist());
+}
+
 void func() {
     test_collated_counters();
     test_multiple_counters();
@@ -276,6 +285,7 @@ void func() {
     test_to_double();
     test_blacklist();
     test_start_with_missing_blacklist();
+    test_start_with_blacklist_disabled_due_to_0_period();
 }
 
 int main(int argc, char const *argv[]) {

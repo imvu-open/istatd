@@ -74,22 +74,40 @@ namespace istat
     }
     #define assert_within(a, b, dist) if (fabs((b) - (a)) < (dist)) {} else { istat::test_assertwithin(__FILE__, __LINE__, #a, #b, #dist, a, b, dist); }
 
+    template<typename T>
     class CallCounter
     {
     public:
-        CallCounter() : count_(0), value_(0), ret_(false) {}
-        CallCounter(bool ret) : count_(0), value_(0), ret_(ret) {}
-        void reset() { count_ = 0; value_ = 0; str_ = ""; ret_ = false; }
+        CallCounter(T ret) : count_(0), value_(0), ret_(ret) {}
+        void reset() { count_ = 0; value_ = 0; str_ = ""; }
         mutable int64_t count_;
         mutable int64_t value_;
-        mutable bool ret_;
+        mutable T ret_;
         mutable std::string str_;
-        bool operator()() const { call(); return ret_;} 
+        T operator()() const { call(); return ret_;} 
         void call() const { ++count_; }
-        bool operator()(int64_t v) const { call(v); return ret_;}
+        T operator()(int64_t v) const { call(v); return ret_;}
         void call(int64_t v) const { ++count_; value_ += v; }
-        bool operator()(std::string const &str) const { call(str); return ret_;}
+        T operator()(std::string const &str) const { call(str); return ret_;}
         void call(std::string const &str) const { ++count_; str_ += str; }
+    };
+
+    template<>
+    class CallCounter<void>
+    {
+    public:
+        CallCounter() : count_(0), value_(0) {}
+        void reset() { count_ = 0; value_ = 0; str_ = ""; }
+        mutable int64_t count_;
+        mutable int64_t value_;
+        mutable std::string str_;
+        void operator()() const { call(); } 
+        void call() const { ++count_; }
+        void operator()(int64_t v) const { call(v); }
+        void call(int64_t v) const { ++count_; value_ += v; }
+        void operator()(std::string const &str) const { call(str); }
+        void call(std::string const &str) const { ++count_; str_ += str; }
+    
     };
 }
 

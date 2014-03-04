@@ -34,7 +34,7 @@ void handle_inputData(std::string const &s, Consume const &c, Handle const &h)
 {
     size_t sz = s.size();
     size_t start = 0;
-    bool stop_handling = false;
+    StatServer::HandleStatus handle_status = StatServer::HandleSuccess;
     for (size_t pos = 0; pos != sz; ++pos)
     {
         //  protocol says: terminate at char(10), ignore any padding space
@@ -44,8 +44,10 @@ void handle_inputData(std::string const &s, Consume const &c, Handle const &h)
             std::string cmd(s.substr(start, pos-start));
             start = pos + 1;
             c(cmd.size()+1);
-            if (!stop_handling)
-                stop_handling |= h(cmd);
+            if (handle_status != StatServer::HandleBlacklisted)
+            {
+                handle_status = h(cmd);
+            }
         }
     }
 }
@@ -192,11 +194,12 @@ void StatServer::reportMemory()
             std::ifstream ifs("/proc/self/statm", std::ios_base::in);
             ifs >> vmsize >> vmrss >> ignore >> ignore >> ignore >> ignore >> ignore;
         }
-        long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
-        if (page_size_kb == -1)
+        long page_size = sysconf(_SC_PAGESIZE);
+        if (page_size == -1)
         {
             return;
         }
+        long page_size_kb = page_size / 1024;
 
         double vmsizeKb = vmsize * page_size_kb;
         double vmrssKb = vmrss * page_size_kb;
@@ -362,9 +365,11 @@ bool StatServer::checkBlacklistAndMaybeClose(boost::shared_ptr<ConnectionInfo> c
     if (mit != metaInfo_.end())
     {
         boost::shared_ptr<MetaInfo> mi = (*mit).second;
-        std::tr1::unordered_map<std::string, std::string>::iterator ptr(mi->info_.find("hostname"));
-        if (ptr != mi->info_.end()){
-            if (blacklist_->check((*ptr).second)) {
+        MetaInfo::MetaInfoDataMap::iterator ptr(mi->info_.find("hostname"));
+        if (ptr != mi->info_.end())
+        {
+            if (blacklist_->contains((*ptr).second))
+            {
                 if (ec->opened())
                 {
                     close_connection(ec);
@@ -400,17 +405,17 @@ void StatServer::on_inputData(boost::shared_ptr<ConnectionInfo> ec)
         boost::bind(&StatServer::handleCmd, this, _1, ec));
 }
 
-bool StatServer::handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec)
+StatServer::HandleStatus StatServer::handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec)
 {
     LogDebug << "StatServer::handleCmd(" << cmd << ")";
     if (blacklist_ && checkBlacklistAndMaybeClose(ec))
     {
-        return true;
+        return HandleBlacklisted;
     }
 
     if (!cmd.size())
     {
-        return false;
+        return HandleUnhandled;
     }
     try
     {
@@ -441,7 +446,7 @@ bool StatServer::handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionI
     {
         LogError << "Caught unknown exception in handleCmd(): " << cmd;
     }
-    return false;
+    return HandleSuccess;
 }
 
 void StatServer::handle_counter_cmd(std::string const &cmd)
@@ -815,8 +820,8 @@ bool AgentFlushRequest::completed(size_t n)
 
 void test_handleInputData()
 {
-    istat::CallCounter consume;
-    istat::CallCounter handle;
+    istat::CallCounter<void> consume;
+    istat::CallCounter<StatServer::HandleStatus> handle(StatServer::HandleSuccess);
     handle_inputData("foo bar\r\nbaz blorg\r\n", consume, handle);
     assert_equal(handle.count_, 2);
     assert_equal(handle.str_, "foo bar\rbaz blorg\r");

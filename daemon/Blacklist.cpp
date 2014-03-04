@@ -115,9 +115,9 @@ void Blacklist::load()
     }
 }
 
-bool Blacklist::check(std::string &host_name)
+bool Blacklist::contains(std::string &host_name)
 {
-    LogDebug << "Blacklist::check( " << host_name << " )";
+    LogDebug << "Blacklist::contains( " << host_name << " )";
     grab aholdof(lock_);
 
     std::transform(host_name.begin(), host_name.end(), host_name.begin(), ::tolower);
@@ -127,7 +127,7 @@ bool Blacklist::check(std::string &host_name)
     if (blacklisted)
     {
         ++countBlacklisted;
-        LogDebug << "Blacklist::check ( " << host_name << " ) BLACKLISTED!";
+        LogDebug << "Blacklist::contains ( " << host_name << " ) BLACKLISTED!";
     }
     return blacklisted;
 }

@@ -88,6 +88,13 @@ public:
 class StatServer : IStatServer
 {
 public:
+    enum HandleStatus
+    {
+        HandleSuccess = 0,
+        HandleUnhandled = 1,
+        HandleBlacklisted = 2
+    };
+
     StatServer(int statPort, std::string listenAddr, std::string const &agentFw,
         time_t agentInterval,
         Blacklist::Configuration &blacklistCfg,
@@ -101,13 +108,15 @@ public:
         {
             return hasStatStore_ ? statStore_ : boost::shared_ptr<IStatStore>((IStatStore *)NULL);
         }
-    bool handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec);
+    inline boost::shared_ptr<Blacklist> blacklist() const { return blacklist_; }
+    HandleStatus handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec);
     void counters(int64_t *oConnects, int64_t *oDrops);
     void syncAgent(IComplete *complete);
     //  Copy data while the lock is held
     void getConnected(std::vector<MetaInfo> &oConnected);
     void purgeOldMetaRecords(size_t maxOld, time_t maxAge);
     void deleteCounter(std::string const &ctr, IComplete *complete);
+
 private:
     typedef std::tr1::unordered_map<void *, boost::shared_ptr<MetaInfo> > InfoHashMap;
 

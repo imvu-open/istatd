@@ -7,11 +7,11 @@
 
 struct MetaInfo
 {
+    typedef std::tr1::unordered_map<std::string, std::string> MetaInfoDataMap;
     bool                    online_;
     time_t                  connected_;
     time_t                  activity_;
-    std::tr1::unordered_map<std::string, std::string>
-                            info_;
+    MetaInfoDataMap         info_;
 };
 
 #endif  //  daemon_MetaInfo_h

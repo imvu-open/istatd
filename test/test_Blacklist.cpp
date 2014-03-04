@@ -28,10 +28,10 @@ void test_blacklist() {
     std::string was_lowered_at_load_blacklisted("hostname4");
     std::string good("hostname7");
     Blacklist *bls = new Blacklist(svc, cfg);
-    assert_true(bls->check(blacklisted));
-    assert_true(bls->check(gets_lowered_blacklisted));
-    assert_true(bls->check(was_lowered_at_load_blacklisted));
-    assert_false(bls->check(good));
+    assert_true(bls->contains(blacklisted));
+    assert_true(bls->contains(gets_lowered_blacklisted));
+    assert_true(bls->contains(was_lowered_at_load_blacklisted));
+    assert_false(bls->contains(good));
     delete bls;
 
 }

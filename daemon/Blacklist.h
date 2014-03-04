@@ -19,12 +19,12 @@ public:
         std::string path;
         int16_t period;
 
-        bool use() { return !path.empty(); }
+        bool use() { return !path.empty() && period > 0; }
     };
     Blacklist(boost::asio::io_service &svc, Configuration &cfg);
     ~Blacklist();
 
-    bool check(std::string &host_name);
+    bool contains(std::string &host_name);
 
 private:
     typedef std::tr1::unordered_set<std::string> BlacklistSet;
