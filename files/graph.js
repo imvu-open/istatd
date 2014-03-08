@@ -20,6 +20,11 @@ if(!console.log) {
         }
     }
 }
+//if (!Array.prototype.last){
+//    Array.prototype.last = function(){
+//        return this[this.length - 1];
+//    };
+//};
 
 /* Event handlers and other calls into this application
    from the surrounding DOM should be wrapped in guard().
@@ -774,8 +779,9 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     // about to do a bad thing with the plot array.  assuming data
     // arrays are the same length and has same start time and interval
     var data = this._lastRenderData;
-    var plotTimes = [];
-    var labels = ['time'];
+    var plotTimes = [{'low':[], 'high':[], 'line':[]}];
+//    var labels = ['time'];
+    var labels = [];
 
     var interval = data.interval;
     var start = data.start;
@@ -786,10 +792,13 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     // initialize data array with Date objects
     var i = start;
     while ( i < stop ) {
-        plotTimes.push([new Date(i*1000)]);
+        var d = new Date(i*1000).getTime();
+        plotTimes[0]['low'].push([d])
+        plotTimes[0]['high'].push([d])
+        plotTimes[0]['line'].push([d])
         i += interval;
     }
-    if(plotTimes.length == 0) {
+    if(stop - start <= 0) {
         return;
     }
 
@@ -808,69 +817,119 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     //  "customBars" really means min/max
     //  "noBars" means no bars :-)
     if (format == 'noBars') {
-        pushfn = function(plot, bucket) {
+        pushfn = function(plot, plotHigh, plotLow, bucket) {
             if (!bucket) {
-                plot.push([NaN]);
+                plot.push(NaN);
+                plotHigh.push(NaN);
+                plotLow.push(NaN);
             }
             else {
-                plot.push([bucket.avg]);
-                minimum = Math.min(bucket.avg, minimum);
-                maximum = Math.max(bucket.avg, maximum);
-                minVal = Math.min(bucket.avg, minVal);
+                plot.push(bucket.avg);
+                plotHigh.push(NaN);
+                plotLow.push(NaN);
                 gotdata = true;
             }
         };
+    
     }
     else if (format == 'errorBars') {
-        pushfn = function(plot, bucket) {
+        pushfn = function(plot, plotHigh, plotLow, bucket) {
             if (!bucket) {
-                plot.push([NaN, NaN]);
+                plot.push(NaN);
+                plotHigh.push(NaN);
+                plotLow.push(NaN);
             }
             else {
-                plot.push([bucket.avg, bucket.sdev]);
-                minimum = Math.min(bucket.avg-bucket.sdev, minimum);
-                maximum = Math.max(bucket.avg+bucket.sdev, maximum);
-                minVal = Math.min(bucket.avg, minVal);
+                plot.push(bucket.avg);
+                plotHigh.push(bucket.avg + bucket.sdev);
+                plotLow.push(bucket.avg - bucket.sdev);
                 gotdata = true;
             }
         };
-    }
+    } 
     else {
-        pushfn = function(plot, bucket) {
+        pushfn = function(plot, plotHigh, plotLow, bucket) {
             if (!bucket) {
-                plot.push([NaN, NaN, NaN]);
+                plot.push(NaN);
+                plotHigh.push(NaN);
+                plotLow.push(NaN);
             }
             else {
-                plot.push([bucket.min, bucket.avg, bucket.max]);
-                minimum = Math.min(bucket.min, minimum);
-                maximum = Math.max(bucket.max, maximum);
-                minVal = Math.min(bucket.min, minVal);
+                plot.push(bucket.avg);
+                plotHigh.push(bucket.max);
+                plotLow.push(bucket.min);
                 gotdata = true;
             }
         };
     }
+//    if (format == 'noBars') {
+//        pushfn = function(plot, bucket) {
+//            if (!bucket) {
+//                plot.push([NaN]);
+//            }
+//            else {
+//                plot.push([bucket.avg]);
+//                minimum = Math.min(bucket.avg, minimum);
+//                maximum = Math.max(bucket.avg, maximum);
+//                minVal = Math.min(bucket.avg, minVal);
+//                gotdata = true;
+//            }
+//        };
+//    }
+//    else if (format == 'errorBars') {
+//        pushfn = function(plot, bucket) {
+//            if (!bucket) {
+//                plot.push([NaN, NaN]);
+//            }
+//            else {
+//                plot.push([bucket.avg, bucket.sdev]);
+//                minimum = Math.min(bucket.avg-bucket.sdev, minimum);
+//                maximum = Math.max(bucket.avg+bucket.sdev, maximum);
+//                minVal = Math.min(bucket.avg, minVal);
+//                gotdata = true;
+//            }
+//        };
+//    }
+//    else {
+//        pushfn = function(plot, bucket) {
+//            if (!bucket) {
+//                plot.push([NaN, NaN, NaN]);
+//            }
+//            else {
+//                plot.push([bucket.min, bucket.avg, bucket.max]);
+//                minimum = Math.min(bucket.min, minimum);
+//                maximum = Math.max(bucket.max, maximum);
+//                minVal = Math.min(bucket.min, minVal);
+//                gotdata = true;
+//            }
+//        };
+//    }
     var annotations = [];
+    var dataIntermediate = [];
     jQuery.each(data, function(key,value) {
         var buckets = data[key]['data'];
         if (buckets) {
+            dataIntermediate.push($.extend(true, [], plotTimes[0]));
             var ann_min = Math.pow(2, 100);
             var ann_max = -ann_min;
             var ann_min_ts = null;
             var ann_max_ts = null;
             var bidx = 0;
-            jQuery.each(plotTimes, function(i, plot) {
+
+            var newest = dataIntermediate[dataIntermediate.length - 1];
+            jQuery.each(newest['line'], function(i, plot) {
                 // get next bucket of data to insert
                 while ((bidx < buckets.length) && (buckets[bidx].time == 0)) {
                     bidx++;
                 }
 
                 if (bidx >= buckets.length) {
-                    pushfn(plot, null);
+                    pushfn(plot, newest['high'][i], newest['low'][i], null);
                 }
                 else {
                     var bucket = buckets[bidx];
                     var btime = bucket.time*1000;
-                    var timestamp = plot[0].getTime();
+                    var timestamp = plot[0];
                     if (bucket.min < ann_min) {
                         ann_min = bucket.min;
                         ann_min_ts = timestamp;
@@ -881,11 +940,11 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
                     }
 
                     if (btime == timestamp) {
-                        pushfn(plot, bucket);
+                        pushfn(plot, newest['high'][i], newest['low'][i], bucket);
                         bidx += 1;
                     }
                     else {
-                        pushfn(plot, null);
+                        pushfn(plot, newest['high'][i], newest['low'][i], null);
                     }
                 }
             });
@@ -1001,13 +1060,57 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
         params.customBars = true;
     }
 
-    var g = this._dygraph = new Dygraph(
-        // containing div
-        $div[0],
-        plotTimes,
-        params
-    );
-    g.setAnnotations(annotations);
+//    plotLowBar
+//
+    var dataset = [
+//        { label}
+//    
+    ];
+
+    var color = function(i) {
+        return "rgb(" + (((i % 4) / 3) * 255) + "," + (((Math.min(Math.max(i-4, 0),4) % 4) / 3) * 255) + ",50)";
+    };
+    for( var i =0; i< labels.length; i++) {
+        var plotData = dataIntermediate[i];
+        dataset.push(
+            {label: labels[i], data: plotData['line'], lines: {show:true}, color: color(i), id: labels[i] + "root"}
+        );
+        dataset.push(
+            {id: labels[i] + "low", data: plotData['low'], lines: {show:true, lineWidth: 0, fill: 0.2}, color: color(i), fillBetween: labels[i] + "root"}
+        );
+        dataset.push(
+            {id: labels[i] + "high", data: plotData['high'], lines: {show:true, lineWidth: 0, fill: 0.2}, color: color(i), fillBetween: labels[i] + "root"}
+        );
+    }
+
+    var options = {
+        xaxis: { mode: "time" },
+        selection : {
+            mode: "x"
+        }
+    };
+
+    $div.off("plotselected");
+    $div.on("plotselected", function(event, ranges) {
+        plot = $.plot($div, dataset, $.extend(true, {}, options, {
+                    xaxis: {
+                        min: ranges.xaxis.from,
+                        max: ranges.xaxis.to
+                    }
+                }));
+        theCurrentDates.start = new Date(ranges.xaxis.from);
+        theCurrentDates.stop = new Date(ranges.xaxis.to);
+        calcReloadInterval();
+        refresh();
+    });
+    $.plot($div, dataset, options);
+//    var g = this._dygraph = new Dygraph(
+//        // containing div
+//        $div[0],
+//        plotTimes,
+//        params
+//    );
+//    g.setAnnotations(annotations);
     $('.summary', this.$self).html("<span class='nobreak'>Maximum: " + ann_maxval + " at " +
         (new Date(ann_maxtime)).toLocaleDateString() + "</span><span class='nobreak'> Minimum: " + 
         ann_minval + " at " + (new Date(ann_mintime)).toLocaleDateString() + "</span>");

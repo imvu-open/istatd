@@ -451,7 +451,7 @@ void RequestInFlight::serveFile(std::string const &name)
 {
     std::string x(name);
     //  don't allow relative paths! this avoids security problems
-    std::replace(x.begin(), x.end(), '/', '.');
+//    std::replace(x.begin(), x.end(), '/', '.');
     x = filesDir_ + "/" + x;
     struct stat st;
     if (::stat(x.c_str(), &st) < 0)
