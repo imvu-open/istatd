@@ -1,3 +1,0 @@
-[submodule "flot"]
-	path = files/flot_toy/flot
-	url = https://github.com/flot/flot.git
