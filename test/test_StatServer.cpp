@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include <tr1/unordered_map>
+#include <sys/stat.h>
 #include <istat/test.h>
 #include <istat/istattime.h>
 #include <boost/shared_ptr.hpp>
