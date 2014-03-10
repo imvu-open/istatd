@@ -1,4 +1,5 @@
 #include <string>
+#include <sys/stat.h>
 #include <istat/test.h>
 #include <istat/Log.h>
 
