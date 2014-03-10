@@ -199,13 +199,12 @@ void StatServer::reportMemory()
         {
             return;
         }
-        long page_size_kb = page_size / 1024;
 
-        double vmsizeKb = vmsize * page_size_kb;
-        double vmrssKb = vmrss * page_size_kb;
+        double vmsize_bytes = vmsize * page_size;
+        double vmrss_bytes = vmrss * page_size;
 
-        totalMemoryGauge_.value(vmsizeKb);
-        residentMemoryGauge_.value(vmrssKb);
+        totalMemoryGauge_.value(vmsize_bytes);
+        residentMemoryGauge_.value(vmrss_bytes);
 
     }
     catch( std::exception const &x )
