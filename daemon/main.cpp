@@ -17,6 +17,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <pwd.h>
+#include <signal.h>
 #include <cstdlib>
 #include <ctime>
 #include <boost/filesystem.hpp>
