@@ -1,3 +1,17 @@
+istatd (0.75-1) UNRELEASED; urgency=low
+
+  [ Leonidas Loucas ]
+  * change recording of internal memory counters to record bytes rather
+    than kilobytes
+
+  [ Eric Hohenstein ]
+  * significantly reducing verbosity of notice and debug logging
+  * removing signal handler since it should no longer be necessary and
+    its probably occassionally causing deadlock during shutdown due to
+    use of signal-unsafe functions
+
+ -- Leonidas Loucas <lloucas@imvu.com>  Wed, 12 Mar 2014 15:47:27 -0700
+
 istatd (0.74-1) UNRELEASED; urgency=low
 
   [ Leonidas Loucas ]
