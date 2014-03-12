@@ -76,7 +76,7 @@ RealSettingsFactory::RealSettingsFactory(boost::asio::io_service &svc, std::stri
     svc_(svc),
     path_(path)
 {
-    LogDebug << "RealSettingsFactory::RealSettingsFactory(" << path << ")";
+    LogSpam << "RealSettingsFactory::RealSettingsFactory(" << path << ")";
     try
     {
         boost::filesystem::create_directories(path);
@@ -97,7 +97,7 @@ void RealSettingsFactory::scandir()
     }
     try
     {
-        (debugSettings ? LogNotice : LogDebug) << "settings scanning" << path_;
+        (debugSettings ? LogDebug : LogSpam) << "settings scanning" << path_;
         while (struct dirent *dent = readdir(d))
         {
             if (dent->d_name[0] == '.')
@@ -121,7 +121,7 @@ void RealSettingsFactory::scandir()
 
 void RealSettingsFactory::flush(IComplete *complete)
 {
-    (debugSettings ? LogNotice : LogDebug) << "RealSettingsFactory::flush()";
+    (debugSettings ? LogDebug : LogSpam) << "RealSettingsFactory::flush()";
     //  no need to asynchronize the actual work more than this
     //  because file I/O is not async
     grab aholdof(lock_);
@@ -140,7 +140,7 @@ void RealSettingsFactory::flush(IComplete *complete)
 void RealSettingsFactory::flush_one(std::string const &name, IComplete *complete)
 {
     svc_.post(boost::bind(&IComplete::on_complete, complete));
-    (debugSettings ? LogNotice : LogDebug) << "RealSettingsFactory::flush()";
+    (debugSettings ? LogDebug : LogSpam) << "RealSettingsFactory::flush()";
     //  no need to asynchronize the actual work more than this
     //  because file I/O is not async
     grab aholdof(lock_);
@@ -154,13 +154,13 @@ void RealSettingsFactory::flush_one(std::string const &name, IComplete *complete
 
 void RealSettingsFactory::dispose()
 {
-    (debugSettings ? LogNotice : LogDebug) << "RealSettingsFactory::flush()";
+    (debugSettings ? LogDebug : LogSpam) << "RealSettingsFactory::flush()";
     delete this;
 }
 
 void RealSettingsFactory::reloadSettings(std::string const &domain, IComplete *complete)
 {
-    (debugSettings ? LogNotice : LogDebug) << "RealSettingsFactory::reloadSettings( " << domain << " )";
+    (debugSettings ? LogDebug : LogSpam) << "RealSettingsFactory::reloadSettings( " << domain << " )";
     std::string fullPath(path_ + "/" + domain + ".set");
     grab aholdof(lock_);
     try
@@ -176,7 +176,7 @@ void RealSettingsFactory::reloadSettings(std::string const &domain, IComplete *c
 
 void RealSettingsFactory::loadSettingsPath(std::string const &path, std::string const &name)
 {
-    (debugSettings ? LogNotice : LogDebug) << "RealSettingsFactory::loadSettingsPath(" << path << "," << name << ")";
+    (debugSettings ? LogDebug : LogSpam) << "RealSettingsFactory::loadSettingsPath(" << path << "," << name << ")";
     int i = ::open(path.c_str(), O_RDONLY);
     if (i == -1)
     {
@@ -247,7 +247,7 @@ void RealSettingsFactory::loadSettingsPath(std::string const &path, std::string 
 
 void RealSettingsFactory::get(std::string const &domain, boost::shared_ptr<ISettings> &settings)
 {
-    (debugSettings ? LogNotice : LogDebug) << "RealSettingsFactory::get( " << domain << " )";
+    (debugSettings ? LogDebug : LogSpam) << "RealSettingsFactory::get( " << domain << " )";
     settings = boost::shared_ptr<ISettings>((ISettings *)0);
     std::map<std::string, boost::shared_ptr<ISettings> >::iterator ptr(files_.find(domain));
     if (ptr != files_.end())
@@ -259,7 +259,7 @@ void RealSettingsFactory::get(std::string const &domain, boost::shared_ptr<ISett
 void RealSettingsFactory::open(std::string const &domain, bool allowCreate, boost::shared_ptr<ISettings> &settings,
     IComplete *complete)
 {
-    (debugSettings ? LogNotice : LogDebug) << "RealSettingsFactory::open(" << domain << "," << allowCreate << ")";
+    (debugSettings ? LogDebug : LogSpam) << "RealSettingsFactory::open(" << domain << "," << allowCreate << ")";
     settings = boost::shared_ptr<ISettings>((ISettings *)0);
     try
     {
@@ -311,7 +311,7 @@ RealSettings::RealSettings(RealSettingsFactory *rsf, std::string const &name) :
     saveTimer_(rsf->svc_),
     saveQueued_(false)
 {
-    LogDebug << "RealSettings::RealSettings(" << name << ")";
+    LogSpam << "RealSettings::RealSettings(" << name << ")";
 }
 
 void RealSettings::match(std::string const &pattern, std::vector<std::string> &oKeys)
@@ -331,7 +331,7 @@ void RealSettings::match(std::string const &pattern, std::vector<std::string> &o
             }
             else
             {
-                LogDebug << "no match " << (*ptr).first;
+                LogSpam << "matched " << (*ptr).first;
             }
         }
     }
@@ -354,7 +354,7 @@ void RealSettings::get(std::string const &key, std::string &oValue, bool &wasSet
 
 void RealSettings::set(std::string const &key, std::string const &value)
 {
-    (debugSettings ? LogNotice : LogSpam) << "RealSettings::set(" << name_ << "," << key << "," << value << ")";
+    (debugSettings ? LogDebug : LogSpam) << "RealSettings::set(" << name_ << "," << key << "," << value << ")";
     ++countSets;
     //  a valid key?
     if (is_valid_key(key))
@@ -385,7 +385,7 @@ void RealSettings::queueSave()
 
 void RealSettings::save(boost::shared_ptr<ISettings> const &me)
 {
-    (debugSettings ? LogNotice : LogDebug) << "RealSettings::save(" << name_ << ")";
+    (debugSettings ? LogDebug : LogSpam) << "RealSettings::save(" << name_ << ")";
     grab aholdof(lock_);
     if (dirty_) {
         //  Only re-write if dirty. This allows a settings file to be edited on disk and re-loaded
@@ -419,7 +419,7 @@ void RealSettings::save(boost::shared_ptr<ISettings> const &me)
     {
         if (debugSettings.enabled())
         {
-            LogNotice << "settings not dirty";
+            LogDebug << "settings not dirty";
         }
     }
     saveQueued_ = false;

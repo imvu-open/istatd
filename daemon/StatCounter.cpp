@@ -44,7 +44,7 @@ StatCounter::StatCounter(std::string const &pathName, bool isCollated, time_t ze
     isCollated_(isCollated),
     collationInterval_(1)
 {
-    LogDebug << "StatCounter::StatCounter(" << pathName << ")";
+    LogSpam << "StatCounter::StatCounter(" << pathName << ")";
 
     OneCounter oc;
     istat::StatFile::Settings set;
@@ -150,7 +150,7 @@ void StatCounter::record(time_t time, double value, double valueSq, double min, 
 {
     if(debugRecord.enabled())
     {
-        LogNotice << "record" << value << valueSq << min << max << cnt << time;
+        LogDebug << "record" << value << valueSq << min << max << cnt << time;
     }
     else
     {
@@ -315,7 +315,7 @@ bool StatCounter::shiftCollated(time_t t)
     {
         if (debugRecord.enabled())
         {
-            LogNotice << "shiftCollated (time " << collations_[0].time << " shifted out)";
+            LogDebug << "shiftCollated (time " << collations_[0].time << " shifted out)";
         }
 
         // Write collated buckets to the statfile.
@@ -515,10 +515,10 @@ void StatCounter::normalizeRange(time_t &start, time_t &end, time_t &interval, s
 
     if (!targetInterval)
     {
-        LogNotice << "cannot reduce evenly samples of interval " << interval
-                  << " in range " << start
-                  << " to " << end
-                  << " to be less than max sample count " << maxSamples;
+        LogWarning << "cannot reduce evenly samples of interval " << interval
+                   << " in range " << start
+                   << " to " << end
+                   << " to be less than max sample count " << maxSamples;
         targetInterval = (end - start) / maxSamples;
         if (targetInterval < interval * 2)
         {

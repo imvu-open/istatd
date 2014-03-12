@@ -52,7 +52,7 @@ void HttpServer::getInfo(HttpServerInfo &oInfo)
 
 void HttpServer::acceptOne()
 {
-    LogDebug << "HttpService::acceptOne()";
+    LogSpam << "HttpService::acceptOne()";
     boost::shared_ptr<IHttpRequest> sptr(newHttpRequest());
     HttpRequestHolder request(sptr);
     acceptor_.async_accept(request->socket(),
@@ -61,13 +61,13 @@ void HttpServer::acceptOne()
 
 void HttpServer::handleAccept(boost::system::error_code const &e, HttpRequestHolder const &req)
 {
-    LogDebug << "HttpService::handleAccept()";
+    LogSpam << "HttpService::handleAccept()";
     ++sInfo_.numRequests;
     if (!e)
     {
         if (debugHttp.enabled())
         {
-            LogNotice << "http request";
+            LogDebug << "http request";
         }
         ++sInfo_.current;
         sInfo_.currentGauge.value((int32_t)sInfo_.current);
@@ -77,7 +77,7 @@ void HttpServer::handleAccept(boost::system::error_code const &e, HttpRequestHol
         return;
     }
     ++sInfo_.numErrors;
-    LogWarning << "Error accepting a HTTP request: " << e;
+    LogError << "Error accepting a HTTP request: " << e;
     timer_.expires_from_now(boost::posix_time::seconds(1));
     timer_.async_wait(boost::bind(&HttpServer::acceptOne, this));
 }
@@ -132,14 +132,14 @@ void HttpRequest::readBody()
         }
         if (debugHttp.enabled())
         {
-            LogNotice << "http toCopy" << toCopy;
+            LogDebug << "http toCopy" << toCopy;
         }
         std::copy(&headerData_[headerSize_], &headerData_[headerSize_] + toCopy, &bodyData_[0]);
         bodyRead_ = toCopy;
     }
     if (debugHttp.enabled())
     {
-        LogNotice << "http readBody" << len << "bytes";
+        LogDebug << "http readBody" << len << "bytes";
     }
     try
     {
@@ -148,7 +148,7 @@ void HttpRequest::readBody()
         {
             if (debugHttp.enabled())
             {
-                LogNotice << "http toRead complete";
+                LogDebug << "http toRead complete";
             }
             on_body(boost::system::errc::make_error_code(boost::system::errc::success), toRead);
             return;
@@ -159,7 +159,7 @@ void HttpRequest::readBody()
         }
         if (debugHttp.enabled())
         {
-            LogNotice << "http queue read" << toRead;
+            LogDebug << "http queue read" << toRead;
         }
         boost::asio::async_read(socket_, boost::asio::buffer(&bodyData_[bodyRead_], toRead), boost::asio::transfer_at_least(toRead),
             boost::bind(&HttpRequest::on_body, HttpRequestHolder(shared_from_this()), placeholders::error, placeholders::bytes_transferred));
@@ -239,7 +239,7 @@ void HttpRequest::on_body(boost::system::error_code const &err, size_t xfer)
     }
     if (debugHttp.enabled())
     {
-        LogNotice << "http on_body" << xfer << "bytes";
+        LogDebug << "http on_body" << xfer << "bytes";
     }
     //  got the body!
     onBody_();
@@ -279,7 +279,7 @@ void HttpRequest::parseMethod(std::string const &data)
     split(temp, ' ', url_, version_);
     if (debugHttp.enabled())
     {
-        LogNotice << "http method" << method_ << "url" << url_ << "version" << version_;
+        LogDebug << "http method" << method_ << "url" << url_ << "version" << version_;
     }
 }
 
@@ -296,8 +296,8 @@ void HttpRequest::parseHeader(std::string const &data)
 
 void HttpRequest::error()
 {
+    LogSpam << "HttpRequest::error()";
     ++hs_->sInfo_.numErrors;
-    LogDebug << "HttpRequest::error()";
     onError_();
     onError_.disconnect_all_slots();
     onBody_.disconnect_all_slots();
@@ -313,11 +313,11 @@ void HttpRequest::doReply(int code, std::string const &ctype, std::string const 
 {
     if (debugHttp.enabled())
     {
-        LogNotice << "http reply" << code << ctype;
+        LogDebug << "http reply" << code << ctype;
     }
     else
     {
-        LogDebug << "HttpRequest::doReply()";
+        LogSpam << "HttpRequest::doReply()";
     }
     if (code >= 400)
     {
@@ -344,7 +344,7 @@ void HttpRequest::doReply(int code, std::string const &ctype, std::string const 
     headers += xheaders;
     if (debugHttp.enabled() && xheaders.size())
     {
-        LogNotice << "http xheaders" << xheaders;
+        LogDebug << "http xheaders" << xheaders;
     }
 
     headers += "\r\n";
@@ -359,9 +359,12 @@ void HttpRequest::on_reply(boost::system::error_code const &err, size_t xfer)
 {
     if (debugHttp.enabled())
     {
-        LogNotice << "http on_reply() complete" << err;
+        LogDebug << "http on_reply() complete" << err;
     }
-    LogDebug << "HttpRequest::on_reply()";
+    else
+    {
+        LogSpam << "HttpRequest::on_reply()";
+    }
     if (!!err)
     {
         ++hs_->sInfo_.numErrors;
@@ -388,7 +391,7 @@ AcceptEncodingHeader::AcceptEncodingHeader(EncodingSet &ae, std::string const *h
 
 AcceptEncodingHeader::HeaderStatus AcceptEncodingHeader::parseAcceptEncoding()
 {
-    LogDebug << "AcceptEncodingHeader:parseAcceptEncoding()";
+    LogSpam << "AcceptEncodingHeader:parseAcceptEncoding()";
     if (AcceptEncodingHeader::disallow_compressed_responses)
     {
         return updateStatusAndReturn(StatusDisabled);
@@ -426,7 +429,7 @@ AcceptEncodingHeader::HeaderStatus AcceptEncodingHeader::parseAcceptEncoding()
 
 void AcceptEncodingHeader::performAcceptEncodingRules()
 {
-    LogDebug << "AcceptEncodingHeader:performAcceptEncodingRules()";
+    LogSpam << "AcceptEncodingHeader:performAcceptEncodingRules()";
     for(EncodingWeightMap::iterator ptr(weights_.begin()), end(weights_.end()); ptr != end; ++ptr)
     {
         if((*ptr).second == "*")

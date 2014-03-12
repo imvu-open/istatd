@@ -27,7 +27,7 @@ EagerConnectionFactory::~EagerConnectionFactory()
 
 void EagerConnectionFactory::listen(int port, std::string listen_address)
 {
-    LogDebug << "EagerConnectionFactory::listen(" << port << ")";
+    LogSpam << "EagerConnectionFactory::listen(" << port << ")";
     try
     {
         acceptor_.open(tcp::v4());
@@ -48,7 +48,7 @@ void EagerConnectionFactory::listen(int port, std::string listen_address)
 
 boost::shared_ptr<ConnectionInfo> EagerConnectionFactory::nextConn()
 {
-    LogDebug << "EagerConnectionFactory::nextConn()";
+    LogSpam << "EagerConnectionFactory::nextConn()";
     boost::shared_ptr<ConnectionInfo> ret;
     {
         grab aholdof(mutex_);
@@ -63,7 +63,7 @@ boost::shared_ptr<ConnectionInfo> EagerConnectionFactory::nextConn()
 
 void EagerConnectionFactory::startAccept()
 {
-    LogDebug << "EagerConnectionFactory::startAccept()";
+    LogSpam << "EagerConnectionFactory::startAccept()";
     try
     {
         if (pending_ != 0)
@@ -87,7 +87,7 @@ void EagerConnectionFactory::startAccept()
 
 void EagerConnectionFactory::on_accept(boost::system::error_code const &err)
 {
-    LogDebug << "EagerConnectionFactory::on_accept()";
+    LogSpam << "EagerConnectionFactory::on_accept()";
     try
     {
         if (!!err)

@@ -68,7 +68,7 @@ struct AddFilter
 
 void RequestInFlight::prepareEncoding()
 {
-    LogDebug << "RequestInFlight:prepareEncoding()";
+    LogSpam << "RequestInFlight:prepareEncoding()";
     AddFilter ss_push(strm_buffer_, strm_);
     AcceptEncodingHeader aeh(acceptableEncodings_, req_->header("Accept-encoding"));
 
@@ -77,7 +77,7 @@ void RequestInFlight::prepareEncoding()
 
 void RequestInFlight::chooseEncoding(AcceptEncodingHeader &aeh)
 {
-    LogDebug << "RequestInFlight:chooseEncoding()";
+    LogSpam << "RequestInFlight:chooseEncoding()";
     //prefer gzip if its there
     if (aeh.should_send_gzip())
     {
@@ -93,7 +93,7 @@ void RequestInFlight::chooseEncoding(AcceptEncodingHeader &aeh)
 
 void RequestInFlight::go()
 {
-    LogDebug << "RequestInFlight:go()";
+    LogSpam << "RequestInFlight:go()";
     try {
         std::string const &url(req_->url());
         boost::shared_ptr<IStatStore> storePtr(ss_->store());
@@ -133,7 +133,7 @@ void RequestInFlight::go()
         }
     }
     catch (std::runtime_error const &re) {
-        LogDebug << std::string("HTTP exception: ") + re.what();
+        LogError << std::string("HTTP exception: ") + re.what();
         reportError(std::string("HTTP exception: ") + re.what());
     }
 }
@@ -142,7 +142,7 @@ void RequestInFlight::do_UNKNOWN(std::string const &method)
 {
     if (debugHttp.enabled())
     {
-        LogNotice << "http do_UNKNOWN" << method;
+        LogError << "http do_UNKNOWN" << method;
     }
     reportError("Bad method", 405);
 }
@@ -154,7 +154,7 @@ void RequestInFlight::do_GET(std::string const &url, std::map<std::string, std::
 
     if (debugHttp.enabled())
     {
-        LogNotice << "http do_GET" << url;
+        LogDebug << "http do_GET" << url;
     }
 
     if (url == "/") {
@@ -194,7 +194,7 @@ void RequestInFlight::do_POST(std::string const &url, std::map<std::string, std:
 {
     if (debugHttp.enabled())
     {
-        LogNotice << "http do_POST" << url;
+        LogDebug << "http do_POST" << url;
     }
     std::map<std::string, std::string>::iterator pval;
 
@@ -212,7 +212,7 @@ void RequestInFlight::do_POST(std::string const &url, std::map<std::string, std:
     {
         if (debugHttp.enabled())
         {
-            LogNotice << "http POST to bad URL" << url;
+            LogDebug << "http POST to bad URL" << url;
         }
         reportError("No such POST target", 404);
     }
@@ -418,7 +418,7 @@ void RequestInFlight::on_multigetBody()
 
 void RequestInFlight::complete(int code, char const *type)
 {
-    LogDebug << "RequestInFlight::complete(" << code << type << ")";
+    LogSpam << "RequestInFlight::complete(" << code << type << ")";
     if (!isComplete_) {
         boost::iostreams::close(strm_buffer_);
         isComplete_ = true;
@@ -521,14 +521,14 @@ void RequestInFlight::serveFile(std::string const &name)
         strm_buffer_.write(&ch[0], n);
     }
     fclose(f);
-    LogNotice << "serveFile(" << x << "): " << l << " bytes.";
+    LogDebug << "serveFile(" << x << "): " << l << " bytes.";
     complete(200, static_file_type(name));
 }
 
 void RequestInFlight::listCountersMatching(std::string const &pattern,
         boost::shared_ptr<IStatStore> storePtr)
 {
-    LogDebug << "RequestInFlight::listCountersMatching(" << pattern << ") - start";
+    LogSpam << "RequestInFlight::listCountersMatching(" << pattern << ") - start";
     std::list<std::pair<std::string, bool> > results;
     storePtr->listMatchingCounters(pattern, results);
 
@@ -675,7 +675,7 @@ void RequestInFlight::generateCounterData(
     storePtr->find(cname, statCounter, strand);
 
     if (!statCounter) {
-        LogNotice << "Unknown counter: '" << cname << "'";
+        LogError << "Unknown counter: '" << cname << "'";
         reportError("No such counter " + cname, 404);
         return;
     }
@@ -821,7 +821,7 @@ public:
         }
         if (debugHttp.enabled())
         {
-            LogNotice << "GetSettingsWorker completing with" << ret_.size() << "keys.";
+            LogDebug << "GetSettingsWorker completing with" << ret_.size() << "keys.";
         }
         Json::Value root;
         for (std::map<std::string, std::string>::iterator ptr(ret_.begin()), end(ret_.end());

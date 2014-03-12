@@ -20,7 +20,7 @@ Blacklist::Blacklist(boost::asio::io_service &svc, Configuration &cfg) :
     lastModifiedTime_(0),
     period_(cfg.period)
 {
-    LogDebug << "Blacklist::Blacklist being created ( " << cfg.path << " )";
+    LogSpam << "Blacklist::Blacklist being created ( " << cfg.path << " )";
     load();
     startRead();
 }
@@ -33,7 +33,7 @@ void Blacklist::startRead()
 
 void Blacklist::onRead(boost::system::error_code const &err)
 {
-    LogDebug << "Blacklist::onRead()";
+    LogSpam << "Blacklist::onRead()";
     if (!!err)
     {
         LogWarning << "Blacklist::onRead error:" << err;
@@ -100,24 +100,24 @@ void Blacklist::load()
                     std::string name(base, cur);
                     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
                     blacklistSet_.insert(name);
-                    LogDebug << "Blacklist::load blackist host ( " << name << " ).";
+                    LogNotice << "Blacklist::load blackist host ( " << name << " ).";
                 }
                 base = cur + 1;
             }
         }
 
         lastModifiedTime_ = modifiedTime;
-        LogDebug << "Blacklist::load new mod time! ( " << lastModifiedTime_ << " ).";
+        LogNotice << "Blacklist::load new mod time! ( " << lastModifiedTime_ << " ).";
     }
     catch (std::exception const &x)
     {
-        LogDebug << "Blacklist::load exception ( " << x.what() << " ).";
+        LogError << "Blacklist::load exception ( " << x.what() << " ).";
     }
 }
 
 bool Blacklist::contains(std::string &host_name)
 {
-    LogDebug << "Blacklist::contains( " << host_name << " )";
+    LogSpam << "Blacklist::contains( " << host_name << " )";
     grab aholdof(lock_);
 
     std::transform(host_name.begin(), host_name.end(), host_name.begin(), ::tolower);
@@ -127,7 +127,7 @@ bool Blacklist::contains(std::string &host_name)
     if (blacklisted)
     {
         ++countBlacklisted;
-        LogDebug << "Blacklist::contains ( " << host_name << " ) BLACKLISTED!";
+        LogNotice << "Blacklist::contains ( " << host_name << " ) BLACKLISTED!";
     }
     return blacklisted;
 }

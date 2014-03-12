@@ -239,7 +239,7 @@ void StatStore::availCheckNext()
 {
     int const CHECK_INTERVAL = 30;
 
-    LogDebug << "StatStore::availCheckNext() every " << CHECK_INTERVAL << " seconds.";
+    LogSpam << "StatStore::availCheckNext() every " << CHECK_INTERVAL << " seconds.";
     availCheckTimer_.expires_from_now(boost::posix_time::seconds(CHECK_INTERVAL));
     availCheckTimer_.async_wait(boost::bind(&StatStore::onAvailCheck, this));
 }
@@ -264,7 +264,7 @@ void StatStore::scanDir(std::string const& dir)
     dirpath += "/";
     dirpath += dir;
     DIR *d = opendir(dirpath.c_str());
-    LogDebug << "StatStore::scanDir(" << dirpath.c_str() << ")";
+    LogSpam << "StatStore::scanDir(" << dirpath.c_str() << ")";
     if (!d)
     {
         LogError << "Could not scan directory: " << dir << " (out of file desccriptors?)";
@@ -316,7 +316,7 @@ void StatStore::scanDir(std::string const& dir)
 
 void StatStore::loadCtr(std::string const &file)
 {
-    LogDebug << "StatStore::loadCtr(" << file << ")";
+    LogSpam << "StatStore::loadCtr(" << file << ")";
     std::string cname(file);
     std::replace(cname.begin(), cname.end(), '/', '.');
     try
@@ -332,7 +332,7 @@ void StatStore::loadCtr(std::string const &file)
 
 void StatStore::listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, bool> > &oList)
 {
-    LogDebug << "StatStore::listMatchingCounters(" << pat << ")";
+    LogSpam << "StatStore::listMatchingCounters(" << pat << ")";
     keys_.match(pat, oList);
 }
 
@@ -392,7 +392,7 @@ public:
 
 void StatStore::flushAll(IComplete *cmp)
 {
-    LogDebug << "StatStore::flushAll()";
+    LogSpam << "StatStore::flushAll()";
     Shards::iterator ptr(counterShards_.begin());
     CounterMap::key_type key;
     CounterMap::mapped_type data;

@@ -26,7 +26,7 @@ LoopbackCounter::LoopbackCounter(char const *name, CounterType type)
 {
     if (debugLoopback.enabled())
     {
-        LogNotice << "loopback" << name;
+        LogDebug << "loopback" << name;
     }
     me_ = new LoopbackCounterRecord();
     if (TypeEvent == type)
@@ -100,9 +100,12 @@ void LoopbackCounter::setup(IStatStore *ss, boost::asio::io_service &svc)
 {
     if (debugLoopback.enabled())
     {
-        LogNotice << "loopback setup";
+        LogDebug << "loopback setup";
     }
-    LogDebug << "LoopbackCounter::setup()";
+    else
+    {
+        LogSpam << "LoopbackCounter::setup()";
+    }
     if (svc_)
     {
         throw std::runtime_error("Cannot re-initialize LoopbackCounter");
@@ -115,7 +118,7 @@ void LoopbackCounter::setup(IStatStore *ss, boost::asio::io_service &svc)
 
 void LoopbackCounter::forceUpdates()
 {
-    debugLoopback.enabled() ? (LogNotice << "loopback forceUpdates()") : (LogSpam << "LoopbackCounter::forceUpdates()");
+    debugLoopback.enabled() ? (LogDebug << "loopback forceUpdates()") : (LogSpam << "LoopbackCounter::forceUpdates()");
     if (!LoopbackCounter::ss_)
     {
         return;

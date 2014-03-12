@@ -55,7 +55,7 @@ EagerConnection::~EagerConnection()
 
 void EagerConnection::open()    //  called when accepted
 {
-    LogDebug << "EagerConnection::open()";
+    LogSpam << "EagerConnection::open()";
     std::stringstream ss;
     ss << endpoint_;
     endpointName_ = ss.str();
@@ -64,7 +64,7 @@ void EagerConnection::open()    //  called when accepted
 
 void EagerConnection::open(std::string const &dest, std::string const &initialData)
 {
-    LogDebug << "EagerConnection::open(" << dest << ")";
+    LogSpam << "EagerConnection::open(" << dest << ")";
     close();
     std::string host;
     std::string port;
@@ -86,7 +86,7 @@ void EagerConnection::open(std::string const &dest, std::string const &initialDa
 
 void EagerConnection::close()
 {
-    LogDebug << "EagerConnection::close()";
+    LogSpam << "EagerConnection::close()";
     if (!opened_)
     {
         return;
@@ -198,7 +198,7 @@ void EagerConnection::writeOut(void const *data, size_t size)
     if (outgoing_.size() > maxBufferSize)
     {
         bool found = false;
-        LogNotice << "notice: pruning pending outgoing buffer";
+        LogDebug << "notice: pruning pending outgoing buffer";
         //  find a line somewhere in the middle, and cut at that point
         for (std::vector<char>::iterator ptr(outgoing_.begin() + maxBufferSize/2),
             end(outgoing_.end()); ptr != end; ++ptr)
@@ -223,7 +223,7 @@ void EagerConnection::writeOut(void const *data, size_t size)
 
 void EagerConnection::abort()
 {
-    LogDebug << "EagerConnection::abort()";
+    LogSpam << "EagerConnection::abort()";
     socket_.close();
     {
         grab aholdof(mutex_);
@@ -242,7 +242,7 @@ tcp::endpoint EagerConnection::endpoint() const
 
 void EagerConnection::startResolve()
 {
-    LogDebug << "EagerConnection::startResolve()";
+    LogSpam << "EagerConnection::startResolve()";
     time_t nowTime;
     istat::istattime(&nowTime);
     if (nowTime - tryLaterTime_ < backoff_ / 2)
@@ -259,7 +259,7 @@ void EagerConnection::startResolve()
 
 void EagerConnection::on_resolve(boost::system::error_code const &err, tcp::resolver::iterator endpoint)
 {
-    LogDebug << "EagerConnection::on_resolve()";
+    LogSpam << "EagerConnection::on_resolve()";
     if(!err)
     {
         tryingLater_ = false;
@@ -291,13 +291,13 @@ void EagerConnection::on_resolve(boost::system::error_code const &err, tcp::reso
 
 void EagerConnection::tryLater()
 {
-    LogDebug << "EagerConnection::tryLater()";
+    LogSpam << "EagerConnection::tryLater()";
     successfulWritesDuringBackoff_ = 1;
     if (resolveHost_.size() && resolvePort_.size())
     {
         if (tryingLater_)
         {
-            LogNotice << "already trying later (backoff is " << backoff_ << " seconds)";
+            LogDebug << "already trying later (backoff is " << backoff_ << " seconds)";
         }
         else
         {
@@ -357,7 +357,7 @@ void EagerConnection::on_connect(boost::system::error_code const &err, tcp::endp
 
 void EagerConnection::startWrite()
 {
-    LogDebug << "EagerConnection::startWrite()";
+    LogSpam << "EagerConnection::startWrite()";
     if (socket_.is_open())
     {
         grab aholdof(mutex_);
@@ -411,7 +411,7 @@ void EagerConnection::on_write(boost::system::error_code const &err, size_t xfer
 //  and I don't want to waste more than 160 MB on such a set-up: 10k * 16k buffers == 160M
 void EagerConnection::startRead()
 {
-    LogDebug << "EagerConnect::startRead()";
+    LogSpam << "EagerConnect::startRead()";
     grab aholdof(mutex_);
     if (!readPending_)
     {
@@ -444,11 +444,11 @@ void EagerConnection::on_read(boost::system::error_code const &err, size_t xfer)
     {
         if (resolveHost_ != "")
         {
-            LogNotice << "Socket error for host" << resolveHost_ << "; port" << resolvePort_ << ";" << err;
+            LogError << "Socket error for host" << resolveHost_ << "; port" << resolvePort_ << ";" << err;
         }
         else
         {
-            LogNotice << "Socket error for endpoint" << endpoint_ << ";" << err;
+            LogError << "Socket error for endpoint" << endpoint_ << ";" << err;
         }
         socket_.close();
         onDisconnect_();

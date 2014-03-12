@@ -267,7 +267,7 @@ public:
     {
         if (debugAudit.enabled())
         {
-            LogNotice << "AuditTimer() thread" << boost::this_thread::get_id();
+            LogDebug << "AuditTimer() thread" << boost::this_thread::get_id();
         }
         srand((int)((size_t)this & 0xffff));
         scheduleNext();
@@ -276,7 +276,7 @@ public:
     {
         if (debugAudit.enabled())
         {
-            LogNotice << "~AuditTimer() thread" << boost::this_thread::get_id();
+            LogDebug << "~AuditTimer() thread" << boost::this_thread::get_id();
         }
         timer_.cancel();
     }
@@ -284,7 +284,7 @@ public:
     {
         if (debugAudit.enabled())
         {
-            LogNotice << "AuditTimer::cancel() thread" << boost::this_thread::get_id();
+            LogDebug << "AuditTimer::cancel() thread" << boost::this_thread::get_id();
         }
         timer_.cancel();
     }
@@ -298,7 +298,7 @@ private:
     {
         if (debugAudit.enabled())
         {
-            LogNotice << "AuditTimer::auditFunc() thread" << boost::this_thread::get_id();
+            LogDebug << "AuditTimer::auditFunc() thread" << boost::this_thread::get_id();
         }
         else
         {
@@ -352,7 +352,7 @@ private:
     {
         if (debugAudit.enabled())
         {
-            LogNotice << "LogRolloverTimer::threadFunc() thread" << boost::this_thread::get_id();
+            LogDebug << "LogRolloverTimer::threadFunc() thread" << boost::this_thread::get_id();
         }
         else
         {
@@ -425,9 +425,12 @@ static void printRequest(HttpRequestHolder const &req, StatServer *ss)
 {
     if (debugHttp.enabled())
     {
-        LogNotice << "http serving" << req->url();
+        LogDebug << "http serving" << req->url();
     }
-    LogDebug << "Serving:" << req->method() << req->url();
+    else
+    {
+        LogSpam << "Serving:" << req->method() << req->url();
+    }
     boost::shared_ptr<RequestInFlight> rif(new RequestInFlight(req.p_, ss, filesDir.get()));
     ss->service().post(boost::bind(&RequestInFlight::go, rif));
 }
@@ -437,7 +440,7 @@ static void onHttpRequest(StatServer *ss, HttpRequestHolder const &req)
     LogSpam << "onHttpRequest()";
     if (debugHttp.enabled())
     {
-        LogNotice << "http onHttpRequest binding handlers";
+        LogDebug << "http onHttpRequest binding handlers";
     }
     req->onHeader_.connect(boost::bind(printRequest, req, ss));
     req->onError_.connect(boost::bind(printRequest, req, ss));
@@ -459,7 +462,7 @@ static uid_t dropped_uid()
 
 void drop_privileges()
 {
-    LogDebug << "drop_privileges()";
+    LogSpam << "drop_privileges()";
     uid_t uid = dropped_uid();
     if (uid < 0)
     {
@@ -477,7 +480,7 @@ static std::list<std::string> toHandle_;
 
 void localBegin(time_t t)
 {
-    LogDebug << "localBegin(" << t << ")";
+    LogSpam << "localBegin(" << t << ")";
     localTime_ = t;
 }
 
@@ -697,7 +700,7 @@ void get_initial_dir()
         LogError << "could not get working directory";
     }
     initialDir_ = path;
-    LogDebug << "get_initial_dir(): initialDir_ is" << initialDir_;
+    LogNotice << "get_initial_dir(): initialDir_ is" << initialDir_;
 }
 
 

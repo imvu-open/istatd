@@ -321,7 +321,7 @@ void StatServer::on_forwardWrite(size_t n)
 
 void StatServer::on_forwardData()
 {
-    LogDebug << "StatServer::on_forwardData()";
+    LogSpam << "StatServer::on_forwardData()";
     //  This really should never happen, because the server on the other end
     //  will never send anything back!
     size_t sz = forward_->pendingIn();
@@ -337,7 +337,7 @@ void StatServer::on_forwardData()
 
 void StatServer::on_connection()
 {
-    LogDebug << "StatServer::on_connection()";
+    LogSpam << "StatServer::on_connection()";
     while (true)
     {
         boost::shared_ptr<ConnectionInfo> ec(input_.nextConn());
@@ -357,7 +357,7 @@ void StatServer::on_connection()
 
 bool StatServer::checkBlacklistAndMaybeClose(boost::shared_ptr<ConnectionInfo> const &ec)
 {
-    LogDebug << "StatServer::checkBlacklistAndMaybeClose()";
+    LogSpam << "StatServer::checkBlacklistAndMaybeClose()";
     grab aholdof(metaMutex_);
     void *key = ec->asEagerConnection();
     InfoHashMap::iterator mit(metaInfo_.find(key));
@@ -384,7 +384,7 @@ bool StatServer::checkBlacklistAndMaybeClose(boost::shared_ptr<ConnectionInfo> c
 
 void StatServer::on_inputData(boost::shared_ptr<ConnectionInfo> ec)
 {
-    LogDebug << "StatServer::on_inputData()";
+    LogSpam << "StatServer::on_inputData()";
 
     size_t sz = ec->pendingIn();
     if (sz == 0)
@@ -396,7 +396,7 @@ void StatServer::on_inputData(boost::shared_ptr<ConnectionInfo> ec)
     s.resize(sz);
     if (debugTcp)
     {
-        LogNotice << "data from" << ec->endpointName() << sz << "bytes:" << std::string(s, sz);
+        LogDebug << "data from" << ec->endpointName() << sz << "bytes:" << std::string(s, sz);
     }
     ec->peekIn(&s[0], sz);
     handle_inputData(s,
@@ -406,7 +406,7 @@ void StatServer::on_inputData(boost::shared_ptr<ConnectionInfo> ec)
 
 StatServer::HandleStatus StatServer::handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec)
 {
-    LogDebug << "StatServer::handleCmd(" << cmd << ")";
+    LogSpam << "StatServer::handleCmd(" << cmd << ")";
     if (blacklist_ && checkBlacklistAndMaybeClose(ec))
     {
         return HandleBlacklisted;
@@ -473,7 +473,7 @@ void StatServer::handle_counter_cmd(std::string const &cmd)
                 //  got part
                 if (n >= sizeof(parts)/sizeof(parts[0]))
                 {
-                    LogNotice << "Unknown field in received stat: " << cmd;
+                    LogWarning << "Unknown field in received stat: " << cmd;
                     break;
                 }
                 parts[n] = cmd.substr(start, pos-start);
@@ -487,7 +487,7 @@ void StatServer::handle_counter_cmd(std::string const &cmd)
     {
         if (n >= sizeof(parts)/sizeof(parts[0]))
         {
-            LogNotice << "unknown field at end of received stat:" << cmd;
+            LogWarning << "unknown field at end of received stat:" << cmd;
         }
         else
         {
@@ -518,7 +518,7 @@ void StatServer::handle_counter_cmd(std::string const &cmd)
                     to_double(parts[5]), to_size_t(parts[6]));
                 break;
             default:
-                LogNotice << "Bad format in received stat (" << n << "fields; expected 2, 3 or 7):" << cmd;
+                LogError << "Bad format in received stat (" << n << "fields; expected 2, 3 or 7):" << cmd;
                 ++badCommands_;
                 break;
             }
@@ -526,7 +526,7 @@ void StatServer::handle_counter_cmd(std::string const &cmd)
     }
     else
     {
-        LogNotice << "Bad format in received stat (" << n << "fields; expected 2, 3 or 7):" << cmd;
+        LogError << "Bad format in received stat (" << n << "fields; expected 2, 3 or 7):" << cmd;
         ++badCommands_;
     }
 }
@@ -614,7 +614,7 @@ void StatServer::handle_forward(std::string const &ctr, time_t time, double val,
     }
     if (update_err_msg != "")
     {
-        LogNotice << "StatServer::handle_forwarded for" << ctr << update_err_msg;
+        LogDebug << "StatServer::handle_forwarded for" << ctr << update_err_msg;
     }
 }
 
@@ -748,7 +748,7 @@ void StatServer::reschedule_udp_recv(bool success, const std::string &reason)
 
 void StatServer::on_udp_recv(boost::system::error_code const &err, size_t bytes)
 {
-    LogDebug << "StatServer::on_udp_recv()";
+    LogSpam << "StatServer::on_udp_recv()";
     bool success = false;
     std::string reason;
     if (!!err)
@@ -760,7 +760,7 @@ void StatServer::on_udp_recv(boost::system::error_code const &err, size_t bytes)
     {
             if (debugUdp)
             {
-                LogNotice << "data from" << udpEndpoint_->endpoint_ << bytes << "bytes:" << std::string(udpBuffer_, bytes);
+                LogDebug << "data from" << udpEndpoint_->endpoint_ << bytes << "bytes:" << std::string(udpBuffer_, bytes);
             }
         //  packet must end with NL, and contain some data!
         if (bytes < 5 || bytes > sizeof(udpBuffer_) || udpBuffer_[bytes-1] != 10)

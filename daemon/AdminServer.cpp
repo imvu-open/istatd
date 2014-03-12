@@ -86,12 +86,12 @@ AdminConnection::AdminConnection(boost::shared_ptr<ConnectionInfo> const &ec, Ad
     ec_(ec),
     as_(as)
 {
-    LogDebug << "AdminConnection::AdminConnection()";
+    LogSpam << "AdminConnection::AdminConnection()";
 }
 
 void AdminConnection::go()
 {
-    LogNotice << "AdminConnection::go()";
+    LogSpam << "AdminConnection::go()";
     ec_->onDisconnect_.connect(boost::bind(&AdminConnection::on_disconnect, this));
     ec_->onData_.connect(boost::bind(&AdminConnection::on_data, this));
     ec_->asEagerConnection()->startRead();
@@ -100,7 +100,7 @@ void AdminConnection::go()
 void AdminConnection::on_disconnect()
 {
     ec_->close();
-    LogNotice << "AdminConnection::on_disconnect()";
+    LogSpam << "AdminConnection::on_disconnect()";
     delete this;
 }
 
@@ -131,7 +131,7 @@ again:
 
 void AdminConnection::doCmd(std::string const &cmd)
 {
-    (debugAdmin.enabled() ? LogNotice : LogDebug) << "AdminConnection::doCmd(" << istat::sql_quote(cmd) << ")";
+    (debugAdmin.enabled() ? LogNotice : LogSpam) << "AdminConnection::doCmd(" << istat::sql_quote(cmd) << ")";
     ++as_->numAdminCommands_;
     std::string left, right;
     switch (istat::split(cmd, ' ', left, right))
@@ -154,13 +154,13 @@ void AdminConnection::doCmd(std::string const &cmd)
 
 void AdminConnection::huh()
 {
-    LogDebug << "AdminConnection::huh()";
+    LogSpam << "AdminConnection::huh()";
     ec_->writeOut("huh? ('help' for help)\r\n");
 }
 
 void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> const &args)
 {
-    LogDebug << "AdminConnection::cmdArgs(" << cmd << ", ...)";
+    LogSpam << "AdminConnection::cmdArgs(" << cmd << ", ...)";
     if (cmd == "help")
     {
         ec_->writeOut("Commands:\r\n");
@@ -409,19 +409,19 @@ void AdminConnection::settings_flush_complete()
 
 void AdminConnection::flush_complete()
 {
-    LogDebug << "AdminConnection::flush_complete()";
+    LogSpam << "AdminConnection::flush_complete()";
     as_->ssp_->syncAgent(heap_complete<AdminConnection, &AdminConnection::sync_complete>(this));
 }
 
 void AdminConnection::sync_complete()
 {
-    LogDebug << "AdminConnection::sync_complete()";
+    LogSpam << "AdminConnection::sync_complete()";
     ec_->writeOut("ok\r\n");
 }
 
 void AdminConnection::generic_complete()
 {
-    LogDebug << "AdminConnection::generic_complete()";
+    LogSpam << "AdminConnection::generic_complete()";
     ec_->writeOut("ok\r\n");
 }
 

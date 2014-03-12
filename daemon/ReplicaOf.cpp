@@ -51,7 +51,7 @@ ReplicaOf::~ReplicaOf()
 
 void ReplicaOf::go()
 {
-    LogDebug << "ReplicaOf::go()";
+    LogSpam << "ReplicaOf::go()";
     conn_->onConnect_.connect(boost::bind(&ReplicaOf::on_connection, this));
     pduSrc_ = new PduReaderActor(conn_);
     pduSrc_->onPdu_.connect(boost::bind(&ReplicaOf::on_pdu, this));
@@ -92,11 +92,11 @@ void ReplicaOf::on_pdu()
 {
     if (debugReplicaOf.enabled())
     {
-        LogNotice << "replica pdu from" << conn_->endpointName();
+        LogDebug << "replica pdu from" << conn_->endpointName();
     }
     else
     {
-        LogDebug << "ReplicaOf::on_pdu() from" << conn_->endpointName();
+        LogSpam << "ReplicaOf::on_pdu() from" << conn_->endpointName();
     }
 }
 

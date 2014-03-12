@@ -32,7 +32,7 @@ void AllKeys::add(std::string const &str)
     dirty_ = true;
     if (allKeys.enabled())
     {
-        LogNotice << "AllKeys::add(" << str << ")";
+        LogSpam << "AllKeys::add(" << str << ")";
     }
     Rec *r = new Rec(str);
     //  Spin, in case we race with some other winner.
@@ -109,7 +109,7 @@ void KeyMatch::extract(std::string const &pat, std::list<std::pair<std::string, 
         {
             if (allKeys.enabled())
             {
-                LogNotice << "allKeys match " << (*ptr).first << "as" << ((*ptr).second ? "leaf" : "branch");
+                LogDebug << "allKeys match " << (*ptr).first << "as" << ((*ptr).second ? "leaf" : "branch");
             }
             oList.push_back(*ptr);
         }
@@ -117,7 +117,7 @@ void KeyMatch::extract(std::string const &pat, std::list<std::pair<std::string, 
         {
             if (allKeys.enabled())
             {
-                LogNotice << "allKeys no match " << (*ptr).first;
+                LogDebug << "allKeys no match " << (*ptr).first;
             }
         }
     }

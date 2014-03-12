@@ -38,7 +38,7 @@ void Bucketizer::update(istat::Bucket const &o) {
     // 60 --> 4 <--- now + 10
 
     update_err_msg_ = "";
-    LogDebug << "Bucketizer::updating offset time:" << time << " with value " << o.sum() << "at offset" << offset << "delta" << (time - now);
+    LogSpam << "Bucketizer::updating offset time:" << time << " with value " << o.sum() << "at offset" << offset << "delta" << (time - now);
     if ((offset < 0) || (offset > ((int) BUCKET_COUNT-1))) {
         std::stringstream ss;
         ss <<  "bad time: " << time << " not close enough to " << now << " at offset " << offset << " delta " << (time - now);
