@@ -17,8 +17,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <pwd.h>
-#include <signal.h>
-#include <syslog.h>
 #include <cstdlib>
 #include <ctime>
 #include <boost/filesystem.hpp>
@@ -704,56 +702,6 @@ void get_initial_dir()
 }
 
 
-static char segvError[] = "\nistatd received signal XX; shutting down!\n\n";
-static size_t segvLen = strlen(segvError);
-
-void signalHandler(int sig)
-{
-    segvError[24] = (sig / 10) + '0';
-    segvError[25] = (sig % 10) + '0';
-    if (sig < 10)
-    {
-        segvError[24] = ' ';
-    }
-    ssize_t n = write(2, segvError, segvLen);
-    syslog(LOG_CRIT, "%s", segvError);
-
-    if (sig == SIGINT || sig == SIGHUP || sig == SIGTERM) {
-        // "graceful" exit
-        exit(0);
-    }
-
-    if (n != INT_MIN)
-    {
-        // now, crash!
-        if (pidFileName_[0])
-        {
-            ::unlink(pidFileName_);
-        }
-        abort();
-    }
-}
-
-void setupSignals()
-{
-    struct sigaction act, oact;
-    sigset_t all;
-    sigfillset(&all);
-    memset(&act, 0, sizeof(act));
-    act.sa_handler = &signalHandler;
-    act.sa_mask = all;
-    act.sa_flags = SA_RESETHAND;
-    if (!debugSegv)
-    {
-        sigaction(SIGCHLD, &act, &oact);
-        sigaction(SIGSEGV, &act, &oact);
-        sigaction(SIGQUIT, &act, &oact);
-    }
-    sigaction(SIGTERM, &act, &oact);
-    sigaction(SIGINT, &act, &oact);
-    sigaction(SIGHUP, &act, &oact);
-}
-
 DebugOption debugLogArgs("log_args");
 
 void log_args()
@@ -865,11 +813,7 @@ int main(int argc, char const *argv[])
         usage();
     }
 
-    // open syslog
-    openlog(argv[0], LOG_NDELAY|LOG_NOWAIT|LOG_PID, LOG_USER);
-
     setupDebug();
-    setupSignals();
     LogConfig::setLogLevel((LogLevel)loglevel.get());
 
     // test convert the address to ensure it's convertable without exceptions before entering main code
