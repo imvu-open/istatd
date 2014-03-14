@@ -1,4 +1,3 @@
-
 /* A simple in-browser app to browse counters out of istatd. */
 /* Copyright 2011 IMVU, Inc. Author: jwatte@imvu.com */
 /*
@@ -7,6 +6,10 @@ todo:
 - arrange colors and counter ordering explicitly
 - render modes: area, stacked, line, min/max (in addition to "bands")
 */
+
+/*  HEY Let's highjack DYGRAPH plugins! */
+Dygraph.PLUGINS = Dygraph.PLUGINS.slice(1);
+Dygraph.PLUGINS.unshift(ISTATD_Legend);
 
 CONSOLE_LOG_ALERT = false;
 if(typeof(console) === 'undefined') {
@@ -781,7 +784,6 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     var start = data.start;
     var stop = data.stop;
     var format = this._format || 'noBars';
-    var lockatzero = false;
 
     // initialize data array with Date objects
     var i = start;
@@ -807,13 +809,13 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     //  "errorBars" really means sdev
     //  "customBars" really means min/max
     //  "noBars" means no bars :-)
-    if (format == 'noBars') {
+    if (format == 'noBars' || format == 'stacked') {
         pushfn = function(plot, bucket) {
             if (!bucket) {
-                plot.push([NaN]);
+                plot.push(NaN);
             }
             else {
-                plot.push([bucket.avg]);
+                plot.push(bucket.avg);
                 minimum = Math.min(bucket.avg, minimum);
                 maximum = Math.max(bucket.avg, maximum);
                 minVal = Math.min(bucket.avg, minVal);
@@ -913,6 +915,29 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
         }
     });
 
+    // for stacked charts, the y axis must be based on max of the sum
+    // of the y values for each x.
+    if (format == 'stacked') {
+        var sums = Array(plotTimes.length);
+        jQuery.each(data, function(key, series) {
+            if (series instanceof Object && 'data' in series) {
+                jQuery.each(series['data'], function(index, bucket) {
+                    if (sums[index] == undefined) {
+                        sums[index] = bucket.avg;
+                    }
+                    else {    
+                        sums[index] += bucket.avg;
+                    }
+                });
+            }
+        });
+        maximum = -Math.pow(2,100) - 1; // pick a really big negative maximum to start
+        jQuery.each(sums, function(key, value) {
+            maximum = Math.max(value, maximum);
+        });
+        
+    }
+
     // Doing Dygraph's job of calculating the data range properly,
     // so that error bars don't go outside the plotted data set.
     if (!gotdata) {
@@ -930,11 +955,9 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
         maximum = maximum + (range_slop * 2); // 10% extra on top
         minimum = minimum - range_slop;       // 5% extra on bottom!
     }
-    /* Does the sdev range go negative, but no value goes negative? Clamp to 0. */
+
+    // Does the sdev range go negative, but no value goes negative? Clamp to 0.
     if (minVal >= 0 && minimum < 0) {
-        minimum = 0;
-    }
-    if (lockatzero) {
         minimum = 0;
     }
 
@@ -972,7 +995,7 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
             'labelsDiv': $div.parents('.graph').find('.legend').get()[0],
             'legend': 'always',
             'labels': labels,
-            'showLabelsOnHighlight': false,
+            'showLabelsOnHighlight': true,
             'zoomCallback': function(minX, maxX, yRanges) {
                 // We need to use the interactionModel's stored domain to check if the X axis is changed.
                 // Y zooming doesn't change the X axis, so this is reliable.
@@ -992,13 +1015,32 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
             },
             'interactionModel': theInteractionModel,
             'labelsKMB': true,
-            'pixelsPerYLabel': 20
+            'axes': {
+                'x' : {
+                    'valueFormatter': function (x) {return ''},
+                },
+                'y' : {
+                    'valueFormatter': function (y) {return ''},
+                    'pixelsPerlLabel': 20
+                }
+            },
         };
+
+    if (labels.length > 2) {
+        params.highlightSeriesOpts = {
+            highlightCircleSize: 5,
+            strokeWidth: 3,
+        };
+    }
+
     if (format == 'errorBars') {
         params.errorBars = true;
     }
     else if (format == 'customBars') {
         params.customBars = true;
+    }
+    else if (format == 'stacked') {
+        params.stackedGraph = true;
     }
 
     var g = this._dygraph = new Dygraph(
@@ -1031,7 +1073,8 @@ GraphSurface.prototype.showSettings = function GraphSurface_showSettings() {
     {
         'noBars': "Lines",
         'errorBars': "StdDev",
-        'customBars': "Min/Max"
+        'customBars': "Min/Max",
+        'stacked' : "Stacked"
     },
     function(v) {
         console.log("Selected format: " + v);
@@ -1235,7 +1278,7 @@ GraphGrid.prototype.newGraph = guard(function GraphGrid_newGraph() {
         $('span', this).each(function(i, elem) {
             $(elem).unbind();
             $(elem).click(guard(function () {
-                surface.toggleSeries($(this).html().slice(1));
+                surface.toggleSeries($(this).contents()[1].wholeText.slice(1))
             }));
         });
     });
@@ -2016,13 +2059,15 @@ function load_dashboard(args, contexts, cb) {
 var bars_ix_to_fmt = {
     1: 'noBars',
     2: 'errorBars',
-    3: 'customBars'
+    3: 'customBars',
+    4: 'stacked'
 };
 
 var bars_fmt_to_ix = {
     'noBars': 1,
     'errorBars': 2,
-    'customBars': 3
+    'customBars': 3,
+    'stacked': 4
 };
 
 function load_state(state, _ctx, cb) {

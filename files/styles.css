@@ -585,9 +585,17 @@ div.graph span.label, div.graph div.legend {
 }
 
 div.graph span.label span, div.graph div.legend span {
-    display: inherit;
+    display: block;
     padding: 0px;
     margin: 0px 1em 0px 0px;
+}
+
+div.graph div.legend {
+    overflow: hidden;
+}
+
+div.graph div.legend span div[style] {
+    bottom: -1ex !important;
 }
 
 div.graph div.legend span {
@@ -599,7 +607,8 @@ div.graph div.legend span {
     padding-right: 20px;
     position: relative;
     cursor: pointer;
-    display: inline-block;
+    display: block;
+    float: left;
 }
 
 div.graph div.legend span:before {
@@ -620,15 +629,13 @@ div.graph div.legend span:active:before {
     opacity: 0.25;
 }
 
-div.graph div.legend b:first-child:last-child span {
+div.graph div.legend span:first-child:last-child {
     padding-right: 8px;
     cursor: default;
 }
 
-div.graph div.legend b:first-child:last-child span:before {
+div.graph div.legend span:first-child:last-child:before {
     background: transparent;
-    width: 0px;
-    height: 0px;
 }
 
 div.graph div.summary {
