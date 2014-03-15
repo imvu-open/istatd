@@ -809,7 +809,7 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     //  "errorBars" really means sdev
     //  "customBars" really means min/max
     //  "noBars" means no bars :-)
-    if (format == 'noBars' || format == 'stacked') {
+    if (format == 'noBars' || format == 'stacked' || format == 'area') {
         pushfn = function(plot, bucket) {
             if (!bucket) {
                 plot.push(NaN);
@@ -1042,6 +1042,9 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     else if (format == 'stacked') {
         params.stackedGraph = true;
     }
+    else if (format == 'area') {
+        params.fillGraph = true;
+    }
 
     var g = this._dygraph = new Dygraph(
         // containing div
@@ -1074,7 +1077,8 @@ GraphSurface.prototype.showSettings = function GraphSurface_showSettings() {
         'noBars': "Lines",
         'errorBars': "StdDev",
         'customBars': "Min/Max",
-        'stacked' : "Stacked"
+        'stacked' : "Stacked",
+        'area' : "Area"
     },
     function(v) {
         console.log("Selected format: " + v);
@@ -2060,14 +2064,16 @@ var bars_ix_to_fmt = {
     1: 'noBars',
     2: 'errorBars',
     3: 'customBars',
-    4: 'stacked'
+    4: 'stacked',
+    5: 'area'
 };
 
 var bars_fmt_to_ix = {
     'noBars': 1,
     'errorBars': 2,
     'customBars': 3,
-    'stacked': 4
+    'stacked': 4,
+    'area': 5
 };
 
 function load_state(state, _ctx, cb) {
