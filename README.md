@@ -2,7 +2,9 @@ istatd
 ======
 
 Check with jwatte@imvu.com for more information. Released under MIT 
-license. All rights reserved. Copyright 2011 IMVU, Inc.
+license. All rights reserved. Copyright 2011-2014 IMVU, Inc. Some
+contributions in the contrib subdirectory may be released under 
+different licenses.
 
 The purpose of istatd is to efficiently collect, store and retrieve 
 named statistics from a large number of sources. This is similar to 

@@ -1,0 +1,12 @@
+# this is a comment
+    # blank line with comment
+class
+trailing_ws 	   ##### trailing comment  ##
+	  leading_ws
+  surrounded_ws     
+_.-.clean_me up!$por&-favor5()-_.
+host.fakehost
+
+
+
+# yikes what is this comment down here for?
