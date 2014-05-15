@@ -1,3 +1,18 @@
+istatd (0.76-1) UNRELEASED; urgency=low
+
+  [ Eric Hohenstein ]
+  * adding back signal.h include to main.cpp because kill needs it even
+    though istatd builds without it on lucid
+
+  [ Jon Schedler ]
+  * add contrib/collectd to hold some helpful collectd plugins that
+    will write date to istatd
+  * Update to jquery 1.8
+  * add area graph type
+  * Update copyright and text in LICENSE.md
+
+ -- Jon Schedler <jschedler@imvu.com>  Thu, 15 May 2014 10:56:29 -0700
+
 istatd (0.75-1) UNRELEASED; urgency=low
 
   [ Leonidas Loucas ]
