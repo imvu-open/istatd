@@ -125,7 +125,7 @@ if [ -z "$BOOST_SYSTEM" ]; then
     BOOST_SYSTEM=`findone -lboost_system -lboost_system-mt`
     if [ -z "$BOOST_SYSTEM" ]; then
         echo "Cannot find boost_system-mt.so (or boost_system.so)"
-        echo "Specify it with --boost_system or install libbost-all-dev."
+        echo "Specify it with --boost_system or install libboost-all-dev."
         exit 1
     fi
 fi
@@ -134,7 +134,7 @@ if [ -z "$BOOST_FILESYSTEM" ]; then
     BOOST_FILESYSTEM=`findone -lboost_filesystem -lboost_filesystem-mt`
     if [ -z "$BOOST_FILESYSTEM" ]; then
         echo "Cannot find boost_filesystem-mt.so (or boost_filesystem.so)"
-        echo "Specify it with --boost_filesystem or install libbost-all-dev."
+        echo "Specify it with --boost_filesystem or install libboost-all-dev."
         exit 1
     fi
 fi
@@ -144,7 +144,7 @@ if [ -z "$BOOST_THREAD" ]; then
     BOOST_THREAD=`findone -lboost_thread -lboost_thread-mt`
     if [ -z "$BOOST_THREAD" ]; then
         echo "Cannot find boost_thread-mt.so (or boost_thread.so)"
-        echo "Specify it with --boost_thread or install libbost-all-dev."
+        echo "Specify it with --boost_thread or install libboost-all-dev."
         exit 1
     fi
 fi
@@ -153,7 +153,7 @@ if [ -z "$BOOST_IOSTREAMS" ]; then
     BOOST_IOSTREAMS=`findone -lboost_iostreams -lboost_iostreams-mt`
     if [ -z "$BOOST_IOSTREAMS" ]; then
         echo "Cannot find boost_iostreams-mt.so (or boost_iostreams.so)"
-        echo "Specify it with --boost_iostreams or install libbost-all-dev."
+        echo "Specify it with --boost_iostreams or install libboost-all-dev."
         exit 1
     fi
 fi
