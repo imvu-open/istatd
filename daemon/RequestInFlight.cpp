@@ -82,12 +82,12 @@ void RequestInFlight::chooseEncoding(AcceptEncodingHeader &aeh)
     if (aeh.should_send_gzip())
     {
         hdrs_["Content-encoding"] = "gzip";
-        strm_buffer_.push(boost::iostreams::gzip_compressor(boost::iostreams::gzip_params(boost::iostreams::gzip::best_compression)));
+        strm_buffer_.push(boost::iostreams::gzip_compressor(boost::iostreams::gzip_params(boost::iostreams::gzip::best_speed)));
     }
     else if (aeh.should_send_deflate())
     {
         hdrs_["Content-encoding"] = "deflate";
-        strm_buffer_.push(boost::iostreams::zlib_compressor(boost::iostreams::zlib_params(boost::iostreams::zlib::best_compression)));
+        strm_buffer_.push(boost::iostreams::zlib_compressor(boost::iostreams::zlib_params(boost::iostreams::zlib::best_speed)));
     }
 }
 
