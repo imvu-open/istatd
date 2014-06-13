@@ -19,7 +19,7 @@ public:
     virtual void record(std::string const &ctr, time_t time, double value);
     virtual void record(std::string const &ctr, time_t time, double value, double valueSq, double min, double max, size_t cnt);
     virtual void find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand *&strand);
-    virtual void listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, bool> > &oList);
+    virtual void listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList);
     virtual std::string const &getLocation() const;
     void manufactureTruth(std::string const &name, time_t from, time_t to, time_t interval);
     void flushAll(IComplete *cmp) { cmp->on_complete(); }

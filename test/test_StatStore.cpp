@@ -99,13 +99,30 @@ void run_tests(void)
         StatStore store(storepath, getuid(), service, statCounterFactory, mm);
 
         store.record("taco", 42.42);
-        std::list<std::pair<std::string, bool> > oList;
+        std::list<std::pair<std::string, CounterResponse> > oList;
         store.listMatchingCounters("bbq", oList);
         assert_equal(0, oList.size());
         store.listMatchingCounters("taco is delicious!", oList);
         assert_equal(0, oList.size());
         store.listMatchingCounters("taco", oList);
         assert_equal(1, oList.size());
+        store.record("taco.bell", 42.42);
+        store.record("*taco.cheese", 42.42);
+        std::list<std::pair<std::string, CounterResponse> > oList2;
+        store.listMatchingCounters("taco*", oList2);
+        assert_equal(3, oList2.size());
+        std::list<std::pair<std::string, CounterResponse> >::iterator ptr = oList2.begin();
+        assert_equal("taco.bell", (*ptr).first);
+        assert_equal(true, (*ptr).second.isLeaf);
+        assert_equal(CounterResponse::DisplayTypeGauge, (*ptr).second.counterType);
+        std::advance(ptr, 1);
+        assert_equal("taco.cheese", (*ptr).first);
+        assert_equal(true, (*ptr).second.isLeaf);
+        assert_equal(CounterResponse::DisplayTypeEvent, (*ptr).second.counterType);
+        std::advance(ptr, 1);
+        assert_equal("taco", (*ptr).first);
+        assert_equal(false, (*ptr).second.isLeaf);
+        assert_equal(CounterResponse::DisplayTypeAggregate, (*ptr).second.counterType);
     }
     mm->dispose();
 

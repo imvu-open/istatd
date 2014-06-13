@@ -40,7 +40,7 @@ public:
 
     virtual void find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand * &strand);
 
-    virtual void listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, bool> > &oList);
+    virtual void listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList);
 
     inline virtual std::string const &getLocation() const { return path_; }
 

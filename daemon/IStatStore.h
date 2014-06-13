@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "IStatCounter.h"
+#include "AllKeys.h"
 #include <istat/Header.h>
 
 #include <boost/asio/strand.hpp>
@@ -33,7 +34,7 @@ public:
 
     virtual void find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand * &strand) = 0;
 
-    virtual void listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, bool> > &oList) = 0;
+    virtual void listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList) = 0;
 
     virtual std::string const &getLocation() const = 0;
 
@@ -62,7 +63,7 @@ public:
     inline void record(std::string const &ctr, time_t time, double value) {}
     inline void record(std::string const &ctr, time_t time, double value, double valueSq, double min, double max, size_t cnt) {}
     inline void find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand * &strand) { strand = 0; }
-    inline void listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, bool> > &oList) {}
+    inline void listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList) {}
     inline std::string const &getLocation() const { static std::string ss; return ss; }
     inline void flushAll(IComplete *cmp) {}
     inline void getUniqueId(UniqueId &out) { out = UniqueId(); }

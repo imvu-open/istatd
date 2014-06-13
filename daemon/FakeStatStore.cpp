@@ -86,7 +86,7 @@ void FakeStatStore::find(std::string const &ctr, boost::shared_ptr<IStatCounter>
 }
 
 
-void FakeStatStore::listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, bool> > &oList) {}
+void FakeStatStore::listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList) {}
 
 std::string const &FakeStatStore::getLocation() const { return location_; }
 

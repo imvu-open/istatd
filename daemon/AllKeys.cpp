@@ -5,11 +5,15 @@
 #include "Logs.h"
 
 #include <istat/Atomic.h>
+#include <boost/assign/list_of.hpp>
 
+
+using boost::assign::map_list_of;
 
 
 DebugOption allKeys("allKeys");
 
+CounterResponse::CounterDisplayTypeToStringMap CounterResponse::DisplayTypeToString = map_list_of(DisplayTypeGauge, "gauge")(DisplayTypeEvent, "counter")(DisplayTypeAggregate, "aggregate");
 AllKeys::AllKeys() :
     head_(0)
 {
@@ -27,14 +31,14 @@ AllKeys::~AllKeys()
     }
 }
 
-void AllKeys::add(std::string const &str)
+void AllKeys::add(std::string const &str, bool isCollated)
 {
     dirty_ = true;
     if (allKeys.enabled())
     {
         LogSpam << "AllKeys::add(" << str << ")";
     }
-    Rec *r = new Rec(str);
+    Rec *r = new Rec(str, isCollated);
     //  Spin, in case we race with some other winner.
     //  Note that it will never livelock, because someone
     //  will write to the head_ each cycle and thus make
@@ -49,7 +53,7 @@ void AllKeys::add(std::string const &str)
     }
 }
 
-void AllKeys::match(std::string const &path, std::list<std::pair<std::string, bool> > &oList)
+void AllKeys::match(std::string const &path, std::list<std::pair<std::string, CounterResponse> > &oList)
 {
     //  Only one match() can run at once. That should not be a real problem.
     grab aholdof(lock_);
@@ -66,15 +70,20 @@ KeyMatch::KeyMatch()
 {
 }
 
-void KeyMatch::operator()(std::string const &str)
+void KeyMatch::operator()(CounterData const &cd)
 {
+    std::string const &str = cd.name;
     //  add knowledge about a particular counter
     HashMap::iterator ptr(ctrs.find(str)), end(ctrs.end());
     if (ptr != end)
     {
         return;
     }
-    ctrs[str] = true;
+
+    CounterResponse::CounterDisplayType lt = cd.isCounter ? CounterResponse::DisplayTypeEvent : CounterResponse::DisplayTypeGauge;
+    CounterResponse cr(true, lt);
+
+    ctrs[str] = cr;
     std::string prev(str);
     while (true)
     {
@@ -88,18 +97,18 @@ void KeyMatch::operator()(std::string const &str)
         ptr = ctrs.find(prev);
         if (ptr == end)
         {
-            ctrs[prev] = false;
+            ctrs[prev] = CounterResponse(false, CounterResponse::DisplayTypeAggregate);
         }
         else
         {
-            (*ptr).second = false;
+            (*ptr).second = CounterResponse(false, CounterResponse::DisplayTypeAggregate);
             //  I know its parents already exist
             break;
         }
     }
 }
 
-void KeyMatch::extract(std::string const &pat, std::list<std::pair<std::string, bool> > &oList)
+void KeyMatch::extract(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList)
 {
     for (HashMap::iterator ptr(ctrs.begin()), end(ctrs.end());
         ptr != end;
@@ -109,7 +118,7 @@ void KeyMatch::extract(std::string const &pat, std::list<std::pair<std::string, 
         {
             if (allKeys.enabled())
             {
-                LogDebug << "allKeys match " << (*ptr).first << "as" << ((*ptr).second ? "leaf" : "branch");
+                LogDebug << "allKeys match " << (*ptr).first << "as" << ((*ptr).second.isLeaf ? "leaf" : "branch");
             }
             oList.push_back(*ptr);
         }

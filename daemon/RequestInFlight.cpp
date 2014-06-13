@@ -529,7 +529,7 @@ void RequestInFlight::listCountersMatching(std::string const &pattern,
         boost::shared_ptr<IStatStore> storePtr)
 {
     LogSpam << "RequestInFlight::listCountersMatching(" << pattern << ") - start";
-    std::list<std::pair<std::string, bool> > results;
+    std::list<std::pair<std::string, CounterResponse> > results;
     storePtr->listMatchingCounters(pattern, results);
 
     createCountersMatchingResponse(pattern, results);
@@ -537,11 +537,30 @@ void RequestInFlight::listCountersMatching(std::string const &pattern,
     complete(200, "application/json");
 }
 
-void RequestInFlight::createCountersMatchingResponse(std::string const &pattern, std::list<std::pair<std::string, bool> > &results)
+void RequestInFlight::createCountersMatchingResponse(std::string const &pattern, std::list<std::pair<std::string, CounterResponse> > &results)
 {
-    strm_buffer_ << "{\"pattern\":\"" << js_quote(pattern) << "\",\"matching_names\":[";
+    strm_buffer_ << "{";
+
+    strm_buffer_ << "\"type_mapping\":{";
     bool comma = false;
-    for (std::list<std::pair<std::string, bool> >::iterator
+    for(CounterResponse::CounterDisplayTypeToStringMap::iterator it = CounterResponse::DisplayTypeToString.begin();
+            it != CounterResponse::DisplayTypeToString.end();
+            ++it) {
+
+        if (comma)
+        {
+            strm_buffer_ << ",";
+        }
+        else
+        {
+            comma = true;
+        }
+        strm_buffer_ << "\"" << (*it).first << "\":\"" << js_quote((*it).second) << "\"";
+    }
+    strm_buffer_ << "}";
+    strm_buffer_ << ",\"pattern\":\"" << js_quote(pattern) << "\",\"matching_names\":[";
+    comma = false;
+    for (std::list<std::pair<std::string, CounterResponse> >::iterator
         ptr(results.begin()), end(results.end());
         ptr != end;
         ++ptr)
@@ -554,7 +573,9 @@ void RequestInFlight::createCountersMatchingResponse(std::string const &pattern,
         {
             comma = true;
         }
-        strm_buffer_ << "{\"is_leaf\":" << ((*ptr).second ? "true" : "false") <<
+        strm_buffer_ << 
+            "{\"is_leaf\":" << ((*ptr).second.isLeaf ? "true" : "false") <<
+            ",\"type\":" << ((*ptr).second.counterType ) <<
             ",\"name\":\"" << js_quote((*ptr).first) << "\"}";
     }
     strm_buffer_ << "]}";

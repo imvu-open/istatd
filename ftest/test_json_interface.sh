@@ -12,6 +12,9 @@ create_stat_files single ice.cream.bar 1010 1090
 
 start_server single --fake-time 2600
 
+send_stat single *maybe^counter 1
+send_stat single maybe^gauge 1
+
 test_name GET_returns_15_minutes_only_when_end_is_specified
 http_get_counter localhost:18011 null 2510 null foo.bar > $TEST_OUT
 assert_expected $TEST_OUT
@@ -106,6 +109,10 @@ assert_expected $TEST_OUT
 
 test_name POST_works_with_trailing_key
 http_post_json "http://localhost:18011/*" '{"start":1001,"stop":1598,"maxSamples":2,"keys":["foo.bar"],"trailing":0}' > $TEST_OUT
+assert_expected $TEST_OUT
+
+test_name GET_counter_list_returns_counter_type
+curl -s "http://localhost:18011/?q=*" > $TEST_OUT
 assert_expected $TEST_OUT
 
 cleanup_test

@@ -190,7 +190,7 @@ boost::shared_ptr<StatStore::AsyncCounter> StatStore::openCounter(std::string co
             return asyncCounter;
         }
         counters[xform] = asyncCounter;
-        keys_.add(xform);
+        keys_.add(xform, isCollated);
     }
     //  strip the leaf name "extension"
     std::string sex(name);
@@ -330,7 +330,7 @@ void StatStore::loadCtr(std::string const &file)
 }
 
 
-void StatStore::listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, bool> > &oList)
+void StatStore::listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList)
 {
     LogSpam << "StatStore::listMatchingCounters(" << pat << ")";
     keys_.match(pat, oList);

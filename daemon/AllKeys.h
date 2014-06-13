@@ -10,17 +10,42 @@
 #include <string>
 #include <list>
 #include <tr1/unordered_map>
+#include "LoopbackCounter.h"
 
 class AllKeys;
+struct CounterResponse
+{
+    enum CounterDisplayType
+    {
+        DisplayTypeGauge = 0,
+        DisplayTypeEvent = 1,
+        DisplayTypeAggregate = 2
+    };
+    typedef std::map<CounterDisplayType, const char*> CounterDisplayTypeToStringMap;
+    static CounterDisplayTypeToStringMap DisplayTypeToString;
+
+    bool isLeaf;
+    CounterDisplayType counterType;
+    CounterResponse(bool isLeaf, CounterDisplayType counterType) : isLeaf(isLeaf), counterType(counterType) {}
+    CounterResponse() : isLeaf(true), counterType(DisplayTypeAggregate) {}
+};
 
 class KeyMatch
 {
 public:
-    KeyMatch();
-    void operator()(std::string const &str);
-    void extract(std::string const &pat, std::list<std::pair<std::string, bool> > &oList);
+    struct CounterData
+    {
+        std::string name;
+        bool isCounter;
+        CounterData(std::string const &str, bool isCounter) : name(str), isCounter(isCounter) {}
+    };
 public:
-    typedef std::tr1::unordered_map<std::string, bool> HashMap;
+    KeyMatch();
+    void operator()(CounterData const &cd);
+    void extract(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList);
+
+public:
+    typedef std::tr1::unordered_map<std::string, CounterResponse> HashMap;
     HashMap ctrs;
 };
 
@@ -30,7 +55,7 @@ public:
     AllKeys();
     ~AllKeys();
     //  add() does *not* check for duplicates! It happily adds them.
-    void add(std::string const &str);
+    void add(std::string const &str, bool isCollated);
 
     //  T is callable(std::string const &str)
     template<typename T> void foreach(T &t) const
@@ -42,16 +67,16 @@ public:
             r = r->next;
         }
     }
-    void match(std::string const &path, std::list<std::pair<std::string, bool> > &oList);
+    void match(std::string const &path, std::list<std::pair<std::string, CounterResponse> > &oList);
 private:
     //  Once created, one of these records never go away, unless 
     //  ALL records go away. This makes iteration thread safe (at 
     //  the risk of missing any new record created while iterating).
     struct Rec
     {
-        inline Rec(std::string const &init) : next(0), data(init) {}
+        inline Rec(std::string const &init, bool isCollated) : next(0), data(init, isCollated) {}
         struct Rec *next;
-        std::string data;
+        KeyMatch::CounterData data;
     };
     Rec *head_;
     bool dirty_;

@@ -63,7 +63,7 @@ private:
     void chooseEncoding(AcceptEncodingHeader &codecs);
     void prepareEncoding();
     void listCountersMatching(std::string const &url, boost::shared_ptr<IStatStore> storePtr);
-    void createCountersMatchingResponse(std::string const &pattern, std::list<std::pair<std::string, bool> > &results);
+    void createCountersMatchingResponse(std::string const &pattern, std::list<std::pair<std::string, CounterResponse> > &results);
     void generateCounterData(std::string const &left, std::map<std::string, std::string> params,
         boost::shared_ptr<IStatStore> storePtr);
     void listAgentsMatching(std::string const &a);
