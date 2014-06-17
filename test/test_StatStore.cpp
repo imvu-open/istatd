@@ -87,7 +87,7 @@ private:
 void run_tests(void)
 {
     Mmap *mm;
-    
+
     mm = NewMmap();
     {
         boost::asio::io_service service;
@@ -155,7 +155,13 @@ void run_tests(void)
     mm->dispose();
 }
 
+
+void func()
+{
+    run_tests();
+}
+
 int main(int argc, char const *argv[])
 {
-    return istat::test(run_tests, argc, argv);
+    return istat::test(func, argc, argv);
 }

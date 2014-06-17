@@ -287,6 +287,10 @@ function delete_ctr {
     echo -ne "delete.ctr $2\n" | bin/istatd_netcat -q 1 localhost `admin_port_from_profile $1`
 }
 
+function delete_pattern {
+    echo -ne "delete.pattern $2\n" | bin/istatd_netcat -q 1 localhost `admin_port_from_profile $1`
+}
+
 function check_get_resp_size_zlib {
     PORT="$1"; shift
     QUERY="$1"; shift

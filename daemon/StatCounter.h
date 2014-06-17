@@ -11,6 +11,8 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/asio/strand.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/operations.hpp>
 
 class RetentionPolicy;
 
@@ -29,6 +31,9 @@ public:
     virtual void select(time_t start, time_t end, bool trailing, std::vector<istat::Bucket> &oBuckets, 
                         time_t &normalized_start, time_t &normalized_end, time_t &interval, 
                         size_t max_samples);
+
+
+    virtual void purge(std::string rootPath);
 
     boost::shared_ptr<istat::StatFile> pickStatFile(time_t startTime, time_t endTime, time_t &interval);
     boost::shared_ptr<istat::StatFile> pickTrailingStatFile(time_t season, time_t &o_interval, time_t &o_season);
@@ -63,6 +68,8 @@ private:
     void reduce(std::vector<istat::Bucket> &buckets, time_t startTime, time_t endTime, time_t interval, int collatedBucketSize);
     bool shiftCollated(time_t t);
     void fullyShiftCollated();
+    std::pair<bool, std::string> wrap_remove(const boost::filesystem::path& p);
+    std::pair<bool, std::string> wrap_copy_file(const boost::filesystem::path& from, const boost::filesystem::path& to);
     std::string getSampleStatFilePath();
 };
 

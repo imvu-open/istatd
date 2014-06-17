@@ -44,6 +44,7 @@ public:
     void operator()(CounterData const &cd);
     void extract(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList);
 
+    void clear() { ctrs.clear(); }
 public:
     typedef std::tr1::unordered_map<std::string, CounterResponse> HashMap;
     HashMap ctrs;
@@ -56,6 +57,8 @@ public:
     ~AllKeys();
     //  add() does *not* check for duplicates! It happily adds them.
     void add(std::string const &str, bool isCollated);
+    void delete_all();
+    void exchange(AllKeys &ak);
 
     //  T is callable(std::string const &str)
     template<typename T> void foreach(T &t) const

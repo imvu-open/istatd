@@ -117,6 +117,8 @@ public:
     void getConnected(std::vector<MetaInfo> &oConnected);
     void purgeOldMetaRecords(size_t maxOld, time_t maxAge);
     void deleteCounter(std::string const &ctr, IComplete *complete);
+    void deletePattern(std::string const &pattern, IComplete *complete);
+    void refreshKeys();
 
 private:
     typedef std::tr1::unordered_map<void *, boost::shared_ptr<MetaInfo> > InfoHashMap;

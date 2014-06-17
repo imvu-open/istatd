@@ -21,6 +21,8 @@
 #include <istat/StatFile.h>
 
 
+class Deleter;
+
 class StatStore : public IStatStore
 {
 public:
@@ -28,7 +30,9 @@ public:
         boost::asio::io_service &svc,
         boost::shared_ptr<IStatCounterFactory> factory,
         istat::Mmap *mm, long flushMs = -1,
-        long minimumRequiredSpace = -1);
+        long minimumRequiredSpace = -1,
+        int pruneEmptyDirsMs = 60000
+        );
 
     virtual ~StatStore();
 
@@ -50,6 +54,12 @@ public:
     void getUniqueId(UniqueId &oid);
 
     void deleteCounter(std::string const &ctr, IComplete *complete);
+    void deleteCounter(std::string const &ctr, Deleter* deleter, IComplete *complete);
+    void deletePattern(std::string const &pattern, IComplete *complete);
+
+    virtual void pruneEmptyDirsNow(const std::string &purgePath);
+
+    void refreshKeys();
 
     struct AsyncCounter
     {
@@ -70,25 +80,40 @@ private:
     typedef ShardedMap<CounterMap> Shards;
     Shards counterShards_;
     void flushOne(Shards::iterator &iterator);
+    void pruneEmptyDirs(const std::string &purgePath);
     std::string path_;
     boost::asio::io_service &svc_;
+    boost::asio::deadline_timer pruneEmptyDirsTimer_;
+    boost::asio::strand refreshStrand_;
     boost::asio::deadline_timer syncTimer_;
     boost::asio::deadline_timer availCheckTimer_;
     Shards::iterator syncIterator_;
     boost::shared_ptr<IStatCounterFactory> factory_;
+    std::list< boost::shared_ptr<AsyncCounter> > pendedDeletes_;
+    ::lock deleteMutex_;
+    ::lock pruneEmptyDirsMutex_;
     istat::Mmap *mm_;
     long flushMs_;
     long minimumRequiredSpace_;
     UniqueId myId_;
     AllKeys keys_;
+    AllKeys keysWA_;
     int64_t numLoaded_;
     int aggregateCount_;
+    int pruneEmptyDirsMs_;
+    volatile int queuedRefreshes_;
 
     //  openCounter() takes an un-munged name!
     boost::shared_ptr<AsyncCounter> openCounter(std::string const &name, bool create=false, time_t zeroTime=0);
 
+    void scheduleRefresh();
+    void refreshAllKeys();
+
     void syncNext();
     void onSync();
+
+    void pruneEmptyDirsNext();
+    void onPruneEmptyDirs(const std::string & purgePath, const boost::system::error_code& e);
 
     void availCheckNext();
     void onAvailCheck();

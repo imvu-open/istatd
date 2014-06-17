@@ -31,6 +31,23 @@ AllKeys::~AllKeys()
     }
 }
 
+void AllKeys::exchange(AllKeys &ak)
+{
+    Rec* old_head = head_;
+    dirty_ = true;
+    while (true)
+    {
+        if(istat::atomic_compare_exchange((void * volatile *)&head_, (void *)old_head, (void *)ak.head_))
+        {
+            break;
+        }
+
+    }
+    ak.head_ = old_head;
+    toMatch_.clear();
+
+}
+
 void AllKeys::add(std::string const &str, bool isCollated)
 {
     dirty_ = true;
@@ -51,6 +68,12 @@ void AllKeys::add(std::string const &str, bool isCollated)
             return;
         }
     }
+}
+
+void AllKeys::delete_all()
+{
+    AllKeys ak;
+    exchange(ak);
 }
 
 void AllKeys::match(std::string const &path, std::list<std::pair<std::string, CounterResponse> > &oList)

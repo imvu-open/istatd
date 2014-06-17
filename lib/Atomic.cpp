@@ -34,5 +34,13 @@ bool atomic_compare_exchange(int64_t volatile *vp, int64_t oldValue, int64_t new
     return __sync_bool_compare_and_swap(vp, oldValue, newValue);
 #endif
 }
-}
 
+void* atomic_compare_exchange_and_return(void * volatile * vpp, void *oldValue, void *newValue)
+{
+#if defined(_WIN32)
+#error "implement me"
+#else
+    return __sync_val_compare_and_swap(vpp, oldValue, newValue);
+#endif
+}
+}

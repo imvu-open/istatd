@@ -272,6 +272,16 @@ void StatServer::deleteCounter(std::string const &ctr, IComplete *complete)
     statStore_->deleteCounter(ctr, complete);
 }
 
+void StatServer::deletePattern(std::string const &pattern, IComplete *complete)
+{
+    statStore_->deletePattern(pattern, complete);
+}
+
+void StatServer::refreshKeys()
+{
+    statStore_->refreshKeys();
+}
+
 void StatServer::startResolveAgent()
 {
     forward_->onData_.connect(boost::bind(&StatServer::on_forwardData, this));

@@ -12,6 +12,8 @@
 #include "Debug.h"
 #include "Settings.h"
 #include "DeleteCountersWorker.h"
+#include "DeletePatternsWorker.h"
+
 
 #include <istat/strfunc.h>
 #include <istat/istattime.h>
@@ -362,10 +364,25 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         }
         if (!as_->ssp_)
         {
-            ec_->writeOut("huh? no statstore to flush.\r\n");
+            ec_->writeOut("huh? no statstore to delete.ctr from.\r\n");
             return;
         }
         (new DeleteCountersWorker(&args.front(), &args.front() + args.size(), as_->ssp_, ec_))->go();
+        return;
+    }
+    if (cmd == "delete.pattern")
+    {
+        if (args.size() < 1)
+        {
+            ec_->writeOut(std::string("huh? delete.pattern requires one or more patterns.\r\n"));
+            return;
+        }
+        if (!as_->ssp_)
+        {
+            ec_->writeOut("huh? no statstore to delete.pattern from.\r\n");
+            return;
+        }
+        (new DeletePatternsWorker(&args.front(), &args.front() + args.size(), as_->ssp_, ec_))->go();
         return;
     }
     if (cmd == "flush.setting")

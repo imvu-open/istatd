@@ -1,9 +1,10 @@
-
 #include "DeleteCountersWorker.h"
 #include "StatServer.h"
+#include "Logs.h"
 
 void DeleteCountersWorker::go()
 {
+    LogNotice << "DeleteCountersWorker::go() deleting a counter: T-" << counters_.size();
     if (counters_.empty())
     {
         conn_->writeOut(std::string("ok\r\n"));
@@ -17,6 +18,7 @@ void DeleteCountersWorker::go()
 
 void DeleteCountersWorker::on_complete()
 {
+    LogNotice << "DeleteCountersWorker::on_complete()";
     go();
 }
 

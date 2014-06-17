@@ -53,6 +53,8 @@ public:
             oBuckets.push_back(istat::Bucket(1, 1, 1, 1, 1, i * interval + start));
         }
     }
+
+    void purge(std::string rootPath) {}
 };
 
 void FakeStatStore::record(std::string const &ctr, double value)
@@ -95,5 +97,3 @@ void FakeStatStore::manufactureTruth(std::string const &name, time_t from, time_
 {
     fakeCounters_[name] = boost::shared_ptr<IStatCounter>(new FakeStatCounter(svc_, from, to, interval, this, name));
 }
-
-

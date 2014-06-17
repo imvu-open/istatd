@@ -5,6 +5,8 @@
 #include "StatStore.h"
 #include "IComplete.h"
 
+class Deleter;
+
 class FakeStatStore : public IStatStore {
 public:
     FakeStatStore(boost::asio::io_service &svc);
@@ -25,8 +27,11 @@ public:
     void flushAll(IComplete *cmp) { cmp->on_complete(); }
     void getUniqueId(UniqueId &oid) { memset(&oid, 0, sizeof(oid)); }
     void setAggregateCount(int ac) {};
+    void deleteCounter(std::string const &str, Deleter* deleter, IComplete *complete) { complete->on_complete(); }
     void deleteCounter(std::string const &str, IComplete *complete) { complete->on_complete(); }
-
+    void deletePattern(std::string const &pattern, IComplete *complete) { complete->on_complete(); }
+    void pruneEmptyDirsNow(const std::string &purgePath) {}
+    void refreshKeys() {}
 };
 
 #endif // daemon_FakeStatStore_h

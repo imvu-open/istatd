@@ -15,6 +15,11 @@ public:
 
     virtual boost::shared_ptr<IStatCounter> create(std::string const &name, bool isCollated, time_t zeroTime);
 
+    std::string& rootPath()
+    {
+        return rootPath_;
+    }
+
 private:
     std::string rootPath_;
     istat::Mmap *mm_;

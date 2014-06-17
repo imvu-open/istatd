@@ -150,6 +150,20 @@ public:
         return ret;
     }
 
+    std::pair<map_type&, ::lock&> get_from_index(int i)
+    {
+        if (i < 0 || i > 255)
+        {
+            throw std::runtime_error("Map index out of range");
+        }
+        return std::pair<map_type&, ::lock&>(maps_[i], locks_[i]);
+    }
+
+    int dimension()
+    {
+        return 256;
+    }
+
 private:
     friend struct iterator;
     Map maps_[256];

@@ -24,6 +24,8 @@ using namespace istat;
 #define FLUSH_INTERVAL_MS 300000
 //  Don't wait more than this to flush at least one counter (if there are few counters)
 #define FLUSH_INTERVAL_MS_MAX 3000
+// The second key refresh queued will catch all changes made so there is no need to queue any more.
+#define MAX_QUEUED_KEY_REFRESHES 2
 
 long const DEFAULT_MIN_REQUIRED_SPACE = 100 * 1024 * 1024;
 
@@ -31,9 +33,13 @@ StatStore::StatStore(std::string const &path, int uid,
     boost::asio::io_service &svc,
     boost::shared_ptr<IStatCounterFactory> factory,
     istat::Mmap *mm, long flushMs,
-    long minimumRequiredSpace) :
+    long minimumRequiredSpace,
+    int pruneEmptyDirsMs
+    ) :
     path_(path),
     svc_(svc),
+    pruneEmptyDirsTimer_(svc_),
+    refreshStrand_(svc_),
     syncTimer_(svc_),
     availCheckTimer_(svc_),
     factory_(factory),
@@ -42,7 +48,9 @@ StatStore::StatStore(std::string const &path, int uid,
     minimumRequiredSpace_(minimumRequiredSpace),
     myId_(UniqueId::make()),
     numLoaded_(0),
-    aggregateCount_(0)
+    aggregateCount_(0),
+    pruneEmptyDirsMs_(pruneEmptyDirsMs),
+    queuedRefreshes_(0)
 {
     if(minimumRequiredSpace_ == -1)
     {
@@ -72,6 +80,7 @@ StatStore::StatStore(std::string const &path, int uid,
     }
     syncNext();
     availCheckNext();
+    pruneEmptyDirsNext();
 }
 
 StatStore::~StatStore()
@@ -235,6 +244,74 @@ void StatStore::onSync()
     syncNext();
 }
 
+void StatStore::pruneEmptyDirsNext()
+{
+    LogSpam << "StatStore::pruneEmptyDirsNext() every " << pruneEmptyDirsMs_ << " ms";
+    pruneEmptyDirsTimer_.expires_from_now(boost::posix_time::milliseconds(pruneEmptyDirsMs_));
+    pruneEmptyDirsTimer_.async_wait(boost::bind(&StatStore::onPruneEmptyDirs, this, factory_->rootPath(), boost::asio::placeholders::error));
+}
+
+void StatStore::pruneEmptyDirsNow(const std::string& purgePath)
+{
+    LogSpam << "StatStore::pruneEmptyDirsNow(" << purgePath << ")";
+
+    pruneEmptyDirs(purgePath);
+
+}
+
+void StatStore::onPruneEmptyDirs(const std::string& purgePath, const boost::system::error_code& e)
+{
+    LogSpam << "StatStore::onPruneEmptyDirs(" << purgePath << ")";
+    if(e != boost::asio::error::operation_aborted)
+    {
+        pruneEmptyDirs(purgePath);
+    }
+    else
+    {
+        LogDebug << "StatStore::onPruneEmptyDirs() operation was cancelled";
+    }
+    pruneEmptyDirsNext();
+}
+
+void StatStore::pruneEmptyDirs(const std::string& purgePath)
+{
+    LogSpam << "StatStore::pruneEmptyDirs(" << purgePath << ")";
+    grab aholdof(pruneEmptyDirsMutex_);
+    boost::filesystem::directory_iterator it(purgePath);
+    boost::filesystem::directory_iterator end = boost::filesystem::directory_iterator();
+
+    while(it != end)
+    {
+        const boost::filesystem::path& path = it->path();
+
+        if (boost::filesystem::is_directory(path))
+        {
+            const boost::filesystem::path del = path;
+            ++it;
+
+            pruneEmptyDirs(del.string());
+        }
+        else
+        {
+            ++it;
+        }
+    }
+    if (boost::filesystem::is_directory(purgePath) && boost::filesystem::is_empty(purgePath))
+    {
+        const boost::filesystem::path del = purgePath;
+
+        try
+        {
+            LogNotice << "Pruning an empty directory: " << del;
+            boost::filesystem::remove(del);
+        }
+        catch (const boost::filesystem::filesystem_error & ex)
+        {
+            LogWarning << "Couldnt delete empty directory " << del << " because " << ex.what();
+        }
+    }
+}
+
 void StatStore::availCheckNext()
 {
     int const CHECK_INTERVAL = 30;
@@ -346,19 +423,164 @@ public:
     virtual void forceFlush(boost::shared_ptr<IStatStore> const &store) {}
     virtual void maybeShiftCollated(time_t t) {}
     virtual void select(time_t start, time_t end, bool trailing, std::vector<istat::Bucket> &oBuckets, time_t &normalized_start, time_t &normalized_end, time_t &interval, size_t max_samples) {}
+    virtual void purge(std::string rootPath) {}
 
 };
 static boost::shared_ptr<DeletedCounter> theDeletedCounter(new DeletedCounter);
 
+class Deleter
+{
+public:
+    Deleter(boost::shared_ptr<IStatStore> const &ss, std::string rootPath) : ss_(ss), rootPath_(rootPath), rootCtrPath_("") {}
+
+    struct Work
+    {
+        boost::shared_ptr<StatStore::AsyncCounter> aCount;
+        boost::shared_ptr<IStatCounter> counter;
+        std::string ctr;
+    };
+
+    void go()
+    {
+        if (!toDelete.size())
+        {
+            LogSpam << "Deletion batch done";
+            ss_->pruneEmptyDirsNow(rootPath_ + "/" + istat::counter_filename(rootCtrPath_));
+            ss_->refreshKeys();
+            delete this;
+            return;
+        }
+        toDelete.front().aCount->strand_.get_io_service().post(toDelete.front().aCount->strand_.wrap(
+            boost::bind(&Deleter::delete_stuff, this)));
+    }
+    void delete_stuff()
+    {
+        Deleter::Work work(toDelete.front());
+        toDelete.pop_front();
+        //counter purging needs to know the stores root path to properly relocate counters for backup
+        work.counter->purge(rootPath_);
+        go();
+    }
+
+    void addWork(Work &w)
+    {
+        LogSpam << "Scheduling a piece of work for deleting counter " << w.ctr;
+        toDelete.push_back(w);
+        //Prune will need to know the 'closest' to rootPath_ counter in order to prune only the changed paths
+        if(w.ctr.length() < rootCtrPath_.length() && rootCtrPath_.length() != 0)
+        {
+            rootCtrPath_ = w.ctr;
+        }
+    }
+
+private:
+    boost::shared_ptr<IStatStore> ss_;
+    std::string rootPath_;
+    std::list<Deleter::Work> toDelete;
+    std::string rootCtrPath_;
+};
 void StatStore::deleteCounter(std::string const &ctr, IComplete *complete)
+{
+    Deleter *deleter = new Deleter(IStatStore::shared_from_this(), factory_->rootPath());
+    deleteCounter(ctr, deleter, complete);
+    deleter->go();
+}
+
+void StatStore::deleteCounter(std::string const &ctr, Deleter* deleter, IComplete *complete)
 {
     boost::shared_ptr<StatStore::AsyncCounter> aCount = openCounter(ctr, false, 0);
     if (!!aCount)
     {
-        //  don't keep a reference to this counter anymore
+        boost::shared_ptr<IStatCounter> oldPtr = aCount->statCounter_;
         aCount->statCounter_ = theDeletedCounter;
+        Deleter::Work w;
+        w.aCount = aCount;
+        w.counter = oldPtr;
+        w.ctr = ctr;
+
+        deleter->addWork(w);
+
     }
-    svc_.post(CallComplete(complete));
+    if(complete)
+    {
+        svc_.post(CallComplete(complete));
+    }
+}
+
+void StatStore::deletePattern(std::string const &pattern, IComplete *complete)
+{
+
+    std::list<std::pair<std::string, CounterResponse> > results;
+    listMatchingCounters(pattern, results);
+
+    Deleter *deleter = new Deleter(IStatStore::shared_from_this(), factory_->rootPath());
+    for (std::list<std::pair<std::string, CounterResponse> >::iterator ptr(results.begin()), end(results.end()); ptr != end; ptr++)
+    {
+        deleteCounter((*ptr).first, deleter, (IComplete*)0);
+    }
+    deleter->go();
+    if(complete)
+    {
+        svc_.post(CallComplete(complete));
+    }
+}
+
+void StatStore::refreshKeys()
+{
+    LogSpam << "StatStore::refreshKeys()";
+    scheduleRefresh();
+}
+
+void StatStore::refreshAllKeys()
+{
+    std::string key;
+    boost::shared_ptr<AsyncCounter> value;
+
+    LogSpam << "StatStore::refreshAllKeys()";
+    for (int i = 0; i < counterShards_.dimension(); ++i)
+    {
+        std::pair<CounterMap&, ::lock&> mapAndLock = counterShards_.get_from_index(i);
+        ::lock& lock = mapAndLock.second;
+        CounterMap& map = mapAndLock.first;
+        grab aholdof(lock);
+
+
+        CounterMap::iterator it = map.begin();
+
+        while (it != map.end())
+        {
+            key = (*it).first;
+            value = (*it).second;
+            if(!(value->statCounter_ == theDeletedCounter))
+            {
+                keysWA_.add(key, value->statCounter_->isCollated());
+                ++it;
+            }
+            else
+            {
+                LogNotice << "StatStore::refreshAllKeys(" << key << ") ... removing a theDeleted counter from the map";
+                map.erase(it++);
+            }
+        }
+    }
+    keys_.exchange(keysWA_);
+    keysWA_.delete_all();
+    __sync_fetch_and_sub(&queuedRefreshes_, 1);
+}
+
+void StatStore::scheduleRefresh()
+{
+    LogSpam << "StatStore::scheduleRefresh()";
+
+    if(__sync_fetch_and_add(&queuedRefreshes_, 1) <= MAX_QUEUED_KEY_REFRESHES)
+    {
+        LogDebug << "StatStore::scheduleRefresh() - queueing a refresh. (" << queuedRefreshes_ << "/" << MAX_QUEUED_KEY_REFRESHES << ") scheduled.";
+        svc_.post(refreshStrand_.wrap(boost::bind(&StatStore::refreshAllKeys, this)));
+    }
+    else
+    {
+        LogNotice << "StatStore::scheduleRefresh() - Did not schedule a refresh. There are already " << queuedRefreshes_ << "/" << MAX_QUEUED_KEY_REFRESHES << " scheduled.";
+    }
 }
 
 class Flusher

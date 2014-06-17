@@ -154,6 +154,7 @@ Argument<std::string> agent("agent", "", "Agent to forward to, rather than save 
 Argument<std::string> replicaOf("replica-of", "", "Source to pull-replicate from. Incompatible with stat-port.");
 Argument<int> replicaPort("replica-port", 0, "Port that others can pull-replicate from. Requires store.");
 Argument<int> flush("flush", 300, "How often (in seconds) to flush stats files to disk.");
+Argument<int> pruneEmptyDirectoriesInterval("prune-empty-directories-interval", 120, "How often (in seconds) to go through the directory tree and prune empty trees.");
 Argument<std::string> store("store", "", "Where to store statistics files.");
 Argument<std::string> config("config", "istatd.cfg", "Config file to read, if present.");
 Argument<int> threadCount("thread-count", sysconf(_SC_NPROCESSORS_ONLN), "Number of threads to create.");
@@ -912,7 +913,7 @@ int main(int argc, char const *argv[])
             storepath = combine_paths(initialDir_, storepath);
             boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, retentionPolicy));
 
-            StatStore * ss = new StatStore(storepath, dropped_uid(), g_service, statCounterFactory, mm, flush.get()*1000, minimumRequiredSpace.get());
+            StatStore * ss = new StatStore(storepath, dropped_uid(), g_service, statCounterFactory, mm, flush.get()*1000, minimumRequiredSpace.get(), pruneEmptyDirectoriesInterval.get()*1000);
             LoopbackCounter::setup(ss, g_service);
             statStore = boost::shared_ptr<IStatStore>(ss);
         }

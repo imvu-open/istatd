@@ -26,3 +26,5 @@ debian/istatd-agent/
 debian/istatd-server/
 debian/tmp/
 python
+tags
+files/files

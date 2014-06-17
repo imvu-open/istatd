@@ -1,8 +1,9 @@
 #include <iostream>
 #include <algorithm>
 #include <istat/istattime.h>
-#include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "istat/strfunc.h"
 #include "Logs.h"
@@ -352,6 +353,100 @@ bool StatCounter::shiftCollated(time_t t)
 void StatCounter::fullyShiftCollated()
 {
     maybeShiftCollated(collations_[BUCKETS_PER_COLLATION_WINDOW - 1].time + collationInterval_ * BUCKETS_PER_COLLATION_WINDOW);
+}
+
+void StatCounter::purge(std::string rootPath)
+{
+    std::string ext = ".bak";
+    std::string backupDir = rootPath + ext;
+    if(!boost::filesystem::exists(backupDir))
+    {
+        LogNotice << "Creating new backup directory:" << backupDir;
+    }
+
+    boost::filesystem::path parentPath = boost::filesystem::path(counters_[0].file->getPath()).parent_path();
+    std::string backupTargetPath = parentPath.string();
+    boost::algorithm::replace_all(backupTargetPath, rootPath, backupDir);
+
+    if(!boost::filesystem::create_directories(backupTargetPath) && !boost::filesystem::exists(backupTargetPath))
+    {
+        throw std::runtime_error("Could not create backup counter directory: " + backupTargetPath);
+    }
+    else
+    {
+        LogNotice << "We created the backup target root path:" << backupTargetPath;
+    }
+
+    for(std::vector<OneCounter>::iterator
+        ptr(counters_.begin()),
+        end(counters_.end());
+        ptr != end;
+        ++ptr)
+    {
+        ptr->file->flush();
+
+        std::string counterBackupPath = ptr->file->getPath();
+        boost::algorithm::replace_all(counterBackupPath, rootPath, backupDir);
+
+
+        boost::system::error_code ec;
+        boost::filesystem::create_hard_link(boost::filesystem::path(ptr->file->getPath()), boost::filesystem::path(counterBackupPath), ec);
+        if (!boost::filesystem::exists(counterBackupPath))
+        {
+            throw std::runtime_error("We failed to create the backup counter hard link: " + counterBackupPath + " : " + ec.message());
+        }
+        else
+        {
+            LogNotice << "We created the backup counter hard link:" << counterBackupPath;
+            std::pair<bool, std::string> op_status = wrap_remove(ptr->file->getPath());
+            if (boost::filesystem::exists(ptr->file->getPath()))
+            {
+                throw std::runtime_error("We failed to delete the old counter file: " + ptr->file->getPath() + " : Reason: " + op_status.second);
+            }
+            else
+            {
+                LogNotice << "We have removed the old counter file " << ptr->file->getPath();
+            }
+        }
+    }
+    counters_.clear();
+
+    std::pair<bool, std::string> op_status = wrap_remove(parentPath);
+
+    if(boost::filesystem::exists(parentPath))
+    {
+        LogWarning << "Parent directory still exists at " << parentPath.string() <<  ":" << op_status.second;
+    }
+
+}
+//Newer versions of boost (>1.40) have a throwless filesystem api that takes an optional erorr struct to populate
+//with any errors. We are sorty of mirroring that here because we have to support this old version of boost.
+std::pair<bool, std::string> StatCounter::wrap_remove(const boost::filesystem::path& p)
+{
+    try
+    {
+        boost::filesystem::remove(p);
+    }
+    catch (const boost::filesystem::filesystem_error &e)
+    {
+       return std::pair<bool, std::string>(false, e.what());
+    }
+
+    return std::pair<bool, std::string>(true, "");
+}
+
+std::pair<bool, std::string> StatCounter::wrap_copy_file(const boost::filesystem::path& from, const boost::filesystem::path& to)
+{
+    try
+    {
+        boost::filesystem::copy_file(from, to);
+    }
+    catch (const boost::filesystem::filesystem_error &e)
+    {
+       return std::pair<bool, std::string>(false, e.what());
+    }
+
+    return std::pair<bool, std::string>(true, "");
 }
 
 void StatCounter::flush(boost::shared_ptr<IStatStore> const &store)

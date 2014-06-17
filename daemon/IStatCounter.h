@@ -31,6 +31,8 @@ public:
     virtual void maybeShiftCollated(time_t t) = 0;
     virtual void select(time_t start, time_t end, bool trailing, std::vector<istat::Bucket> &oBuckets, time_t &normalized_start, time_t &normalized_end, time_t &interval, size_t max_samples) = 0;
 
+    virtual void purge(std::string rootPath) = 0;
+
 };
 
 #endif  //  daemon_IStatCounter_h
