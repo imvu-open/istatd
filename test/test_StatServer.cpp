@@ -38,7 +38,7 @@ boost::shared_ptr<StatServer> makeServer(Mmap *mm, boost::asio::io_service &svc)
     boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storePath, mm, rp));
     boost::shared_ptr<IStatStore> statStore(new StatStore(storePath, getuid(), svc, statCounterFactory, mm));
     statStore->setAggregateCount(2);
-    return boost::shared_ptr<StatServer>(new StatServer(port, listenAddress, agent, 1, blacklistCfg, svc, statStore));
+    return boost::shared_ptr<StatServer>(new StatServer(port, listenAddress, agent, 1, blacklistCfg, svc, statStore, 256));
 }
 
 boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_service &svc, int period) {
@@ -54,7 +54,7 @@ boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_
     boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storePath, mm, rp));
     boost::shared_ptr<IStatStore> statStore(new StatStore(storePath, getuid(), svc, statCounterFactory, mm));
     statStore->setAggregateCount(2);
-    return boost::shared_ptr<StatServer>(new StatServer(port, listenAddress, agent, 1, blacklistCfg, svc, statStore));
+    return boost::shared_ptr<StatServer>(new StatServer(port, listenAddress, agent, 1, blacklistCfg, svc, statStore, 256));
 }
 
 void test_counter() {
