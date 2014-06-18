@@ -99,7 +99,8 @@ public:
         time_t agentInterval,
         Blacklist::Configuration &blacklistCfg,
         boost::asio::io_service &svc,
-        boost::shared_ptr<IStatStore> &statStore);
+        boost::shared_ptr<IStatStore> &statStore,
+        int udpBufferSize);
     ~StatServer();
     inline bool hasStore() const { return hasStatStore_; }
     inline bool hasAgent() const { return !agent_.empty(); }
@@ -167,6 +168,7 @@ private:
     boost::asio::ip::udp::socket udpSocket_;
     boost::shared_ptr<UdpConnectionInfo> udpEndpoint_;
     boost::asio::deadline_timer udpTimer_;
+    int udpBufferSize_;
     boost::asio::deadline_timer reportTimer_;
     char udpBuffer_[4096];
     int udpBackoffMs_;

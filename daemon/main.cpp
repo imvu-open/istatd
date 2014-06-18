@@ -177,6 +177,7 @@ Argument<int> rollup("rollup", 0, "How many levels to roll up counter values.");
 Argument<std::string> blacklist_path("blacklist-path", "", "Where to look for blacklisted hosts");
 Argument<int> blacklist_period("blacklist-period", 60, "How often to check the file");
 Argument<bool> disallow_compressed_responses("disallow-compressed-responses", false, "Should istatd-server disallow compression of http responses by accept-encoding");
+Argument<int> udpBufferSize("udp-buffer-size", 1024, "Buffer size for UDP sockets, in Kilobytes");
 
 
 void usage()
@@ -919,7 +920,7 @@ int main(int argc, char const *argv[])
         Blacklist::Configuration cfg = {};
         cfg.path = blacklist_path.get();
         cfg.period = blacklist_period.get();
-        StatServer ss(statPort.get(), listenAddress.get(), agent.get(), std::max(agentInterval.get(), 1), cfg, g_service, statStore);
+        StatServer ss(statPort.get(), listenAddress.get(), agent.get(), std::max(agentInterval.get(), 1), cfg, g_service, statStore, udpBufferSize.get());
         if (replicaPort.get())
         {
             reps = new ReplicaServer(replicaPort.get(), listenAddress.get(), g_service, statStore);

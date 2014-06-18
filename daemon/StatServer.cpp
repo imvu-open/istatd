@@ -80,7 +80,8 @@ StatServer::StatServer(int statPort, std::string listenAddress,
     time_t agentInterval,
     Blacklist::Configuration &blacklistCfg,
     boost::asio::io_service &svc,
-    boost::shared_ptr<IStatStore> &statStore) :
+    boost::shared_ptr<IStatStore> &statStore,
+    int udpBufferSize) :
     port_(statPort),
     forwardInterval_(agentInterval),
     agent_(agentFw),
@@ -91,6 +92,7 @@ StatServer::StatServer(int statPort, std::string listenAddress,
     udpSocket_(svc),
     udpEndpoint_(new UdpConnectionInfo()),
     udpTimer_(svc),
+    udpBufferSize_(udpBufferSize),
     reportTimer_(svc),
     udpBackoffMs_(50),
     nConnects_("statserver.connects", TypeEvent),
@@ -140,11 +142,8 @@ StatServer::StatServer(int statPort, std::string listenAddress,
     {
         input_.onConnection_.connect(boost::bind(&StatServer::on_connection, this));
         input_.listen(statPort, listenAddress);
-        //  Large receive buffer, if a zillion servers send a state dump at a synchronized time.
-        //  Generally, though, the server must be capable of receiving counters at line speed,
-        //  or no buffer size will be sufficient in the long run.
         udpSocket_.open(udp::v4());
-        udpSocket_.set_option(udp::socket::receive_buffer_size(1024 * 256));
+        udpSocket_.set_option(udp::socket::receive_buffer_size(udpBufferSize_ * 1024));
         if (listenAddress.length() > 0) {
             udpSocket_.bind(udp::endpoint(boost::asio::ip::address::from_string(listenAddress.c_str()), statPort));
         } else {
