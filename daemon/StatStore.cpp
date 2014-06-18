@@ -190,7 +190,7 @@ boost::shared_ptr<StatStore::AsyncCounter> StatStore::openCounter(std::string co
             return asyncCounter;
         }
         counters[xform] = asyncCounter;
-        keys_.add(xform, isCollated);
+        keys_.add(xform, asyncCounter->statCounter_->isCollated());
     }
     //  strip the leaf name "extension"
     std::string sex(name);
