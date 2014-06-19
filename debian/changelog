@@ -1,3 +1,22 @@
+istatd (0.77-1) UNRELEASED; urgency=low
+
+  [ Jon Schedler ]
+  * fix typo in user prompt in configure script
+
+  [ Leonidas Loucas ]
+  * Change compression from best_compression to best_speed, initial 
+    testing on the command line indicates a significant gain in 
+    performance for a minimal loss in compression
+  * Json Counter list now returns counter_type: 
+    enum { 0 = Gauge, 1 = Counter/Event, 2 = Aggregate }.
+    The counter list also contains a mapping elemnt that documents 
+    the enum in the response so its self documenting.
+
+  [ Eric Hohenstein ]
+  * adding configuration option for adjusting udp buffer size
+
+ -- Jon Schedler <jschedler@imvu.com>  Thu, 19 Jun 2014 10:41:29 -0700
+
 istatd (0.76-1) UNRELEASED; urgency=low
 
   [ Eric Hohenstein ]
