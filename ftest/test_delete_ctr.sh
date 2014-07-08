@@ -35,8 +35,9 @@ wait_for_file $DBDIR/single-store/tep/asd/dds/10s
 
 test_name GET_before_delete_and_purge
 curl -s "http://localhost:18011/?q=*" > $TEST_OUT
-assert_expected $TEST_OUT
 cat $TEST_OUT | grep -q "tep.asd.dds" || failure "Couldnt find expected tep.asd.dds counter in json response"
+cat $TEST_OUT | grep -q "tep.asd.aaa" || failure "Couldnt find expected tep.asd.aaa counter in json response"
+cat $TEST_OUT | grep -q "tep.tep_die" || failure "Couldnt find expected tep.tep_die counter in json response"
 
 delete_pattern single 'tep.asd*'
 flush_istatd single
