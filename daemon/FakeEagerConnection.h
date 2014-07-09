@@ -3,7 +3,6 @@
 #define daemon_FakeEagerConnection_h
 
 #include <vector>
-#include <boost/signal.hpp>
 
 #include "EagerConnection.h"
 

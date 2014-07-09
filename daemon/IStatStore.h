@@ -10,9 +10,9 @@
 #include <istat/Header.h>
 
 #include <boost/asio/strand.hpp>
-#include <boost/signals.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
+#include "Signal.h"
 
 struct UniqueId
 {
@@ -43,7 +43,7 @@ public:
 
     virtual void getUniqueId(UniqueId &out) = 0;
 
-    boost::signal<void (istat::Header const &)> iterateSignal;
+    boost::signals2::signal<void (istat::Header const &)> iterateSignal;
 
     virtual void setAggregateCount(int ac) = 0;
     virtual void deleteCounter(std::string const &str, Deleter* deleter, IComplete *complete) = 0;

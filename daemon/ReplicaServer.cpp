@@ -5,11 +5,11 @@
 #include "Logs.h"
 #include "EagerConnection.h"
 #include "PduProtocol.h"
+#include "Signal.h"
 
 #include <istat/Atomic.h>
 
 #include <boost/bind.hpp>
-#include <boost/signals.hpp>
 #include <iostream>
 
 
@@ -118,7 +118,7 @@ public:
     PduReaderActor *pduSrc_;
     ReplicaServer *rs_;
     PduProtocol proto_;
-    boost::signals::connection iterate_;
+    boost::signals2::connection iterate_;
 };
 
 

@@ -4,12 +4,12 @@
 
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/signals.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/detail/atomic_count.hpp>
 #include <set>
 #include "LoopbackCounter.h"
+#include "Signal.h"
 
 class HttpServer;
 class StatServer;
@@ -37,7 +37,7 @@ public:
     virtual void appendReply(char const *data, size_t sz) = 0;
     virtual std::vector<char>::const_iterator bodyBegin() const = 0;
     virtual std::vector<char>::const_iterator bodyEnd() const = 0;
-    boost::signal<void ()> onBody_;
+    boost::signals2::signal<void ()> onBody_;
     virtual void readBody() = 0;
     virtual std::string const *header(std::string const &key) const = 0;
 };
@@ -50,8 +50,8 @@ public:
     inline boost::asio::ip::tcp::socket &socket() { return socket_; }
     void readHeaders();
     void readBody();
-    boost::signal<void ()> onHeader_;
-    boost::signal<void ()> onError_;
+    boost::signals2::signal<void ()> onHeader_;
+    boost::signals2::signal<void ()> onError_;
     boost::shared_ptr<std::list<std::string> > headers() const;
     std::string const *header(std::string const &key) const;
     std::string const &url() const { return url_; }
@@ -138,7 +138,7 @@ public:
     inline boost::asio::io_service &svc() { return svc_; }
     //  You will see the request *before* headers are parsed. 
     //  Generally, sign up for onHeader_ and perhaps onError_ if you keep a reference.
-    boost::signal<void (HttpRequestHolder const &)> onRequest_;
+    boost::signals2::signal<void (HttpRequestHolder const &)> onRequest_;
     void getInfo(HttpServerInfo &oInfo);
 private:
     friend class HttpRequest;

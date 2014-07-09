@@ -220,7 +220,7 @@ void HttpRequest::on_header(boost::system::error_code const &err, size_t xfer)
     }
     //  fire the event
     onHeader_();
-    onHeader_.disconnect_all_slots();
+    disconnect_all_slots(onHeader_);
 }
 
 void HttpRequest::on_body(boost::system::error_code const &err, size_t xfer)
@@ -243,8 +243,8 @@ void HttpRequest::on_body(boost::system::error_code const &err, size_t xfer)
     }
     //  got the body!
     onBody_();
-    onBody_.disconnect_all_slots();
-    onError_.disconnect_all_slots();
+    disconnect_all_slots(onBody_);
+    disconnect_all_slots(onError_);
 }
 
 boost::shared_ptr<std::list<std::string> > HttpRequest::headers() const
@@ -299,9 +299,9 @@ void HttpRequest::error()
     LogSpam << "HttpRequest::error()";
     ++hs_->sInfo_.numErrors;
     onError_();
-    onError_.disconnect_all_slots();
-    onBody_.disconnect_all_slots();
-    onHeader_.disconnect_all_slots();
+    disconnect_all_slots(onError_);
+    disconnect_all_slots(onBody_);
+    disconnect_all_slots(onHeader_);
 }
 
 void HttpRequest::appendReply(char const *data, size_t size)
@@ -351,8 +351,8 @@ void HttpRequest::doReply(int code, std::string const &ctype, std::string const 
     reply_.insert(reply_.begin(), headers.begin(), headers.end());
     boost::asio::async_write(socket_, boost::asio::buffer(&reply_[0], reply_.size()), boost::asio::transfer_all(),
         boost::bind(&HttpRequest::on_reply, HttpRequestHolder(shared_from_this()), placeholders::error, placeholders::bytes_transferred));
-    onHeader_.disconnect_all_slots();
-    onBody_.disconnect_all_slots();
+    disconnect_all_slots(onHeader_);
+    disconnect_all_slots(onBody_);
 }
 
 void HttpRequest::on_reply(boost::system::error_code const &err, size_t xfer)
@@ -374,7 +374,7 @@ void HttpRequest::on_reply(boost::system::error_code const &err, size_t xfer)
     hs_->sInfo_.currentGauge.value((int32_t)hs_->sInfo_.current);
     //  this should soon go away, as the stack reference will go away!
     socket_.close();
-    onError_.disconnect_all_slots();
+    disconnect_all_slots(onError_);
 }
 
 bool AcceptEncodingHeader::disallow_compressed_responses = false;

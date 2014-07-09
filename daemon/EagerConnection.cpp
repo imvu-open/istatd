@@ -100,10 +100,10 @@ void EagerConnection::close()
     outgoing_.clear();
     incoming_.clear();
 
-    onConnect_.disconnect_all_slots();
-    onDisconnect_.disconnect_all_slots();
-    onData_.disconnect_all_slots();
-    onWrite_.disconnect_all_slots();
+    disconnect_all_slots(onConnect_);
+    disconnect_all_slots(onDisconnect_);
+    disconnect_all_slots(onData_);
+    disconnect_all_slots(onWrite_);
 }
 
 bool EagerConnection::opened()

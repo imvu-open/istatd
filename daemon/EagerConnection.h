@@ -7,12 +7,12 @@
 #include <string>
 #include <vector>
 #include <boost/asio.hpp>
-#include <boost/signals.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/detail/atomic_count.hpp>
 
+#include "Signal.h"
 
 class EagerConnection;
 class UdpConnectionInfo;
@@ -37,11 +37,11 @@ public:
     virtual void writeOut(std::string const &str) = 0;
 
     virtual ~ConnectionInfo() {}
-    boost::signal<void ()> onConnect_;
-    boost::signal<void ()> onDisconnect_;
-    boost::signal<void ()> onData_;
+    boost::signals2::signal<void ()> onConnect_;
+    boost::signals2::signal<void ()> onDisconnect_;
+    boost::signals2::signal<void ()> onData_;
     // onWrite_ will be called with the connection mutex held!
-    boost::signal<void (size_t)> onWrite_;
+    boost::signals2::signal<void (size_t)> onWrite_;
 };
 
 //  EagerConnection will attempt to establish a connection to a remote side.

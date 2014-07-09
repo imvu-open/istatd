@@ -4,7 +4,6 @@
 
 #include <inttypes.h>
 #include <vector>
-#include <boost/signal.hpp>
 #include <boost/noncopyable.hpp>
 #include <stdexcept>
 
@@ -14,6 +13,7 @@
 #include "threadfunc.h"
 #include "IStatStore.h"
 #include "EagerConnection.h"
+#include "Signal.h"
 
 
 enum {
@@ -147,8 +147,8 @@ public:
     ~PduReaderActor();
     bool nextPdu(PduHeader &got);
 
-    boost::signal<void()> onPdu_;
-    boost::signal<void()> onDeleted_;
+    boost::signals2::signal<void()> onPdu_;
+    boost::signals2::signal<void()> onDeleted_;
 
 private:
     void on_disconnect();

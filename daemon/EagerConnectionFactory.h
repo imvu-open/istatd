@@ -3,8 +3,9 @@
 #define daemon_EagerConnectionFactory_h
 
 #include <boost/asio.hpp>
-#include <boost/signals.hpp>
 #include <boost/shared_ptr.hpp>
+
+#include "Signal.h"
 
 class EagerConnection;
 class ConnectionInfo;
@@ -16,7 +17,7 @@ public:
     ~EagerConnectionFactory();
     void listen(int port, std::string listen_address);
     boost::shared_ptr<ConnectionInfo> nextConn();
-    boost::signal<void ()> onConnection_;
+    boost::signals2::signal<void ()> onConnection_;
 private:
     void startAccept();
     void on_accept(boost::system::error_code const &err);
