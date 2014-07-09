@@ -10,7 +10,7 @@ source "$SCRIPTDIR/functions"
 start_server single --fake-time 84000
 for i in `seq 84001 84015` ; do 
     # counter timestamp val valsq valmin valmax count
-    send_stat single "*testconn" $i 1 1 1 1
+    send_stat single "*testconn" $i 1 1 1 1 1
 done
 
 flush_istatd single
