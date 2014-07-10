@@ -1,3 +1,15 @@
+istatd (0.78-1) UNRELEASED; urgency=low
+
+  [ Leonidas Loucas ]
+  * Summary: Allow run-time deletion of counters and patterns of counters that will persist through istatd restarts.
+  * instead of asserting on the json response, parse it out and look for specific known entries, This is because istatd does not always return the same order of response
+
+  [ Eric Hohenstein ]
+  * fixing some ftests that were passing the wrong number of parameters to send_stat
+  * Convert istatd to use boost signals2 library for threading support
+
+ -- Eric Hohenstein <ehohenstein@imvu.com>  Wed, 09 Jul 2014 16:45:52 -0700
+
 istatd (0.77-1) UNRELEASED; urgency=low
 
   [ Jon Schedler ]
