@@ -17,3 +17,22 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
+
+Other open source software used by ISTATD that is released under the MIT 
+software license.  Copyright for the software listed below is held by 
+their respective owners.
+
+backbone.js          v1.1.2  http://backbonejs.com
+dygraph-combined.js  v1.0.1  http://dygraphs.com
+jquery-cookie.js     v1.4.1  http://github.com/carhartl/jquery-cookie/tree/v1.4.1
+jquery.js            v2.1.1  http://jquery.com
+jstree.js            v3.0.2  http://www.jstree.com
+underscore.js        v1.6.0  http://underscorejs.com
+
+
+Other open source software used by ISTATD that is released under the
+LGPL v2.1 software license.  Copyright for the software listed below is
+held by their respective owners.
+
+sha256.js                    http://www.movable-type.co.uk/scripts/sha256.html
+

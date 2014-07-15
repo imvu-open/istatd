@@ -4,6 +4,7 @@
     <title>Istatd Counter Browser</title>
     <meta http-equiv="X-UA-Compatible" content="IE=9"/>
     <!-- relative files must start with /files/ !-->
+    <link rel="stylesheet" href="/files/jstree-style.min.css" />
     <link rel='stylesheet' href='/files/styles.css'/>
     <link rel='shortcut icon' href='/files/favicon.ico'/>
     <link rel='icon' type='image/vnd.microsoft.icon' href='/files/favicon.ico'/>
@@ -18,28 +19,13 @@
     <![endif]-->
 </head>
 <body>
-<div id='lefttab' class='tabs'>
+<div id='lefttab' class='tabs unselectable'>
     <h1>istatd</h1>
     <div class='progressbg' id='progressbar'><div class='progressfg'></div></div>
-    <div id='login'>
-        <input type='text' id='loginname' value='Username'/>
-        <input type='password' id='loginpassword' value='********' /><div class='tbutton' action='login()'>Login</div>
-    </div>
-    <div title='User Controls' class='tdropdown username'>
-        <div class='label'>User: <span id='username'></span></div>
-        <div class='reveal'>
-            <div class='tmenuitem' action='logout()'>Logout</div>
-        </div>
-    </div>
+    <div id='foo'></div>
+    <div id='user_controls'></div>
     <div class='labels'></div>
-    <div id='counters' class='active tab'>
-        <div id='counter_filter'>
-            <div id='counter_filter_label'>Search</div>
-            <input type='text' id='counter_filter_text' value=""/>
-            <div id='counter_filter_clear'></div>
-        </div>
-        <div class='scroll'>
-        </div>
+    <div id='counters' class='active tab unselectable'>
     </div>
     <div id='dashboards' class='tab'>
         <div class='scroll'>
@@ -47,7 +33,11 @@
         </div>
     </div>
 </div>
-<div id='hsplit'></div>
+
+<div class='hsplit_container unselectable'>
+    <div id='hsplit' class="unselectable"> </div>
+    <div id='hide_lefttab' class="unselectable"> </div>
+</div>
 
 <div id='grid' class='areabg'>
 <div id='menubar'>
@@ -87,37 +77,20 @@
         </div>
     </div>
     <div title='Chart Size' class='tdropdown chart_size'>
-        <div class='label'>Chart Size</div>
-        <div class='reveal'>
-            <div class='tmenuitem' action='graph_size(300, 120, $i)'>
-                Small (300x120)
-            </div>
-            <div class='tmenuitem current' action='graph_size(600, 240, $i)'>
-                Medium (600x240)
-            </div>
-            <div class='tmenuitem' action='graph_size(800, 480, $i)'>
-                Large (800x480)
-            </div>
-            <div class='tmenuitem' action='size_custom()'>Custom...</div>
-        </div>
     </div>
-    <div title='Advanced Tools' class='tdropdown'>
-        <div class='label'>Advanced</div>
-        <div class='reveal'>
-            <div class='tmenuitem' action='regexp_change()'>Regex/Replace...</div>
-            <div class='tmenuitem' action='regexp_add()'>Regex/Add...</div>
-            <div class='tmenuitem' action='xref_change()'>Cross-reference Counters...</div>
-            <div class='tmenuitem' action='select_daterange()'>Manual Date Range...</div>
-            <div class='tmenuitem' action='packup_state_as_hash()'>Create Bookmark URL</div>
-        </div>
+    <div title='Advanced Tools' class='tdropdown advanced_tools'>
     </div>
 </div>
 </div>
 </div>
-<script type="text/javascript" src="/files/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="/files/jquery-2.1.1.js"></script>
+<script type="text/javascript" src="/files/jquery-cookie-1.4.1.js"></script>
 <script src='/files/sha256.js'></script>
 <script src='/files/istatd-legend.js'></script>
 <script src='/files/dygraph-combined.js'></script>
+<script src='/files/underscore-min.js'></script>
+<script src='/files/backbone-min.js'></script>
+<script src='/files/jstree.min.js'></script>
 <script src='/files/graph.js'></script>
 <script>
     $(document).ready(on_ready);

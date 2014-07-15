@@ -467,7 +467,8 @@ function done() {
 
 var nesting = 0;
 
-function begin() {
+function begin(label) {
+    console.log("progress begin " + (label == undefined ? ":" : label + ":"), nesting);
     var $container;
     var $progress;
 
@@ -592,69 +593,6 @@ function zoomOutIntervals() {
     calcReloadInterval();
     refresh();
  }
-
-function buildHierarchy(items) {
-    var ret = {};
-    for (var k in items) {
-        var item = items[k];
-        var pieces = item.name.split('.');
-        var top = ret;
-        for (var i in pieces) {
-            var piece = pieces[i];
-            if (!top[piece]) {
-                top[piece] = {};
-            }
-            top = top[piece];
-        }
-    }
-    return ret;
-}
-
-function countChildren(obj) {
-    var n = 0;
-    for (var k in obj) {
-        n += 1;
-    }
-    return n;
-}
-
-function createElement(k, path, $parent) {
-    var $div = $("<div class='counter'><span class='name'></span><br/></div>");
-    $('span.name', $div).text(k);
-    $div.attr('title', path);
-    $parent.append($div);
-    return $div;
-}
-
-function buildOneElement(k, hier, builder, $parent, path) {
-    var nchildren = countChildren(hier);
-    if (nchildren == 1) {
-        for (var child in hier) {
-            buildOneElement(k+'.'+child, hier[child], builder, $parent, path+'.'+child);
-        }
-    } else if (nchildren > 1) {
-        var $div = createElement(k, path, $parent);
-        $div.addClass('branch');
-        $div.click(guard(function(ev) {
-            ev.stopPropagation();
-            $children = $('> div.counter', $div);
-            if (!$children.length) {
-                var end = begin();
-                builder.buildElements($div, hier, path + '.');
-                end();
-            }
-            $div.toggleClass('expanded');
-        }));
-    } else {
-        $div = createElement(k, path, $parent);
-        $div.addClass('leaf');
-        var bindPath = '' + path;
-        $div.click(guard(function(ev) {
-            ev.stopPropagation();
-            toggleGraphing(bindPath);
-        }));
-    }
-}
 
 function Widget(obj, $obj, owner) {
     var self = this;
@@ -1090,67 +1028,6 @@ GraphSurface.prototype.toggleSummary = function GraphSurface_toggleSummary() {
     $('.summary', this.$self).toggleClass('visible');
 }
 
-
-function CounterHierarchy(id, parWig) {
-    new Widget(this, $('#' + id), parWig);
-    this.updateXhr = null;
-    this.selected = null;
-    this.update();
-}
-CounterHierarchy.prototype.update = guard(function CounterHierarchy_update() {
-    var self = this;
-    if (!this.updateXhr) {
-        var end = begin();
-        this.updateXhr = new XMLHttpRequest();
-        this.updateXhr.onreadystatechange = function() {
-            if (self.updateXhr.readyState == 4) {
-                self.updateDone();
-                end();
-            }
-        }
-        filt = $('#counter_filter_text').val();
-        if ( filt == '' ) {
-            filt = "*";
-        } else if (filt.indexOf("*") == -1) {
-            // auto wildcard bare words
-            filt = "*" + filt + "*";
-        }
-        this.updateXhr.open('GET', '/?q=' + filt);
-        this.updateXhr.send();
-    }
-})
-CounterHierarchy.prototype.updateDone = guard(function CounterHierarchy_updateDone() {
-    var self = this;
-    if (self.updateXhr.status == 200) {
-        var data = JSON.parse(self.updateXhr.responseText);
-        var hier = buildHierarchy(data.matching_names);
-        self.hierarchy = hier;
-        var $f = $('#counter_filter', self.$self);
-        self.$self.empty();
-        var $scroll = $('<div class="scroll">');
-        self.$self.append($scroll);
-        self.buildElements($scroll, self.hierarchy, '');
-        self.$self.prepend($f);
-        documentResize();
-    }
-    else {
-        errorDialog("Error getting counter list:\n" + self.updateXhr.status + " " + self.updateXhr.statusText, self.$self);
-    }
-    self.updateXhr = null;
-})
-
-CounterHierarchy.prototype.buildElements = function CounterHierarchy_buildElements($parent, hier, path) {
-    var ret = 0;
-    var akeys = keys(hier);
-    akeys.sort();
-    for (var i in akeys) {
-        var k = akeys[i];
-        buildOneElement(k, hier[k], this, $parent, path + k);
-        ret = ret + 1;
-    }
-    return ret;
-}
-
 function DashboardList(id, owner) {
     this.$self = $('#' + id);
     this.$inner = $('.picklist', this.$self);
@@ -1195,9 +1072,9 @@ DashboardList.prototype.on_userDashboards = function DashboardList_onUserDashboa
             var ds = k.substr(10);
 
             $li.attr('title', ds);
-            $('<div class="text"></div>').text(ds).appendTo($li);
-            $remove_button = $('<div class="remove_button" title="Remove dashboard"></div>').appendTo($li);
-            $('<div class="clear"></div>').appendTo($li);
+            $('<span class="text"></span>').text(ds).appendTo($li);
+            $remove_button = $('<span class="remove_button" title="Remove dashboard"></span>').appendTo($li);
+            /*$('<div class="clear"></div>').appendTo($li);*/
 
             (function() {
                 var name = '' + ds;
@@ -1386,6 +1263,28 @@ function HSplitter(id) {
     $self.mousedown(move);
     new Widget(this, $self, null);
 }
+
+function toggle_lefttab_visibility() {
+    var old_element_width = "";
+    return function(ev) {
+        ev.stopPropagation();
+        if ($('#lefttab').hasClass('closed')) {
+            $('#lefttab').css("width", old_element_width);
+            $('#hsplit').removeClass('closed');
+            $('#lefttab').removeClass('closed');
+            $('#hide_lefttab').removeClass('closed');
+        }
+        else {
+            old_element_width = $('#lefttab').css('width');
+            $('#lefttab').css("width", "0px");
+            $('#hsplit').addClass('closed');
+            $('#lefttab').addClass('closed');
+            $('#hide_lefttab').addClass('closed');
+        }
+            
+        documentResize();
+    };
+};
 
 function TimeSlider(id) {
     var self = this;
@@ -1665,16 +1564,6 @@ var saveSettings = guard(function _saveSettings(scope, name, value, cb) {
     xhr.send(JSON.stringify(obj));
 });
 
-function setCookie(name, value, extime) {
-    console.log('setCookie(' + name + ',' + value + ',' + extime + ')');
-    var exdate = new Date();
-    exdate = new Date(exdate.getTime() + extime * 1000);
-    value = escape(value)
-        + ((extime==null) ? "" : "; expires="+exdate.toUTCString())
-        + '; path=/';
-    document.cookie = name + "=" + value;
-}
-
 var theInteractionModel = null;
 var theUser = null;
 var theUserName = null;
@@ -1700,85 +1589,6 @@ function setGraphSize(sz)
     $('#grid .graph').width(sz.width);
     $('#grid .graphdiv').css(sz);
     documentResize();
-}
-
-function createUser(name, password, pwHashed, cb) {
-    saveSettings('users', 'user.'+name, {
-        'password': pwHashed,
-    }, cb);
-}
-
-/* OK, I know -- getting the hash from the server and checking it client
-   side is 100% not secure from the server's point of view. That's not
-   the point. The login is only here to prevent casual impersonation, and
-   to provide a unique name to store preferences under so different users
-   don't step on each other.
-   Really, the only reason there's a password is because it's expected ;-)
- */
-function doLogin(name, password, pwHashed, cb) {
-    var hash = pwHashed || Sha256.hash(password + ' salt ' + name);
-    loadSettings('users', 'user.' + name, function (js) {
-        console.log('doLogin result: ' + JSON.stringify(js));
-        if (!js['user.' + name]) {
-            errorDialog('No such user: ' + name);
-            cb();
-            return;
-        }
-        var userData = JSON.parse(js['user.' + name]);
-        if (hash != userData['password']) {
-            console.log('Your hash was ' + hash);
-            console.log('Desired hash was ' + userData['password']);
-            console.log('Username was ' + name);
-            errorDialog('Bad password. Check log for proper hash and edit user file.');
-            cb();
-            return;
-        }
-        setCookie('login', name + ':' + hash, 1000000);
-        if($('#login').css('display') == 'block') {
-            $('#login').slideUp(function() {
-                $('div.tdropdown.username').slideDown();
-            });
-        } else {
-            $('div.tdropdown.username').show();
-        }
-        $('span#username').text(name);
-        theUser = js;
-        theUserName = name;
-        $('#save_dashboard').removeClass('disabled');
-        theDashboards.reload();
-        cb();
-    },
-    function (js) {
-        choiceDialog("Could not load user info -- create new user " + name + "?",
-            {'create': 'Yes', 'no': 'No'},
-            function(opt) {
-                if (opt == 'create') {
-                    createUser(name, password, hash, function() {
-                        doLogin(name, password, pwHashed, cb);
-                    });
-                }
-                else {
-                    cb();
-                }
-            });
-    });
-}
-
-function login() {
-    var name = $('#loginname').val();
-    var password = $('#loginpassword').val();
-    if (!name || !password || name.match(/[^a-zA-Z_0-9]/)) {
-        errorDialog("You must enter a name and password to login.");
-        return;
-    }
-    doLogin(name, password, null, done);
-}
-
-function logout() {
-    setCookie('login', '', -1);
-    $('div.tdropdown.username').fadeOut(function() {
-        window.location.href = window.location.href.split('#')[0];
-    });
 }
 
 function set_interval(i) {
@@ -1938,7 +1748,7 @@ var isAutoRefresh = false;
 var autoRefreshTimer = null;
 
 var refresh = guard(function _refresh() {
-    var end = begin();
+    var end = begin('refresh');
     var date = getAdjustedNow();
     console.log('refresh; auto reload interval=' + theReloadInterval + ' date is ' + date);
     var delta = theCurrentDates.stop.getTime() - theCurrentDates.start.getTime();
@@ -2127,6 +1937,7 @@ var load_hash = guard(function _load_hash(hash) {
 });
 
 function maybeParseCookie(str, cb) {
+    console.log('maybeParseCookie', str);
     var cookies = str.split(';');
 
     for(var i = 0; i < cookies.length; i++) {
@@ -2172,18 +1983,606 @@ function packup_state_as_hash() {
     document.location.hash = qstr;
 }
 
+/*
+ * work in progress. migrating to the use of backbone, underscorejs and jquery-cookie
+ */
+
+var CounterTreeModel = Backbone.Model.extend({
+    initialize: function() {
+        this.fetch();
+    },
+
+    defaults: {
+        "pattern": "*",
+        "matching_names": []
+    },
+
+    url: function() {
+        return "/?q=" + this.get("pattern");
+    },
+});
+
+function asCounterTree(counters) {
+    function newNode(text, children, type) {
+        return {
+            'text':     _.isUndefined(text)     ? '#' : text,
+            'children': _.isUndefined(children) ? {}  : children,
+            'type':     _.isUndefined(type)     ? 2   : type
+        }
+    }
+
+    // convert list of counters into a tree
+    var parsed_counters = newNode();
+    _.each(counters, function(counter, index) {
+        var fields = counter.name.split(".");
+        var node = parsed_counters;
+        _.each(fields, function(field, index) {
+            if (!node.children[field]) {
+                node.children[field] = newNode(field);
+            }    
+            node = node.children[field];
+        })
+        // store counter type in lowest descendant
+        node.type = counter.type;
+    })
+
+    // collapse nodes that have only 1 child
+    function maybeMoveUp(subtree, key, tree) {
+        collapse(subtree);
+        if (_.size(subtree.children) == 1) {
+            var child_key  = _.keys(subtree.children)[0];
+            var child_node = subtree.children[child_key];
+            var new_key    = key + '.' + child_key;
+
+            tree[new_key] = newNode(new_key, child_node.children, child_node.type)
+
+            delete tree[key];
+        }
+    }
+
+    function collapse(counters) {
+        _.each(counters.children, maybeMoveUp);
+    }
+
+    collapse(parsed_counters);
+
+    return parsed_counters;
+}
+
+function formatTreeLevel(tree) {
+    var icons = {
+        0 : 'istatd-gauge',
+        1 : 'istatd-counter',
+    };
+
+    return _.map(tree.children, function (subtree, key, tree) {
+        if (_.size(subtree.children) > 0) {
+            return {text: key, children: true};
+        }
+        else {
+            return {text: key, a_attr : {'class': icons[subtree.type]}};
+        }
+    });
+}
+
+var CounterTreeFilterView = Backbone.View.extend({
+    initialize: function() {
+        var div = $("<div id='counter_filter' />");
+        this.icon = $("<div class='magnifying_glass' />");
+        this.label = $("<div id='counter_filter_label'>Search</div>");
+        this.input = $("<input type='text' id='counter_filter_text' value=''/>");
+        this.clear = $("<div id='counter_filter_clear' />");
+
+        div.append(this.label);
+        div.append(this.input);
+        div.append(this.icon);
+        div.append(this.clear);
+        this.$el.append(div);
+    },
+
+    events: {
+        "click #counter_filter_label"  : "label_click",
+        "focus #counter_filter_text"   : "input_focus",
+        "blur #counter_filter_text"    : "input_blur",
+        "keydown #counter_filter_text" : "input_keydown",
+        "click #counter_filter_clear"  : "clear_filter",
+    },
+
+    label_click: function() {
+        this.input.focus();
+    },
+
+    input_focus: function() {
+        this.label.hide();
+    },
+
+    input_blur: function() {
+        if (!this.input.val()) {
+            this.label.show();
+        }
+    },
+
+    input_keydown: function(ev) {
+        if (ev.which == 13) {
+            this.model.set("pattern", this.input.val());
+        }
+    },
+
+    clear_filter: function(ev) {
+        this.input.val("");
+        this.label.show();
+        this.model.set("pattern", "");
+    }
+});
+
+var CounterTreeView = Backbone.View.extend({
+    el: '#counters',
+
+    initialize: function() {
+        this.counterTreeModel = new CounterTreeModel();
+
+        var tree_filter_view = new CounterTreeFilterView({el: this.$el, model: this.counterTreeModel});
+
+        var scroll_area = $("<div class='scroll' />");
+        var jstree_view = $("<div id='counter_jstree' />");
+
+        this.$el.append(scroll_area.append(jstree_view));
+
+        this.listenTo(this.counterTreeModel, 'change', this.render);
+                
+    },
+
+    render: function() {
+        var proto_pat = this.counterTreeModel.get("pattern");
+
+        var pat;
+        if (proto_pat == "*") {
+            pat = /.*/;
+        } 
+        else {
+            if (proto_pat.indexOf("*") == -1) {
+                /* auto wildcard bare words */
+                proto_pat = ".*" + proto_pat + ".*";
+            }
+            else {
+                /* convert wildcard characters to regex */
+                var subpatterns = proto_pat.split("*");
+                proto_pat = subpatterns.join(".*");
+            }
+            pat = new RegExp(proto_pat);
+        }
+
+        // filter counters client side
+        var matching_names = this.counterTreeModel.get("matching_names");
+        var counters = _.chain(matching_names)
+            .filter(function(counter) { return (counter.is_leaf && (counter.name.search(pat) != -1)) })
+            .sortBy("name")
+            .value();
+
+        var counter_tree = asCounterTree(counters);
+
+        function findNodeInCounterTree(counter_tree, id, parents) {
+
+            // return the node of our counter tree that is associated with the jstree
+            // node that was just opened.
+            //
+            // id is the DOM id of the opened node.  parents is the list of DOM ids
+            // from the opened node back up the tree to the root.  We don't need
+            // the jstree '#' id for the root of the tree, so we discard it with
+            // slice()
+
+            var path = _.clone(parents).reverse().concat(id).slice(1);
+            var node = counter_tree;
+            _.each(path, function(id) {
+                node = node.children[$('#counter_jstree').jstree('get_node', id).text];
+            });
+            return node;
+        };
+
+        function getCounterName(id, parents) {
+            var path = _.clone(parents).reverse().concat(id).slice(1);
+            return _.map(path, function(id) {
+                return $('#counter_jstree').jstree('get_node', id).text;
+            }).join('.');
+        }
+
+        // function call order matters here.  you must refresh jstree before you destroy
+        $('#counter_jstree').jstree('refresh').jstree('destroy');
+
+        $('#counter_jstree')
+            .on('select_node.jstree', function (e, data) {
+                if ("class" in data.node.a_attr) {
+                    var counter = getCounterName(data.node.id, data.node.parents);
+                    toggleGraphing(counter);
+                }
+                else {
+                    if ($('#counter_jstree').jstree('is_open', data.node)) {
+                        $('#counter_jstree').jstree('close_node', data.node);
+                    }
+                    else {
+                        $('#counter_jstree').jstree('open_node', data.node);
+                    }
+                }
+             })
+            .jstree({
+                'core': {
+                    'data': function(node, cb) {
+                        if (node.id == '#') {
+                            cb.call(this, formatTreeLevel(counter_tree));
+                        }
+                        else {
+                            var subtree = findNodeInCounterTree(counter_tree, node.id, node.parents);
+                            cb.call(this, formatTreeLevel(subtree));
+                        }
+                    }
+                },
+                'plugins' : [ "sort" ]
+            });
+        documentResize();
+        return this;
+    }
+
+});
+
+var UserModel = Backbone.Model.extend({
+    toJSON: function(options) {
+        var data = {};
+        data["user." + this.get('username')] = JSON.stringify({password: this.get('password_hash')});
+        return data;
+    }
+});
+
+var UsersModel = Backbone.Collection.extend({
+    model: UserModel,
+    url: "/?s=users",
+    parse: function(response, options) {
+        return _.map(response, function(value, key) {
+            return {
+                username: key.split('.')[1],
+                password_hash: JSON.parse(value)['password']
+            }
+        });
+    }
+});
+
+var SettingsModel = Backbone.Model.extend({
+    initialize: function() {
+        var self = this;
+        this.users = new UsersModel();
+        this.users.fetch({
+            reset: true,
+            success: function() {
+               self.trigger("reset");
+            }
+        });
+    },
+
+    getLoggedInUser: function() {
+        var login_cookie = $.cookie('login');
+        if (!_.isUndefined(login_cookie)) {
+            var piece = login_cookie.split(':');
+            var user = this.users.findWhere({username: piece[0]});
+            if (user.get('password_hash') === piece[1]) {
+                return user.get('username');
+            }
+            else {
+                return null;
+            }
+        }
+        return null;
+    },
+
+    isLoggedIn: function() {
+        return !_.isNull(this.getLoggedInUser());
+    },
+
+    createUserAndLogin: function(username, password_hash) {
+        this.users.create({
+            username: username,
+            password_hash: password_hash
+        });
+        this.login(username, password_hash, true);
+    },
+
+    /* OK, I know -- getting the hash from the server and checking it client
+       side is 100% not secure from the server's point of view. That's not
+       the point. The login is only here to prevent casual impersonation, and
+       to provide a unique name to store preferences under so different users
+       don't step on each other.
+       Really, the only reason there's a password is because it's expected ;-)
+     */
+    login: function(username, password, hashed) {
+        var is_hashed = hashed || false;
+        var password_hash = is_hashed ? password : Sha256.hash(password + ' salt ' + username);
+        var user = this.users.findWhere({username: username});
+        var is_new_user = _.isUndefined(user);
+
+        if (is_new_user) {
+            var self = this;
+            choiceDialog(
+                "Could not load user info -- create new user " + username + "?",
+                {'create': 'Yes', 'no': 'No'},
+                function(opt) {
+                    if (opt == 'create') {
+                        self.createUserAndLogin(username, password_hash);
+                    }
+                }
+            );
+        }
+        else {
+            if (user.get('password_hash') == password_hash) {
+                $.cookie('login', username + ':' + password_hash, {expires: 12, path: '/'});
+                this.trigger('logged_in', user);
+            }
+            else {
+                console.log('Your hash was ' + password_hash);
+                console.log('Desired hash was ' + user.get('password_hash'));
+                console.log('Username was ' + username);
+                errorDialog('Bad password. Check log for proper hash and edit user file.');
+            }
+        }
+
+    },
+
+    logout: function() {
+        $.removeCookie('login', {expires: 12, path: '/'});
+        this.trigger('logged_out');
+    },
+
+});
+
+var UserControlsView = Backbone.View.extend({
+    el: "#user_controls",
+    
+    initialize: function() {
+        this.model = new SettingsModel();
+
+        this.$login  = $('<div id="login" />');
+        this.$logout = $('<div id="logout" class="tdropdown username"></div>');
+
+        this.$el.append(this.$login);
+        this.$el.append(this.$logout);
+
+        this.userLoginView  = new UserLoginView({el: this.$login, model: this.model});
+        this.userLogoutView = new UserLogoutView({el: this.$logout, model: this.model});
+
+        this.listenTo(this.model, 'reset', function() {
+            if (_.isNull(this.model.getLoggedInUser())) {
+                this.showViewsWhenNobodyIsLoggedIn();
+            }
+            else {
+                this.showViewsWhenSomebodyIsLoggedIn();
+            }
+        });
+
+        this.listenTo(this.model, 'logged_in', function() {
+            this.showViewsWhenSomebodyIsLoggedIn();
+        });
+
+        this.listenTo(this.model, 'logged_out', function() {
+            // redirect back myself, this will reset entire UI to logged out state.
+            window.location.href = window.location.href.split('#')[0];
+        });
+    },
+
+    showViewsWhenNobodyIsLoggedIn: function() {
+        // nobody is logged in, so show login view
+        var self = this;
+        this.userLogoutView.slideUp(function() {
+            self.userLoginView.slideDown();
+        });
+
+        // hmm, this gotohash() still needs to pull into backbone gracefully
+        // the call to gotohash() here makes it possible to load bookmark urls 
+        // even if a users is not logged into istatd.
+        gotohash();
+    },
+
+    showViewsWhenSomebodyIsLoggedIn: function() {
+        // someone is logged in, so show logout view
+        var self = this;
+        this.userLoginView.slideUp(function() {
+            self.userLogoutView.slideDown();
+            // convert to backbone model and view
+            theUserName = self.model.getLoggedInUser(); // global needed by old dashboards code.
+            $('#save_dashboard').removeClass('disabled');
+            theDashboards.reload();
+
+            // hmm, this gotohash() still needs to pull into backbone gracefully
+            gotohash();
+        });
+    },
+});
+
+var UserLoginView = Backbone.View.extend({
+    initialize: function() {
+        this.$username = $('<input type="text" id="loginname" value="Username">'); 
+        this.$password = $('<input type="password" id="loginpassword">'); 
+        var button     = $('<div class="tbutton" id="loginbutton">Login</div>');
+        this.$el.append(this.$username);
+        this.$el.append(this.$password);
+        this.$el.append(button);
+    },
+    
+    events: {
+        "click #loginbutton": "login",
+        "keydown #loginname": "input_keydown",
+        "keydown #loginpassword": "input_keydown",
+        "focus #loginname": "input_focus",
+        "focus #loginpassword": "input_focus",
+    },
+
+    input_keydown: function(ev) {
+        if (ev.which == 13) {
+            if (ev.currentTarget.id == 'loginname') {
+                this.$password.focus();
+            }
+            else {
+                this.$password.blur();
+                this.login();
+            }
+        } 
+    },
+
+    input_focus: function(ev) {
+        $(ev.currentTarget).val('');
+    },
+
+    login: function() {
+        this.model.login(this.$username.val(), this.$password.val());
+    },
+
+    slideDown: function(callback) {
+        this.$el.slideDown();
+    },
+
+    slideUp: function(callback) {
+        this.$el.slideUp(callback);
+    }
+});
+
+
+var istatdDropdownOptions = [ 'items', 'label' ];
+var IstatdDropdownView = Backbone.View.extend({
+    items: [],
+    label: 'no-label',
+
+    constructor: function(options) {
+        Backbone.View.apply(this, arguments);
+        _.extend(this, _.pick(options, istatdDropdownOptions));
+    },
+
+    initialize: function() {},
+
+    renderLabel: function() {
+        if (_.isUndefined(this.$label)) {
+            this.$label = $('<div class="label"></div>');
+            this.$el.append(this.$label);
+        }
+
+        this.$label.html(_.result(this, 'label'));
+        return this;
+    },
+
+    renderDropdown: function() {
+        if (_.isUndefined(this.$dropdown)) {
+            this.$dropdown = $('<div class="reveal"></div>');
+            console.log(this.$dropdown);
+            _.each(this.items, function(item_definition) {
+                var $entry = $('<div class="tmenuitem">' + item_definition.item + '</div>');
+                if (item_definition.selected || false) {
+                    $entry.addClass('current');
+                }
+                this.$dropdown.append($entry);
+            }, this);
+            this.$el.append(this.$dropdown);
+        }
+
+        return this;
+    },
+
+    render: function() {
+        this
+            .renderLabel()
+            .renderDropdown()
+        return this;
+    },
+
+    events: function() {
+        var self = this;
+        $('body').mouseup(function(ev) {
+            self.close(self.$el);
+        });
+
+        return {
+            'click': 'open',
+            'click .reveal .tmenuitem': 'doAction'
+        }
+    },
+
+    slideDown: function(callback) {
+        this.render();
+        this.$el.slideDown();
+    },
+
+    slideUp: function(callback) {
+        this.$el.slideUp(callback);
+    },
+
+    open: function(ev) {
+        ev.stopPropagation();
+        $(ev.delegateTarget).toggleClass('open')
+    },
+
+    close: function($el) {
+        $el.removeClass('open');
+    },
+
+    doAction: function(ev) {
+        ev.stopPropagation();
+        var item = $(ev.currentTarget).text();
+        var item_definition = _.findWhere(this.items, {item: item});
+        item_definition['action'](ev, this.model);
+    },
+
+    
+});
+
+var UserLogoutView = IstatdDropdownView.extend({
+    label: function() { return "User: " + this.model.getLoggedInUser(); },
+
+    items: [
+        { item: 'Logout', action: function(ev, model) { model.logout(); } }
+    ],
+
+
+});
+
+var ChartSizeView = IstatdDropdownView.extend({
+    label: 'Chart Size',
+
+    items: [
+        { item: 'Small (300x120)',  action: function(ev) { graph_size(300, 120, $(ev.currentTarget)); } },
+        { item: 'Medium (600x240)', action: function(ev) { graph_size(600, 240, $(ev.currentTarget)); }, selected: true },
+        { item: 'Large (800x480)',  action: function(ev) { graph_size(800, 480, $(ev.currentTarget)); } },
+        { item: 'Custom...',        action: function(ev) { size_custom(); } },
+    ],
+
+    initialize: function(options) {
+        this.render();
+    },
+});
+
+var AdvancedToolsView = IstatdDropdownView.extend({
+    label: 'Advanced Tools',
+    items: [
+        { item: 'Regex/Replace...',            action: function(ev) { regexp_change(); } },
+        { item: 'Regex/Add...',                action: function(ev) { regexp_add(); } },
+        { item: 'Cross-reference Counters...', action: function(ev) { xref_change(); } },
+        { item: 'Manual Date Range...',        action: function(ev) { select_daterange(); } },
+        { item: 'Create Bookmark URL',         action: function(ev) { packup_state_as_hash(); } },
+    ],
+    initialize: function(options) {
+        this.render();
+    },
+        
+});
 
 var on_ready = guard(function _on_ready() {
+    var end = begin('on_ready');
     theTabs = new TabCollection('lefttab');
-    theCounters = new CounterHierarchy('counters', theTabs.widget);
     theDashboards = new DashboardList('dashboards', theTabs.widget);
     theSplitter = new HSplitter('hsplit');
     theGrid = new GraphGrid('grid');
     theTimeSlider = new TimeSlider('time_slider');
 
+    counterTreeView = new CounterTreeView();
+    userControls = new UserControlsView();
+    chartSize = new ChartSizeView({el: $('.tdropdown.chart_size')});
+    advanceTools = new AdvancedToolsView({el: $('.tdropdown.advanced_tools')});
+
     $('#hsplit').attr('unselectable', 'on');
     $('.tbutton').attr('unselectable', 'on');
-    $('.tmenu div').attr('unselectable', 'on');
     $('.tdropdown div').attr('unselectable', 'on');
     $('.tslider div').attr('unselectable', 'on');
 
@@ -2195,79 +2594,12 @@ var on_ready = guard(function _on_ready() {
         var txt = $src.attr('action');
         eval(txt);
     }));
-    $('.tmenu, .tdropdown').each(function(ix, item) {
-        var $i = $(item);
-        $i.click(function(ev) {
-            ev.stopPropagation();
-            $i.toggleClass('open');
-        });
-        $('body').mouseup(function() {
-            $i.removeClass('open');
-        });
-    });
-    $('.tmenuitem').each(function(ix, item) {
-        (function() {
-            var $i = $(item);
-            $i.attr('title', $.trim($i.text()));
-            $i.click(guard(function(ev) {
-                ev.stopPropagation();
-                var txt = $i.attr('action');
-                eval(txt);
-            }))
-        })();
-    });
-    $('#loginname').keydown(function(ev) {
-        if (ev.which == 13) {
-            ev.stopPropagation();
-            $('#loginpassword').focus();
-        }
-    });
-    $('#loginpassword').keydown(function(ev) {
-        if (ev.which == 13) {
-            ev.stopPropagation();
-            login();
-        }
-    });
-    $('#loginname, #loginpassword').focus(function(ev) {
-        $(this).unbind('focus');
-        $(this).val('');
-    });
-
-    var $clear = $('#counter_filter_clear');
-    var $label = $('#counter_filter_label');
-    var $input = $('#counter_filter_text');
-
-    if($input.val()) {
-        $label.hide();
-    }
-    $label.live('click', function(ev) {
-        $input.focus();
-    });
-    $input.live('focus', function(ev) {
-        $label.hide();
-    });
-    $input.live('blur', function(ev) {
-        if(!$input.val()) {
-            $label.show();
-        }
-    });
-    $clear.live('click', function(ev) {
-        $input.val("");
-        $label.show();
-        theCounters.update();
-    });
-
-    $('#counter_filter_text').live('keydown', function(ev) {
-        if (ev.which == 13) {
-            ev.stopPropagation();
-            theCounters.update();
-            if(!$input.val()) {
-                $label.show();
-            }
-        }
-    });
+    
+    $('#hide_lefttab').click(toggle_lefttab_visibility());
+        
     $(window).resize(documentResize);
     theLoader = new Loader();
-    maybeParseCookie(document.cookie, gotohash);
+
     window.onhashchange = gotohash;
+    end();
 })
