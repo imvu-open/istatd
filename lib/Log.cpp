@@ -45,7 +45,7 @@ namespace istat
     static boost::shared_ptr<LogInstance> logFile_;
     static std::string g_logFileName_ = "./istat.log";
     static LogLevel g_logLevel_ = LL_Warning;
-    static LogLevel g_stderrLogLevel_ = LL_Error;
+    static LogLevel g_stderrLogLevel_ = LL_Warning;
     static int logN_;
     static int sameCount_;
     static size_t sameSize_;

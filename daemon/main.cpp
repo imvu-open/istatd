@@ -601,17 +601,17 @@ void handle_pid_daemon(std::string const &pidf, bool daemon)
             {
                 if (kill(pid, 0) >= 0)
                 {
-                    std::cerr << pidf << " says process " << pid << " is running; I refuse to start." << std::endl;
+                    LogError << pidf << " says process " << pid << " is running; I refuse to start.";
                     exit(1);
                 }
                 else
                 {
-                    std::cerr << pidf << " was left over from process " << pid << "; will clobber."  << std::endl;
+                    LogWarning << pidf << " was left over from process " << pid << "; will clobber.";
                 }
             }
             else
             {
-                std::cerr << pidf << " seems corrupt; got pidfile " << pid << "; will clobber." << std::endl;
+                LogWarning << pidf << " seems corrupt; got pidfile " << pid << "; will clobber.";
             }
         }
     }
@@ -623,7 +623,7 @@ void handle_pid_daemon(std::string const &pidf, bool daemon)
     {
         if (pipe(waitFdPair) < 0)
         {
-            std::cerr << "daemonize: pipe() failed." << std::endl;
+            LogError << "daemonize: pipe() failed.";
             exit(1);
         }
         pid = fork();
@@ -631,7 +631,7 @@ void handle_pid_daemon(std::string const &pidf, bool daemon)
         {
             if (pid < 0)
             {
-                std::cerr << "daemonize: fork() failed." << std::endl;
+                LogError << "daemonize: fork() failed.";
                 exit(1);
             }
         }
@@ -751,7 +751,7 @@ void cleanup_exit()
     join_all_threads();
     if (pidFileName_[0])
     {
-        fprintf(stderr, "removing pid file %s\n", pidFileName_);
+        LogNotice << "removing pid file " << pidFileName_;
         ::unlink(pidFileName_);
     }
 }
@@ -819,6 +819,12 @@ int main(int argc, char const *argv[])
     setupDebug();
     LogConfig::setLogLevel((LogLevel)loglevel.get());
 
+    std::string log_file_path = combine_paths(initialDir_, logFile.get());
+    if (logFile.get().size() != 0)
+    {
+        LogConfig::setOutputFile(log_file_path.c_str());
+    }
+
     // test convert the address to ensure it's convertable without exceptions before entering main code
     if (listenAddress.get().length() > 0) {
         try
@@ -827,7 +833,7 @@ int main(int argc, char const *argv[])
         }
         catch (std::exception const &x)
         {
-            std::cerr << "Error in main() parsing listen-address [" << x.what() << "]" << std::endl;
+            LogError << "Error in main() parsing listen-address [" << x.what() << "]";
             return 2;
         }
     }
@@ -848,19 +854,12 @@ int main(int argc, char const *argv[])
         }
     }
 
-    std::string log_file_path = combine_paths(initialDir_, logFile.get());
-    if (logFile.get().size() != 0)
-    {
-        LogConfig::setOutputFile(log_file_path.c_str());
-    }
-
     if (fakeTime.get())
     {
         istat::FakeTime *ft = new istat::FakeTime(fakeTime.get());
         istat::Env::set<istat::FakeTime>(*ft);
         LogDebug << "Started with fake time value =" << istattime(0);
     }
-
 
     if (testMode.get())
     {
@@ -955,7 +954,7 @@ int main(int argc, char const *argv[])
             }
             if (sg_init())
             {
-                std::cerr << "Error: cannot open libstatgrab: " << sg_str_error(sg_get_error()) << ": " << sg_get_error_arg() << std::endl;
+                LogError << "Error: cannot open libstatgrab: " << sg_str_error(sg_get_error()) << ": " << sg_get_error_arg();
                 exit(1);
             }
             //  initialize, without recording
@@ -1001,14 +1000,14 @@ int main(int argc, char const *argv[])
     }
     catch (std::exception const &x)
     {
-        std::cerr << "Error in main() [" << x.what() << "]" << std::endl;
+        LogError << "Error in main() [" << x.what() << "]";
         delete hsp;
         delete asp;
         return 2;
     }
     catch (...)
     {
-        std::cerr << "Error in main() [unknown]" << std::endl;
+        LogError << "Error in main() [unknown]";
         delete hsp;
         delete asp;
         return 1;
