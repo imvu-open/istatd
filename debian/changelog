@@ -1,3 +1,14 @@
+istatd (0.79-1) UNRELEASED; urgency=low
+
+  [ Jon Schedler ]
+  * add missing istatd-legend.js file
+  * Replace istatd custom tree with jstree (www.jstree.com) Counter tree identifies guages and counters with an icon All istatd png icons are now in a single sprite sheet. Added ability to show/hide lefthand-side panel W.I.P refactoring of UI to utilize backbone and underscorejs Update to jquery 2.1.1
+
+  [ Eric Hohenstein ]
+  * opening log file sooner during initialization and writing most initialization errors and warnings to log instead of stderr
+
+ -- Eric Hohenstein <ehohenstein@imvu.com>  Thu, 31 Jul 2014 13:52:49 -0700
+
 istatd (0.78-1) UNRELEASED; urgency=low
 
   [ Leonidas Loucas ]
