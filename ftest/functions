@@ -316,7 +316,7 @@ function check_get_zlib {
     curl -s -H "Accept-encoding: deflate" "http://localhost:$PORT/$QUERY" > "$OUTFILE"
     while [ "$#" -ne "0" ]; do
         NAME="$1"; shift
-        if cat "$OUTFILE" | openssl zlib -d | grep "$NAME" > /dev/null; then
+        if cat "$OUTFILE" | zlib-flate -uncompress | grep "$NAME" > /dev/null; then
             true
         else
             failure "Did not find pattern $NAME on port $PORT (see $OUTFILE)"
@@ -339,7 +339,7 @@ function check_post_zlib {
     curl -s -H "Accept-encoding: deflate" -d "$DATA" "http://localhost:$PORT/$QUERY" > "$OUTFILE"
     while [ "$#" -ne "0" ]; do
         NAME="$1"; shift
-        if cat "$OUTFILE" | openssl zlib -d | grep "$NAME" > /dev/null; then
+        if cat "$OUTFILE" | zlib-flate -uncompress | grep "$NAME" > /dev/null; then
             true
         else
             failure "Did not find pattern $NAME on port $PORT (see $OUTFILE)"
