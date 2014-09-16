@@ -22,6 +22,7 @@
 #include <ctime>
 #include <boost/filesystem.hpp>
 
+#include "config.h"
 #include "HttpServer.h"
 #include "StatServer.h"
 #include "StatStore.h"
@@ -521,7 +522,11 @@ void collectLocalStats(StatServer *ss)
 
     localBegin(now);
 
+    #if defined(LIBSTATGRAB_API_0_90)
+    sg_cpu_percents *cpu = sg_get_cpu_percents(NULL);
+    #else
     sg_cpu_percents *cpu = sg_get_cpu_percents();
+    #endif
     localStat(cpu->user, "localstat.cpu.user");
     localStat(cpu->kernel, "localstat.cpu.kernel");
     localStat(cpu->idle, "localstat.cpu.idle");
@@ -529,25 +534,41 @@ void collectLocalStats(StatServer *ss)
     localStat(cpu->swap, "localstat.cpu.swap");
     localStat(cpu->nice, "localstat.cpu.nice");
 
+    #if defined(LIBSTATGRAB_API_0_90)
+    sg_mem_stats *mem = sg_get_mem_stats(NULL);
+    #else
     sg_mem_stats *mem = sg_get_mem_stats();
+    #endif
     localStat(mem->total, "localstat.mem.total");
     localStat(mem->free, "localstat.mem.free");
     localStat(mem->used, "localstat.mem.used");
     localStat(mem->cache, "localstat.mem.cache");
 
+    #if defined(LIBSTATGRAB_API_0_90)
+    sg_load_stats *load = sg_get_load_stats(NULL);
+    #else
     sg_load_stats *load = sg_get_load_stats();
+    #endif
     localStat(load->min1, "localstat.load.min1");
     localStat(load->min5, "localstat.load.min5");
     localStat(load->min15, "localstat.load.min15");
 
+    #if defined(LIBSTATGRAB_API_0_90)
+    sg_swap_stats *swap = sg_get_swap_stats(NULL);
+    #else
     sg_swap_stats *swap = sg_get_swap_stats();
+    #endif
     localStat(swap->total, "localstat.swap.total");
     localStat(swap->used, "localstat.swap.used");
     localStat(swap->free, "localstat.swap.free");
 
-    int j = 0;
+    #if defined(LIBSTATGRAB_API_0_90)
+    size_t i, j = 0;
+    #else
+    int i, j = 0;
+    #endif
     sg_disk_io_stats *disk = sg_get_disk_io_stats_diff(&j);
-    for (int i = 0; i != j; ++i)
+    for (i = 0; i != j; ++i)
     {
         std::string n("localstat.disk.");
         n += disk->disk_name;
@@ -558,7 +579,7 @@ void collectLocalStats(StatServer *ss)
 
     j = 0;
     sg_network_io_stats *net = sg_get_network_io_stats_diff(&j);
-    for (int i = 0; i != j; ++i)
+    for (i = 0; i != j; ++i)
     {
         std::string n("localstat.net.");
         n += net->interface_name;
@@ -952,7 +973,11 @@ int main(int argc, char const *argv[])
             {
                 statSuffix_ = "." + statSuffix_;
             }
+            #if defined(LIBSTATGRAB_API_0_90)
+            if (sg_init(1))
+            #else
             if (sg_init())
+            #endif
             {
                 LogError << "Error: cannot open libstatgrab: " << sg_str_error(sg_get_error()) << ": " << sg_get_error_arg();
                 exit(1);
