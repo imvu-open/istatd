@@ -9,7 +9,7 @@ different licenses.
 The purpose of istatd is to efficiently collect, store and retrieve 
 named statistics from a large number of sources. This is similar to 
 Cacti, Graphite, Zabbix, and a bunch of other systems. In fact, istatd 
-stated out as a storage back-end for Graphite, to replace the built-in 
+started out as a storage back-end for Graphite, to replace the built-in 
 carbon back-end. The specific goals of this system are:
 
 - Support 100,000+ distinct counters with 3 different frequencies and 
