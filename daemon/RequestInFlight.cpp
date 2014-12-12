@@ -223,7 +223,7 @@ class MultiCounterWorker
 {
 public:
     MultiCounterWorker(time_t start, time_t end, size_t maxSamples,
-        bool trailing,
+        bool trailing, bool compact,
         boost::shared_ptr<RequestInFlight> const &req) :
         start_(start),
         end_(end),
@@ -231,7 +231,8 @@ public:
         trailing_(trailing),
         req_(req),
         num(0),
-        wrote_(false)
+        wrote_(false),
+        compact_(compact)
     {
     }
     time_t start_;
@@ -244,6 +245,7 @@ public:
     lock strmLock;
     std::string delim;
     bool wrote_;
+    bool compact_;
 
     void add(boost::shared_ptr<IStatCounter> const &ctr, boost::asio::strand *strand, std::string const &name)
     {
@@ -305,16 +307,33 @@ public:
                 ptr != end; ++ptr)
             {
                 istat::Bucket const &b = *ptr;
-                req_->strm_buffer_ << (first ? "{" : ",{");
-                req_->strm_buffer_ << "\"time\":" << b.time();
-                req_->strm_buffer_ << ",\"count\":" << b.count();
-                req_->strm_buffer_ << ",\"min\":" << b.min();
-                req_->strm_buffer_ << ",\"max\":" << b.max();
-                req_->strm_buffer_ << ",\"sum\":" << b.sum();
-                req_->strm_buffer_ << ",\"sumsq\":" << b.sumSq();
-                req_->strm_buffer_ << ",\"avg\":" << b.avg();
-                req_->strm_buffer_ << ",\"sdev\":" << b.sdev();
-                req_->strm_buffer_ << "}";
+                if (compact_)
+                {
+                    req_->strm_buffer_ << (first ? "[" : ",[");
+                    req_->strm_buffer_ << b.time();
+                    req_->strm_buffer_ << "," << b.count();
+                    req_->strm_buffer_ << "," << b.min();
+                    req_->strm_buffer_ << "," << b.max();
+                    req_->strm_buffer_ << "," << b.sum();
+                    req_->strm_buffer_ << "," << b.sumSq();
+                    req_->strm_buffer_ << "," << b.avg();
+                    req_->strm_buffer_ << "," << b.sdev();
+                    req_->strm_buffer_ << "]";
+
+                }
+                else
+                {
+                    req_->strm_buffer_ << (first ? "{" : ",{");
+                    req_->strm_buffer_ << "\"time\":" << b.time();
+                    req_->strm_buffer_ << ",\"count\":" << b.count();
+                    req_->strm_buffer_ << ",\"min\":" << b.min();
+                    req_->strm_buffer_ << ",\"max\":" << b.max();
+                    req_->strm_buffer_ << ",\"sum\":" << b.sum();
+                    req_->strm_buffer_ << ",\"sumsq\":" << b.sumSq();
+                    req_->strm_buffer_ << ",\"avg\":" << b.avg();
+                    req_->strm_buffer_ << ",\"sdev\":" << b.sdev();
+                    req_->strm_buffer_ << "}";
+                }
                 first = false;
             }
             req_->strm_buffer_ << "]}";
@@ -382,10 +401,11 @@ void RequestInFlight::on_multigetBody()
         {
             trailing = true;
         }
+        bool compact = root["compact"].asBool();
 
         strm_buffer_ << "{";
         std::string delim("");
-        MultiCounterWorker *mcw = new MultiCounterWorker(start, stop, maxSamples, trailing, shared_from_this());
+        MultiCounterWorker *mcw = new MultiCounterWorker(start, stop, maxSamples, trailing, compact, shared_from_this());
         for (int i = 0, n = keys.size(); i != n; ++i)
         {
             std::string name(keys[i].asString());
