@@ -11,6 +11,30 @@ todo:
 Dygraph.PLUGINS = Dygraph.PLUGINS.slice(1);
 Dygraph.PLUGINS.unshift(ISTATD_Legend);
 
+var pageIsHidden;
+if (typeof document.hidden !== "undefined") {
+    pageIsHidden = function() {
+        return document.hidden;
+    }
+} else if (typeof document.mozHidden !== "undefined") {
+    pageIsHidden = function() {
+        return document.mozHidden;
+    }
+} else if (typeof document.msHidden !== "undefined") {
+    pageIsHidden = function() {
+        return document.msHidden;
+    }
+} else if (typeof document.webkitHidden !== "undefined") {
+    pageIsHidden = function() {
+        return document.webkitHidden;
+    }
+} else {
+    // Assume the browser does not support page visibility
+    pageIsHidden = function() {
+        return false;
+    }
+}
+
 CONSOLE_LOG_ALERT = false;
 if(typeof(console) === 'undefined') {
     console = {};
@@ -706,7 +730,9 @@ GraphSurface.prototype.renderData = function GraphSurface_renderData(seriesKeys,
     var self = this;
     //  asynchronize actual painting
     setTimeout(function() {
-        self.repaint();
+        if (!pageIsHidden()) {
+            self.repaint();
+        }
     }, 1);
 }
 GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
@@ -1751,6 +1777,9 @@ var isAutoRefresh = false;
 var autoRefreshTimer = null;
 
 var refresh = guard(function _refresh() {
+    if (pageIsHidden()) {
+        return;
+    }
     var end = begin('refresh');
     var date = getAdjustedNow();
     console.log('refresh; auto reload interval=' + theReloadInterval + ' date is ' + date);
