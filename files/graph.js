@@ -143,6 +143,7 @@ function promptDialog(prmp, cb) {
     $('.answer', $div).keydown(function(ev) {
         if (ev.which == 13) {
             eHandler(ev);
+            $('#counter_jstree').deselect_all();
         }
     });
     return $div;
@@ -216,6 +217,7 @@ function promptDialogN(prmp, fields, submitCallback) {
     $('.answer', $div).keydown(function(ev) {
         if (ev.which == 13) {
             eHandler(ev);
+            $('#counter_jstree').deselect_all();
         }
     });
     return $div;
@@ -368,6 +370,7 @@ function xrefSelectDialog(prmp, cb) {
     $('.answer', $div).keydown(function(ev) {
         if (ev.which == 13) {
             eHandler(ev);
+            $('#counter_jstree').deselect_all();
         }
     });
 
@@ -2105,6 +2108,7 @@ var CounterTreeFilterView = Backbone.View.extend({
     input_keydown: function(ev) {
         if (ev.which == 13) {
             this.model.set("pattern", this.input.val());
+            $('#counter_jstree').deselect_all();
         }
     },
 
@@ -2416,11 +2420,11 @@ var UserLoginView = Backbone.View.extend({
         if (ev.which == 13) {
             if (ev.currentTarget.id == 'loginname') {
                 this.$password.focus();
-            }
-            else {
+            } else {
                 this.$password.blur();
                 this.login();
             }
+            $('#counter_jstree').deselect_all();
         } 
     },
 
