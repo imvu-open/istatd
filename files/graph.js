@@ -12,28 +12,42 @@ Dygraph.PLUGINS = Dygraph.PLUGINS.slice(1);
 Dygraph.PLUGINS.unshift(ISTATD_Legend);
 
 var pageIsHidden;
+var visibilityChange;
+var hidden;
+var visibilitySupported = true;
 if (typeof document.hidden !== "undefined") {
     pageIsHidden = function() {
         return document.hidden;
     }
+    visibilityChange = "visibilitychange";
+    hidden = "hidden";
 } else if (typeof document.mozHidden !== "undefined") {
     pageIsHidden = function() {
         return document.mozHidden;
     }
+    visibilityChange = "mozvisibilitychange";
+    hidden = "mozHidden";
 } else if (typeof document.msHidden !== "undefined") {
     pageIsHidden = function() {
         return document.msHidden;
     }
+    visibilityChange = "msvisibilitychange";
+    hidden = "msHidden";
 } else if (typeof document.webkitHidden !== "undefined") {
     pageIsHidden = function() {
         return document.webkitHidden;
     }
+    visibilityChange = "webkitvisibilitychange";
+    hidden = "webkitHidden";
 } else {
     // Assume the browser does not support page visibility
     pageIsHidden = function() {
         return false;
     }
+    visibilitySupported = false;
 }
+
+var document_hidden = visibilitySupported ? document[hidden] : false;
 
 CONSOLE_LOG_ALERT = false;
 if(typeof(console) === 'undefined') {
@@ -2634,5 +2648,17 @@ var on_ready = guard(function _on_ready() {
     theLoader = new Loader();
 
     window.onhashchange = gotohash;
+
+    if(visibilitySupported) {
+        document.addEventListener(visibilityChange, function() {
+            if(document_hidden != document[hidden]) {
+                if(document[hidden]) {
+                    refresh();
+                }
+            }
+
+            document_hidden = document[hidden];
+        });
+    }
     end();
 })
