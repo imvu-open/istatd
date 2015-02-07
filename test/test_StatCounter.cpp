@@ -161,6 +161,15 @@ void run_tests(void)
 
         time_t start, end, interval;
 
+        // test that crash is gone
+        start = 1000;
+        end   = 2000;
+        interval = 0;
+        gauge->normalizeRange(start, end, interval, 600);
+        assert_equal(1000, start);
+        assert_equal(2000, end);
+        assert_equal(  10, interval);
+
         // test that same values returned when maxSamples is 0
         start = 1000;
         end   = 2000;

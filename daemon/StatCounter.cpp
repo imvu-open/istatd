@@ -570,6 +570,12 @@ void StatCounter::normalizeRange(time_t &start, time_t &end, time_t &interval, s
         return;
     }
 
+    //C++ Standard 2003 says in 5.6/4 that [...] If the second operand of / or % is zero the behavior is undefined; [...]
+    if (interval == 0)
+    {
+        LogDebug << "0 Interval passed. Massaging it to 10 our minimum reduction";
+        interval = 10;
+    }
     // initial normalization
     start = start - (start % interval);
 
