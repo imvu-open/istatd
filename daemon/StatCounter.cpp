@@ -486,11 +486,6 @@ boost::shared_ptr<istat::StatFile> StatCounter::pickStatFile(time_t startTime, t
 
     time_t now = istat::istattime(0);
 
-    // if startTime is in the future, we don't have data
-    if (startTime > now) {
-        return boost::shared_ptr<istat::StatFile>((istat::StatFile*)0);
-    }
-
     // if endTime is in the future, we can't have data after than now time
     if (endTime > now) {
         endTime = now;

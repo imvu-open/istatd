@@ -555,6 +555,10 @@ void run_tests(void)
         sf = statCounter->pickStatFile(1000000000-33696000,1000000000, interval);
         assert_equal(3600, sf->settings().intervalTime);
         assert_equal(3600, interval);
+
+        sf = statCounter->pickStatFile(1000000000+33696000,1000000000+(336960000*2), interval);
+        assert_equal(10, interval);
+        assert_equal(0, sf);
     }
 
 
