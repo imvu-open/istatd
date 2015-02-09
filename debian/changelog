@@ -1,4 +1,4 @@
-istatd (0.79-1) UNRELEASED; urgency=low
+istatd (0.80-1) UNRELEASED; urgency=low
 
   [ Jon Schedler ]
   * add missing istatd-legend.js file
@@ -6,8 +6,30 @@ istatd (0.79-1) UNRELEASED; urgency=low
 
   [ Eric Hohenstein ]
   * opening log file sooner during initialization and writing most initialization errors and warnings to log instead of stderr
+  * adding support for building against either libstatgrab 0.17 or 0.90
+  * fix zlib tests by avoiding use of zlib option of openssl which is not available by default on trusty
 
- -- Eric Hohenstein <ehohenstein@imvu.com>  Thu, 31 Jul 2014 13:52:49 -0700
+  [ Sev ]
+  * Minor typo
+
+  [ Leonidas Loucas ]
+  * New post flag in Multiget. "compact" :: Bool , defaults to false.  Multiget responses can potentially contain many counters with many buckets. Without compact each bucket is a jsonObject mapping keys (time,count,min,max,avg,sum,sumsq,sdev) to their valuesm which are numeric. If "compact":true is passed in the json request, each bucket will be a jsonArray of just the numeric values ordered [time,count,min,max,sum,sumsq,avg,sdev]. This makes compact requests harder to visually/programitically parse (less simple than just asking for the keys) but reduces the size of the response when requesting many counters.
+
+  [ Andy Friesen ]
+  * Searching for counters no longer also passes the keypress onto the tree view.
+  * Don't repaint when the page is hidden.  This works around a bad corner case where a tab left idle over a weekend can eventually cause Chrome to lock up hard.
+
+  [ Jon Schedler ]
+  * one more tweek to really prevent dismissed counter graphs from magically reappearing when filtering the counter tree
+
+  [ Leonidas Loucas ]
+  * This should schedule a refresh when you come back to a tab that has been hidden
+  * Fix a floating point exception caused by attempting to module by a 0 interval
+  * If a request from the far future is made, make sure that it exercises a path through pickStatFile that will populate the interval reference. remove a guard that was allowing an unitialized reference to an interval variable to be used.
+
+  [ Leo Loucas ]
+
+ -- Eric Hohenstein <ehohenstein@imvu.com>  Mon, 09 Feb 2015 15:28:29 -0800
 
 istatd (0.78-1) UNRELEASED; urgency=low
 
