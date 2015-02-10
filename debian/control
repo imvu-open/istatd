@@ -2,7 +2,7 @@ Source: istatd
 Section: universe 
 Priority: extra
 Maintainer: Jon Schedler <jschedler@imvu.com>
-Build-Depends: debhelper (>= 7), libstatgrab-dev, cdbs, libboost-all-dev, build-essential, libmysqlcppconn-dev, curl
+Build-Depends: debhelper (>= 7), libstatgrab-dev, cdbs, libboost-all-dev, build-essential, libmysqlcppconn-dev, curl, qpdf
 Standards-Version: 3.8.3
 Homepage: https://github.com/imvu/istatd
 
