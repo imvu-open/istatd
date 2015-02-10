@@ -2309,7 +2309,7 @@ var SettingsModel = Backbone.Model.extend({
         if (!_.isUndefined(login_cookie)) {
             var piece = login_cookie.split(':');
             var user = this.users.findWhere({username: piece[0]});
-            if (user.get('password_hash') === piece[1]) {
+            if (!_.isUndefined(user) && user.get('password_hash') === piece[1]) {
                 return user.get('username');
             }
             else {
