@@ -1,4 +1,4 @@
-istatd (0.80-1) UNRELEASED; urgency=low
+istatd (0.80-2) UNRELEASED; urgency=low
 
   [ Jon Schedler ]
   * add missing istatd-legend.js file
@@ -29,7 +29,12 @@ istatd (0.80-1) UNRELEASED; urgency=low
 
   [ Leo Loucas ]
 
- -- Eric Hohenstein <ehohenstein@imvu.com>  Mon, 09 Feb 2015 15:28:29 -0800
+  [ Leonidas Loucas ]
+  * add qpdf as debian depends for zlib-flate tool
+
+  [ Leo Loucas ]
+
+ -- Leonidas Loucas <lloucas@imvu.com>  Mon, 09 Feb 2015 16:07:57 -0800
 
 istatd (0.78-1) UNRELEASED; urgency=low
 
