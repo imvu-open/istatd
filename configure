@@ -133,6 +133,7 @@ if [ -z "$BOOST_SYSTEM" ]; then
     if [ -z "$BOOST_SYSTEM" ]; then
         echo "Cannot find boost_system-mt.so (or boost_system.so)"
         echo "Specify it with --boost_system or install libboost-all-dev."
+        echo "Ubuntu users can also use ./install-boost-dev.sh as root"
         exit 1
     fi
 fi
