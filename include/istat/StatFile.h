@@ -28,8 +28,11 @@ namespace istat
         // and just dumps data. Be careful!
         RAWUP_OVERWRITE,
         // For importing. Like RAWUP_OVERWRITE,
-        // but only copies over empty buckets.
-        RAWUP_FILL_EMPTY
+        // but only writes over empty buckets, else merges.
+        RAWUP_FILL_EMPTY,
+        // For merging. Like RAWUP_OVERWRITE, but doesn't
+        // merge buckets if there are already data.
+        RAWUP_ONLY_IF_EMPTY,
     };
 
     class StatFile

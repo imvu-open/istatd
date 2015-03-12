@@ -78,6 +78,9 @@ public:
     std::string str() const { return boost::lexical_cast<std::string>(boost::any_cast<type>(value_)); }
     int set_from_argv(char const *argv[], int iterator) {
         ++iterator;
+        if (!argv[iterator]) {
+            throw std::runtime_error("Argument requires a value: --" + name_);
+        }
         set(argv[iterator]);
         return iterator;
     }

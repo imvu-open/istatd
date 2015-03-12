@@ -20,12 +20,7 @@ namespace istat
     }
 
     Bucket::Bucket(double s, float sq, float mi, float ma, int c, time_t time)
-        : time_(time),
-        sum_(s),
-        min_(mi),
-        max_(ma),
-        count_(c),
-        sumSq_(sq)
+        : FileBucketLayout(s, sq, mi, ma, c, time)
     {
     }
 

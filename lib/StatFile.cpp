@@ -518,11 +518,21 @@ namespace istat
             }
         }
 
-        if((fileHeader_->flags & FILE_FLAG_IS_COLLATED)
+        bool updateAggregate = false;
+        if (mode == RAWUP_ONLY_IF_EMPTY)
+        {
+            if (bp->count() == 0)
+            {
+                memcpy(bp, &data, sizeof(*bp));
+                updateAggregate = true;
+            }
+        }
+        else if((fileHeader_->flags & FILE_FLAG_IS_COLLATED)
             || mode == RAWUP_OVERWRITE
             || (mode == RAWUP_FILL_EMPTY && bp->count() == 0))
         {
             memcpy(bp, &data, sizeof(*bp));
+            updateAggregate = true;
         }
         else
         {
@@ -533,10 +543,14 @@ namespace istat
             {
                 bp->setCount(fileHeader_->fixed_count);
             }
+            updateAggregate = true;
         }
-        fileHeader_->cumulative_sum += data.sum();
-        fileHeader_->cumulative_sum_sq += data.sumSq();
-        fileHeader_->cumulative_count += data.count();
+        if (updateAggregate)
+        {
+            fileHeader_->cumulative_sum += data.sum();
+            fileHeader_->cumulative_sum_sq += data.sumSq();
+            fileHeader_->cumulative_count += data.count();
+        }
         return true;
     }
 

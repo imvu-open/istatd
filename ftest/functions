@@ -10,9 +10,11 @@ set +o histexpand
 FTEST_NAME=`basename $0 .sh`
 echo $FTEST_NAME
 
+export EXIT_HOOK=""
+
 # do a bit of a fail-safe to make sure we don't hang forever
 export ALARMPARENT=$$
-(sleep 30; echo "Test process timed out."; kill -9 $ALARMPARENT; [ -z "$DEBUG_ISTATD" ] && killall -q -9 istatd; exit 1) &
+(sleep 30; echo "Test process timed out."; kill -9 $ALARMPARENT; [ -z "$DEBUG_ISTATD" ] && killall -q -9 istatd && killall -q -9 istatd_transplant; exit 1) &
 ALARMCHILD=$!
 
 function failure {
@@ -22,7 +24,10 @@ function failure {
 }
 
 function onexit {
-    trap "$1" SIGINT SIGTERM SIGHUP EXIT
+    trap "echo SIGINT; $1" SIGINT
+    trap "echo SIGTERM; $1" SIGTERM
+    trap "echo SIGHUP; $1" SIGHUP
+    trap "echo EXIT; $1" EXIT
 }
 
 function assert_equal {
@@ -46,9 +51,15 @@ function kill_server {
     fi
 }
 
+
 function cleanup_inner {
     kill -SIGTERM $ALARMCHILD || true
     onexit 'echo "signal received in cleanup"'
+    if [ ! -z "$EXIT_HOOK" ]; then
+        TORUN="$EXIT_HOOK"
+        EXIT_HOOK=""
+        $TORUN
+    fi
     TOKILL="$STARTED_SERVERS"
     STARTED_SERVERS=""
     for srv in $TOKILL; do

@@ -5,6 +5,8 @@
 #include <istat/istattime.h>
 #include <istat/Mmap.h>
 
+#include <boost/filesystem.hpp>
+
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
@@ -54,6 +56,11 @@ int main(int argc, char const *argv[])
     sett.numSamples = numSamples.get();
     try
     {
+        std::string dn(fn.substr(0, fn.find_last_of('/')));
+        if (!dn.empty())
+        {
+            boost::filesystem::create_directories(dn);
+        }
         StatFile sf(fn, Stats(), sett, mm_, asCounter.get());
         while (true)
         {

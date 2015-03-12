@@ -4,10 +4,27 @@
 
 #include <string>
 #include <boost/cstdint.hpp>
+#include <string.h>
+
 
 namespace istat
 {
-    class Bucket
+    struct FileBucketLayout
+    {
+        inline FileBucketLayout() {}
+        inline FileBucketLayout(bool clear) { if (clear) memset(this, 0, sizeof(*this)); }
+        inline FileBucketLayout(double s, float sq, float mi, float ma, int c, time_t time) :
+            time_(time), sum_(s), min_(mi), max_(ma), count_(c), sumSq_(sq) {}
+
+        int64_t time_; // bucket time (unix epoch), not the clock time of the istatd when written
+        double sum_;
+        float min_;
+        float max_;
+        int32_t count_;
+        float sumSq_;
+    };
+
+    class Bucket : private FileBucketLayout
     {
     public:
         inline Bucket() {} // allow placement new to not clear underlying data
@@ -28,14 +45,6 @@ namespace istat
 
         double avg() const;
         float sdev() const;
-
-    private:
-        int64_t time_; // bucket time (unix epoch), not the clock time of the istatd when written
-        double sum_;
-        float min_;
-        float max_;
-        int32_t count_;
-        float sumSq_;
     };
 }
 
