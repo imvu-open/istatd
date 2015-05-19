@@ -602,8 +602,6 @@ void collectLocalStats(StatServer *ss)
     localStatFlush(ss);
 }
 
-int waitFdPair[2];
-
 void handle_pid_daemon(std::string const &pidf, bool daemon)
 {
     std::string cpf(combine_paths(initialDir_, pidf));
@@ -642,20 +640,30 @@ void handle_pid_daemon(std::string const &pidf, bool daemon)
 
     if (daemon)
     {
-        if (pipe(waitFdPair) < 0)
+        pid = fork();
+        if (pid && pid < 0)
         {
-            LogError << "daemonize: pipe() failed.";
+            LogError << "daemonize: fork() failed.";
             exit(1);
         }
-        pid = fork();
-        if (pid)
+
+        if (pid > 0)
         {
-            if (pid < 0)
-            {
-                LogError << "daemonize: fork() failed.";
-                exit(1);
-            }
+            // Kill the parent process
+            exit(0);
         }
+
+        pid_t sid;
+        sid = setsid();
+        if (sid > 0)
+        {
+            LogError << "daemonize: setsid() failed.";
+            exit(1);
+        }
+
+        ::close(0);
+        ::close(1);
+        ::close(2);
     }
 
     if (pidf.size() > 0 && pid != 0)
@@ -666,40 +674,6 @@ void handle_pid_daemon(std::string const &pidf, bool daemon)
         pf.close();
         strncpy(pidFileName_, cpf.c_str(), sizeof(pidFileName_));
         pidFileName_[sizeof(pidFileName_)-1] = 0;
-    }
-    if (daemon && pid != 0)
-    {
-        char buf[1];
-        buf[0] = read(waitFdPair[0], buf, 1);
-        exit(0);
-    }
-}
-
-//  Use the
-void unblock_waiter()
-{
-    //  If I have the "waiting" fd pipe open, then unblock the
-    //  parent process waiting for me by writing on the pipe.
-    if (waitFdPair[0] != waitFdPair[1])
-    {
-        char buf[1] = { 'X' };
-        buf[0] = write(waitFdPair[1], buf, 1);
-        close(waitFdPair[0]);
-        close(waitFdPair[1]);
-        memset(waitFdPair, 0, sizeof(waitFdPair));
-        //  disassociate from stdin/out/err
-        int devNull = ::open("/dev/null", O_RDWR);
-        if (devNull < 0)
-        {
-            std::cerr << "istatd child: Could not open /dev/null" << std::endl;
-        }
-        else
-        {
-            ::dup2(devNull, 0);
-            ::dup2(0, 1);
-            ::dup2(0, 2);
-            ::close(devNull);
-        }
     }
 }
 
@@ -992,7 +966,6 @@ int main(int argc, char const *argv[])
         }
 
         drop_privileges();
-        unblock_waiter();
 
         int nThreads = threadCount.get();
         if (nThreads < 1)
