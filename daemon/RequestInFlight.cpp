@@ -368,7 +368,7 @@ void RequestInFlight::on_multigetBody()
     {
         time_t start = root["start"].asInt64();
         time_t stop = root["stop"].asInt64();
-        size_t maxSamples = root["maxSamples"].asInt();
+        ssize_t maxSamples = root["maxSamples"].asInt();
         if (start < 0) {
             reportError("Invalid 'start' parameter", 400);
             return;
