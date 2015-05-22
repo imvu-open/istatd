@@ -482,10 +482,10 @@ void RequestInFlight::serveFile(std::string const &name)
     }
     time_t modTime = st.st_mtime;
     int64_t fileSize = st.st_size;
-    time_t now;
-    time_t expires = now;
+    time_t now, expires;
     bool cacheAll = false;
     time(&now);
+    expires = now;
     std::string etag(boost::lexical_cast<std::string>(modTime) + "_" + boost::lexical_cast<std::string>(fileSize));
     //  todo: maybe do some if-none-match optimization here
     hdrs_["Etag"] = etag;
