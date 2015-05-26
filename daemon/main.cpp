@@ -641,7 +641,7 @@ void handle_pid_daemon(std::string const &pidf, bool daemon)
     if (daemon)
     {
         pid = fork();
-        if (pid < 0)
+        if (pid && pid < 0)
         {
             LogError << "daemonize: fork() failed.";
             exit(1);
