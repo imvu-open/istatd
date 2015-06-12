@@ -1,3 +1,17 @@
+istatd (0.81-1) UNRELEASED; urgency=low
+
+  [ Leonidas Loucas ]
+  * fix a bug in login widget
+
+  [ Jon Watte ]
+  * Make finding the right boost libraries easier
+  * transplant test passes
+
+  [ fang fang ]
+  * fix segmentation fault caused by using a raw pointer.
+
+ -- Fang Fang <ffang@imvu.com>  Fri, 12 Jun 2015 12:41:46 -0700
+
 istatd (0.80-2) UNRELEASED; urgency=low
 
   [ Jon Schedler ]
