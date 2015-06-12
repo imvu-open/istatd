@@ -219,7 +219,7 @@ void RequestInFlight::do_POST(std::string const &url, std::map<std::string, std:
 }
 
 
-class MultiCounterWorker
+class MultiCounterWorker : public boost::enable_shared_from_this<MultiCounterWorker>
 {
 public:
     MultiCounterWorker(time_t start, time_t end, size_t maxSamples,
@@ -259,7 +259,6 @@ public:
         {
             req_->strm_buffer_ << "}";
             req_->complete(200, "application/json");
-            delete this;
         }
         else
         {
@@ -268,7 +267,7 @@ public:
                 ptr(data.begin()), end(data.end()); ptr != end; ++ptr)
             {
                 (*ptr).second.first->get_io_service().post((*ptr).second.first->wrap(
-                    boost::bind(&MultiCounterWorker::workOne, this, (*ptr).first, (*ptr).second.second)));
+                    boost::bind(&MultiCounterWorker::workOne, shared_from_this(), (*ptr).first, (*ptr).second.second)));
             }
         }
     }
@@ -349,7 +348,6 @@ public:
             req_->strm_buffer_ << ",\"interval\":" << req_->multiget_interval_;
             req_->strm_buffer_ << "}";
             req_->complete(200, "application/json");
-            delete this;
         }
     }
 };
@@ -405,7 +403,7 @@ void RequestInFlight::on_multigetBody()
 
         strm_buffer_ << "{";
         std::string delim("");
-        MultiCounterWorker *mcw = new MultiCounterWorker(start, stop, maxSamples, trailing, compact, shared_from_this());
+        boost::shared_ptr<MultiCounterWorker> mcw(new MultiCounterWorker(start, stop, maxSamples, trailing, compact, shared_from_this()));
         for (int i = 0, n = keys.size(); i != n; ++i)
         {
             std::string name(keys[i].asString());
