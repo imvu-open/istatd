@@ -8,6 +8,7 @@
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 #include <iostream>
 
 
@@ -18,9 +19,13 @@ using namespace boost::asio;
 //  Allow this to be manipulated later.
 size_t maxBufferSize = 64*1024;
 
+struct EagerConnectionEnabler : public EagerConnection {
+       EagerConnectionEnabler(boost::asio::io_service &svc) : EagerConnection(svc) {}
+};
+
 boost::shared_ptr<ConnectionInfo> EagerConnection::create(boost::asio::io_service &svc)
 {
-    return boost::shared_ptr<ConnectionInfo>(new EagerConnection(svc));
+    return boost::make_shared<EagerConnectionEnabler>(boost::ref(svc));
 }
 
 EagerConnection::EagerConnection(boost::asio::io_service &svc) :

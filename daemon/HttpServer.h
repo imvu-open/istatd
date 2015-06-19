@@ -144,7 +144,6 @@ private:
     friend class HttpRequest;
     void acceptOne();
     void handleAccept(boost::system::error_code const &e, HttpRequestHolder const &req);
-    HttpRequest *newHttpRequest();
     HttpServerInfo sInfo_;
     int port_;
     boost::asio::io_service &svc_;

@@ -20,6 +20,7 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/device/back_inserter.hpp>
+#include <boost/make_shared.hpp>
 
 using namespace istat;
 
@@ -403,7 +404,7 @@ void RequestInFlight::on_multigetBody()
 
         strm_buffer_ << "{";
         std::string delim("");
-        boost::shared_ptr<MultiCounterWorker> mcw(new MultiCounterWorker(start, stop, maxSamples, trailing, compact, shared_from_this()));
+        boost::shared_ptr<MultiCounterWorker> mcw = boost::make_shared<MultiCounterWorker>(start, stop, maxSamples, trailing, compact, shared_from_this());
         for (int i = 0, n = keys.size(); i != n; ++i)
         {
             std::string name(keys[i].asString());

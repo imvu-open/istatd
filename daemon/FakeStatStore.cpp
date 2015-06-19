@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <boost/make_shared.hpp>
 #include "FakeStatStore.h"
 
 FakeStatStore::FakeStatStore(boost::asio::io_service &svc) : svc_(svc) {}
@@ -71,7 +72,7 @@ void FakeStatStore::record(std::string const &name, time_t time, double value, d
 {
     if (!fakeCounters_[name])
     {
-        fakeCounters_[name] = boost::shared_ptr<IStatCounter>(new FakeStatCounter(svc_, time-1000, time+1000, 10, this, name));
+        fakeCounters_[name] = boost::make_shared<FakeStatCounter>(boost::ref(svc_), time-1000, time+1000, 10, this, name);
     }
     fakeCounters_[name]->record(time, value, valueSq, min, max, cnt);
 }
@@ -95,5 +96,5 @@ std::string const &FakeStatStore::getLocation() const { return location_; }
 
 void FakeStatStore::manufactureTruth(std::string const &name, time_t from, time_t to, time_t interval)
 {
-    fakeCounters_[name] = boost::shared_ptr<IStatCounter>(new FakeStatCounter(svc_, from, to, interval, this, name));
+    fakeCounters_[name] = boost::make_shared<FakeStatCounter>(boost::ref(svc_), from, to, interval, this, name);
 }

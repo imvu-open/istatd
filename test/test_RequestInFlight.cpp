@@ -8,6 +8,7 @@
 #include <istat/istattime.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/assign.hpp>
+#include <boost/make_shared.hpp>
 #include <istat/Log.h>
 
 #include "../daemon/RequestInFlight.h"
@@ -132,7 +133,7 @@ void test_parse_encoding() {
 void test_choose_encoding() {
     boost::asio::io_service svc;
     HttpRequestHolder htr(boost::shared_ptr<IHttpRequest>((HttpRequest *)0));
-    boost::shared_ptr<RequestInFlight> rif(new RequestInFlight(htr.p_, svc, "files"));
+    boost::shared_ptr<RequestInFlight> rif = boost::make_shared<RequestInFlight>(htr.p_, boost::ref(svc), "files");
 
     std::set<std::string> mm = boost::assign::list_of("gzip")("deflate");
     std::set<std::string> set;

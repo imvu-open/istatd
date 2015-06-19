@@ -9,6 +9,7 @@
 #include "../daemon/FakeStatStore.h"
 
 #include <boost/filesystem.hpp>
+#include <boost/make_shared.hpp>
 
 using namespace istat;
 
@@ -27,12 +28,12 @@ void run_tests(void)
     // test counter created as gauge stays a gauge even if reopened as a collated counter
     {
         test_init_path("/tmp/test");
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, istattime(0), mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, istattime(0), mm, rp);
         assert_true(gauge.get()!=0);
         assert_false(gauge->isCollated());
         gauge->flush(ssp);
 
-        boost::shared_ptr<IStatCounter> counter(new StatCounter("/tmp/test/taco", true, istattime(0), mm, rp));
+        boost::shared_ptr<IStatCounter> counter = boost::make_shared<StatCounter>("/tmp/test/taco", true, istattime(0), mm, rp);
         assert_true(counter.get()!=0);
         assert_false(counter->isCollated());
     }
@@ -40,12 +41,12 @@ void run_tests(void)
     {
         test_init_path("/tmp/test");
 
-        boost::shared_ptr<IStatCounter> counter(new StatCounter("/tmp/test/taco", true, istattime(0), mm, rp));
+        boost::shared_ptr<IStatCounter> counter = boost::make_shared<StatCounter>("/tmp/test/taco", true, istattime(0), mm, rp);
         assert_true(counter.get()!=0);
         assert_true(counter->isCollated());
         counter->flush(ssp);
 
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, istattime(0), mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, istattime(0), mm, rp);
         assert_true(gauge.get()!=0);
         assert_true(gauge->isCollated());
     }
@@ -53,12 +54,12 @@ void run_tests(void)
     {
         test_init_path("/tmp/test");
 
-        boost::shared_ptr<IStatCounter> counter(new StatCounter("/tmp/test/taco", true, istattime(0), mm, rp));
+        boost::shared_ptr<IStatCounter> counter = boost::make_shared<StatCounter>("/tmp/test/taco", true, istattime(0), mm, rp);
         assert_true(counter.get()!=0);
         assert_true(counter->isCollated());
         counter->flush(ssp);
 
-        boost::shared_ptr<IStatCounter> counter2(new StatCounter("/tmp/test/taco", true, istattime(0), mm, rp));
+        boost::shared_ptr<IStatCounter> counter2 = boost::make_shared<StatCounter>("/tmp/test/taco", true, istattime(0), mm, rp);
         assert_true(counter2.get()!=0);
         assert_true(counter2->isCollated());
     }
@@ -67,12 +68,12 @@ void run_tests(void)
     {
         test_init_path("/tmp/test");
 
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, istattime(0), mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, istattime(0), mm, rp);
         assert_true(gauge.get()!=0);
         assert_false(gauge->isCollated());
         gauge->flush(ssp);
 
-        boost::shared_ptr<IStatCounter> gauge2(new StatCounter("/tmp/test/taco", false, istattime(0), mm, rp));
+        boost::shared_ptr<IStatCounter> gauge2 = boost::make_shared<StatCounter>("/tmp/test/taco", false, istattime(0), mm, rp);
         assert_true(gauge2.get()!=0);
         assert_false(gauge2->isCollated());
     }
@@ -94,7 +95,7 @@ void run_tests(void)
         test_init_path("/tmp/test");
 
         FakeTime faketime(TIME_NOW);
-        boost::shared_ptr<StatCounter> gauge(new StatCounter("/tmp/test/taco", false, TIME_ZERO, mm, rp));
+        boost::shared_ptr<StatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, TIME_ZERO, mm, rp);
 
         // create 2 hours of data. note that 10s counter will wrap since
         // it can only hold 85m and 20s.
@@ -157,7 +158,7 @@ void run_tests(void)
         test_init_path("/tmp/test");
 
         FakeTime faketime(TIME_ZERO);
-        boost::shared_ptr<StatCounter> gauge(new StatCounter("/tmp/test/taco", false, TIME_ZERO, mm, rp));
+        boost::shared_ptr<StatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, TIME_ZERO, mm, rp);
 
         time_t start, end, interval;
 
@@ -244,7 +245,7 @@ void run_tests(void)
         test_init_path("/tmp/test");
         FakeTime faketime(TIME_ZERO);
 
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, TIME_ZERO, mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, TIME_ZERO, mm, rp);
 
         gauge->record(TIME_ZERO, 1.0, 1.0, 1.0, 1.0, 1);
         gauge->record(TIME_60_SECONDS, 4.0, 4.0, 2.0, 2.0, 2);
@@ -271,7 +272,7 @@ void run_tests(void)
     {
         test_init_path("/tmp/test");
 
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, 10, mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, 10, mm, rp);
 
         std::vector<istat::Bucket> buckets;
         time_t normalized_start, normalized_end, interval;
@@ -283,7 +284,7 @@ void run_tests(void)
     // Test a basic gauge.
     {
         FakeTime faketime(1000000020);
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, 10, mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, 10, mm, rp);
 
         gauge->record(1000000000, 1, 1, 1, 1, 1);
         gauge->record(1000000010, 1, 1, 1, 1, 1);
@@ -307,7 +308,7 @@ void run_tests(void)
     // Test min / avg / max rounding (positive values).
     {
         FakeTime faketime(1000000020);
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, 10, mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, 10, mm, rp);
         IStatCounter::recordsRejected_ = LoopbackCounter("test", TypeEvent);
 
         gauge->record((time_t) 1000000020,
@@ -324,7 +325,7 @@ void run_tests(void)
     // Test min / avg / max rounding (negative values).
     {
         FakeTime faketime(1000000020);
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, 10, mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, 10, mm, rp);
         IStatCounter::recordsRejected_ = LoopbackCounter("test", TypeEvent);
 
         gauge->record((time_t) 1000000020,
@@ -343,7 +344,7 @@ void run_tests(void)
         test_init_path("/tmp/test");
 
         FakeTime faketime(1000000030);
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, 10, mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, 10, mm, rp);
 
         gauge->record(1000000000, 1, 1, 1, 1, 1);
         gauge->record(1000000010, 2, 4, 2, 2, 1);
@@ -367,7 +368,7 @@ void run_tests(void)
         test_init_path("/tmp/test");
 
         FakeTime faketime(3610);
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, 10, mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, 10, mm, rp);
 
         gauge->record(10, 1, 1, 1, 1, 1);
         gauge->record(3590, 2, 4, 2, 2, 1);
@@ -400,7 +401,7 @@ void run_tests(void)
         const size_t EXPECTED_BUCKETS = FIFTEEN_MINUTES / INTERVAL;
 
         FakeTime fake(FAKE_TIME);
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, ORIGIN, mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, ORIGIN, mm, rp);
 
         for(size_t i = 0; i != RECORDED_BUCKETS; ++i)
         {
@@ -439,7 +440,7 @@ void run_tests(void)
         const size_t EXPECTED_BUCKETS = TIME_FROM_LAST / INTERVAL;
 
         FakeTime fake(FAKE_TIME);
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, ORIGIN, mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, ORIGIN, mm, rp);
 
         for(size_t i = 0; i != RECORDED_BUCKETS; ++i)
         {
@@ -479,7 +480,7 @@ void run_tests(void)
         const size_t EXPECTED_BUCKETS = FIFTEEN_MINUTES / INTERVAL;
 
         FakeTime fake(FAKE_TIME);
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco", false, ORIGIN, mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, ORIGIN, mm, rp);
 
         for(size_t i = 0; i != RECORDED_BUCKETS; ++i)
         {
@@ -507,7 +508,7 @@ void run_tests(void)
         test_init_path("/tmp/test");
 
         FakeTime faketime(3610);
-        boost::shared_ptr<IStatCounter> gauge(new StatCounter("/tmp/test/taco2", false, 10, mm, rp));
+        boost::shared_ptr<IStatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco2", false, 10, mm, rp);
 
         gauge->record(10, 1, 1, 1, 1, 1);
         gauge->record(3590, 2, 4, 2, 2, 1);
@@ -533,7 +534,7 @@ void run_tests(void)
     {
         RetentionPolicy rp("10s:10d,5m:140d,1h:5y");
         RetentionPolicy xrp("");
-        boost::shared_ptr<StatCounter> statCounter(new StatCounter("fake/counter", false, 1000000000, mm, rp));
+        boost::shared_ptr<StatCounter> statCounter = boost::make_shared<StatCounter>("fake/counter", false, 1000000000, mm, rp);
         statCounter->record(1000000000, 1, 1, 1, 1, 1);
 
         FakeTime fake(1000000000);
@@ -573,7 +574,7 @@ void run_tests(void)
         test_init_path("/tmp/test");
         FakeTime faketime(TIME_ZERO);
 
-        boost::shared_ptr<StatCounter> counter(new StatCounter("/tmp/test/quesadilla", true, TIME_ZERO, mm, rp));
+        boost::shared_ptr<StatCounter> counter = boost::make_shared<StatCounter>("/tmp/test/quesadilla", true, TIME_ZERO, mm, rp);
 
         // Let's create intentional gaps of 20s, to see if bigger intervals handle this correctly.
         for(time_t t = TIME_ZERO; t <= TIME_LAST_VALUE; t += 20)
@@ -646,7 +647,7 @@ void run_tests(void)
 
         time_t TIME_NOW = 123456;
         FakeTime faketime(TIME_NOW);
-        boost::shared_ptr<StatCounter> gauge(new StatCounter("/tmp/test/taco", false, TIME_NOW, mm, rp));
+        boost::shared_ptr<StatCounter> gauge = boost::make_shared<StatCounter>("/tmp/test/taco", false, TIME_NOW, mm, rp);
 
         IStatCounter::recordsRejected_ = LoopbackCounter("test", TypeEvent);
 
@@ -677,7 +678,7 @@ void run_tests(void)
         time_t TIME_ROUNDED = 123450;
         time_t TIME_NOW = TIME_WRITTEN + 120;
         FakeTime faketime(TIME_NOW);
-        boost::shared_ptr<StatCounter> counter(new StatCounter("/tmp/test/quesadilla", true, TIME_WRITTEN, mm, rp));
+        boost::shared_ptr<StatCounter> counter = boost::make_shared<StatCounter>("/tmp/test/quesadilla", true, TIME_WRITTEN, mm, rp);
         counter->record(TIME_WRITTEN, 1.0, 1.0, 1.0, 1.0, 1);
         counter->maybeShiftCollated(TIME_NOW);
 
@@ -714,7 +715,7 @@ void run_tests(void)
         IStatCounter::recordsFromThePast_ = LoopbackCounter("past", TypeEvent);
 
         FakeTime faketime(TIME_NOW);
-        boost::shared_ptr<StatCounter> counter(new StatCounter("/tmp/test/quesadilla", true, 10, mm, rp));
+        boost::shared_ptr<StatCounter> counter = boost::make_shared<StatCounter>("/tmp/test/quesadilla", true, 10, mm, rp);
         counter->record(TIME_RECORD1, 1.0, 1.0, 1.0, 1.0, 1);
         counter->flush(ssp);
         counter->record(TIME_RECORD2, 1.0, 1.0, 1.0, 1.0, 1);
@@ -732,7 +733,7 @@ void run_tests(void)
         time_t TIME_NOW = 13720;
 
         FakeTime faketime(TIME_NOW);
-        boost::shared_ptr<StatCounter> counter(new StatCounter("/tmp/test/trailertrash", false, TIME_RECORD1, mm, trp));
+        boost::shared_ptr<StatCounter> counter = boost::make_shared<StatCounter>("/tmp/test/trailertrash", false, TIME_RECORD1, mm, trp);
         counter->record(TIME_RECORD1, 1.0, 1.0, 1.0, 1.0, 1);
         counter->flush(ssp);
         counter->record(TIME_RECORD2, 2.0, 4.0, 2.0, 2.0, 1);

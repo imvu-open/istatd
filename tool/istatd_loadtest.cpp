@@ -2,6 +2,7 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/make_shared.hpp>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -234,7 +235,7 @@ float counter_value(int ctrix)
 
 void send_sample(int ctrix)
 {
-    boost::shared_ptr<std::string> sp(new std::string(counterNames_[ctrix]));
+    boost::shared_ptr<std::string> sp = boost::make_shared<std::string>(counterNames_[ctrix]);
     (*sp) += " ";
     (*sp) += boost::lexical_cast<std::string>(counter_value(ctrix));
     (*sp) += "\r\n";

@@ -20,6 +20,7 @@
 #include <boost/bind/placeholders.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio/ip/host_name.hpp>
+#include <boost/make_shared.hpp>
 
 
 using boost::asio::ip::udp;
@@ -116,7 +117,7 @@ StatServer::StatServer(int statPort, std::string listenAddress,
 
     if (blacklistCfg.use())
     {
-        blacklist_ = boost::shared_ptr<Blacklist>(new Blacklist(svc, blacklistCfg));
+        blacklist_ = boost::make_shared<Blacklist>(boost::ref(svc), boost::ref(blacklistCfg));
     }
 
     if (hasAgent())
@@ -127,7 +128,7 @@ StatServer::StatServer(int statPort, std::string listenAddress,
     if (!statStore_)
     {
         hasStatStore_ = false;
-        statStore_ = boost::shared_ptr<IStatStore>(new NullStatStore());
+        statStore_ = boost::make_shared<NullStatStore>();
     }
     if (hasStore())
     {
@@ -224,7 +225,7 @@ boost::shared_ptr<MetaInfo> StatServer::metaInfo(boost::shared_ptr<ConnectionInf
     InfoHashMap::iterator ptr(metaInfo_.find(key));
     if (ptr == metaInfo_.end() || !(*ptr).second->online_)
     {
-        boost::shared_ptr<MetaInfo> mi(new MetaInfo());
+        boost::shared_ptr<MetaInfo> mi = boost::make_shared<MetaInfo>();
         mi->online_ = true;
         ::time(&mi->connected_);
         mi->activity_ = mi->connected_;

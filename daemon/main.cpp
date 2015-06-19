@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <boost/filesystem.hpp>
+#include <boost/make_shared.hpp>
 
 #include "config.h"
 #include "HttpServer.h"
@@ -396,8 +397,8 @@ void thread_fn()
 
 void mainThread_fn(StatServer *ss)
 {
-    boost::shared_ptr<AuditTimer> aTimer(new AuditTimer(g_service, mm, ss));
-    boost::shared_ptr<LogRolloverTimer> lTimer(new LogRolloverTimer(g_service, 300));
+    boost::shared_ptr<AuditTimer> aTimer = boost::make_shared<AuditTimer>(boost::ref(g_service), mm, ss);
+    boost::shared_ptr<LogRolloverTimer> lTimer = boost::make_shared<LogRolloverTimer>(boost::ref(g_service), 300);
     volatile bool do_retry = true;
     while (do_retry)
     {
@@ -433,7 +434,7 @@ static void printRequest(HttpRequestHolder const &req, StatServer *ss)
     {
         LogSpam << "Serving:" << req->method() << req->url();
     }
-    boost::shared_ptr<RequestInFlight> rif(new RequestInFlight(req.p_, ss, filesDir.get()));
+    boost::shared_ptr<RequestInFlight> rif = boost::make_shared<RequestInFlight>(req.p_, ss, filesDir.get());
     ss->service().post(boost::bind(&RequestInFlight::go, rif));
 }
 
@@ -495,7 +496,7 @@ void localStat(float v, char const *n)
 
 void localStatFlush(StatServer *ss)
 {
-    boost::shared_ptr<UdpConnectionInfo> tmp(new UdpConnectionInfo());
+    boost::shared_ptr<UdpConnectionInfo> tmp = boost::make_shared<UdpConnectionInfo>();
     //  it's null during initialization
     if (ss != 0)
     {
@@ -931,7 +932,7 @@ int main(int argc, char const *argv[])
         if (storepath.size())
         {
             storepath = combine_paths(initialDir_, storepath);
-            boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, retentionPolicy));
+            boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storepath, mm, boost::ref(retentionPolicy));
 
             StatStore * ss = new StatStore(storepath, dropped_uid(), g_service, statCounterFactory, mm, flush.get()*1000, minimumRequiredSpace.get(), pruneEmptyDirectoriesInterval.get()*1000);
             LoopbackCounter::setup(ss, g_service);
@@ -1013,7 +1014,7 @@ int main(int argc, char const *argv[])
         {
             for (int i = 0; i != nThreads - 1; ++i)
             {
-                threads.push_back(boost::shared_ptr<boost::thread>(new boost::thread(thread_fn)));
+                threads.push_back(boost::make_shared<boost::thread>(thread_fn));
             }
         }
         if (rof != NULL)

@@ -8,6 +8,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 #include <ctype.h>
 #include <iostream>
 
@@ -53,7 +54,7 @@ void HttpServer::getInfo(HttpServerInfo &oInfo)
 void HttpServer::acceptOne()
 {
     LogSpam << "HttpService::acceptOne()";
-    boost::shared_ptr<IHttpRequest> sptr(newHttpRequest());
+    boost::shared_ptr<IHttpRequest> sptr = boost::make_shared<HttpRequest>(boost::ref(svc()), this);
     HttpRequestHolder request(sptr);
     acceptor_.async_accept(request->socket(),
         boost::bind(&HttpServer::handleAccept, this, placeholders::error, request));
@@ -81,14 +82,6 @@ void HttpServer::handleAccept(boost::system::error_code const &e, HttpRequestHol
     timer_.expires_from_now(boost::posix_time::seconds(1));
     timer_.async_wait(boost::bind(&HttpServer::acceptOne, this));
 }
-
-HttpRequest *HttpServer::newHttpRequest()
-{
-    return new HttpRequest(svc(), this);
-}
-
-
-
 
 HttpRequest::HttpRequest(boost::asio::io_service &svc, HttpServer *hs) :
     socket_(svc),
@@ -249,7 +242,7 @@ void HttpRequest::on_body(boost::system::error_code const &err, size_t xfer)
 
 boost::shared_ptr<std::list<std::string> > HttpRequest::headers() const
 {
-    boost::shared_ptr<std::list<std::string> > ret(new std::list<std::string>());
+    boost::shared_ptr<std::list<std::string> > ret = boost::make_shared<std::list<std::string> >();
     for (std::map<std::string, std::string>::const_iterator ptr(headers_.begin()), end(headers_.end());
         ptr != end; ++ptr)
     {

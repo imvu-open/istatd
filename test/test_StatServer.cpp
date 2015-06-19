@@ -7,6 +7,7 @@
 #include <istat/test.h>
 #include <istat/istattime.h>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include <istat/Log.h>
 
 #include "../daemon/StatServer.h"
@@ -35,10 +36,10 @@ boost::shared_ptr<StatServer> makeServer(Mmap *mm, boost::asio::io_service &svc)
     std::string listenAddress("");
     std::string storePath("/tmp/test/testdir");
     //Mmap *mm(NewMmap());
-    boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storePath, mm, rp));
-    boost::shared_ptr<IStatStore> statStore(new StatStore(storePath, getuid(), svc, statCounterFactory, mm));
+    boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storePath, mm, boost::ref(rp));
+    boost::shared_ptr<IStatStore> statStore = boost::make_shared<StatStore>(storePath, getuid(), boost::ref(svc), statCounterFactory, mm);
     statStore->setAggregateCount(2);
-    return boost::shared_ptr<StatServer>(new StatServer(port, listenAddress, agent, 1, blacklistCfg, svc, statStore, 256));
+    return boost::make_shared<StatServer>(port, listenAddress, agent, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256);
 }
 
 boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_service &svc, int period) {
@@ -51,10 +52,10 @@ boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_
     std::string listenAddress("");
     std::string storePath("/tmp/test/testdir");
     //Mmap *mm(NewMmap());
-    boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storePath, mm, rp));
-    boost::shared_ptr<IStatStore> statStore(new StatStore(storePath, getuid(), svc, statCounterFactory, mm));
+    boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storePath, mm, boost::ref(rp));
+    boost::shared_ptr<IStatStore> statStore = boost::make_shared<StatStore>(storePath, getuid(), boost::ref(svc), statCounterFactory, mm);
     statStore->setAggregateCount(2);
-    return boost::shared_ptr<StatServer>(new StatServer(port, listenAddress, agent, 1, blacklistCfg, svc, statStore, 256));
+    return boost::make_shared<StatServer>(port, listenAddress, agent, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256);
 }
 
 void test_counter() {
@@ -63,7 +64,7 @@ void test_counter() {
     boost::shared_ptr<StatServer> server;
     Mmap *mm(NewMmap());
     server = makeServer(mm, svc);
-    boost::shared_ptr<ConnectionInfo> ec(new FakeEagerConnection(svc));
+    boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
 
     boost::shared_ptr<IStatCounter> statCounter;
     boost::asio::strand* strand = 0;
@@ -87,7 +88,7 @@ void test_multiple_counters() {
     boost::shared_ptr<StatServer> server;
     Mmap *mm(NewMmap());
     server = makeServer(mm, svc);
-    boost::shared_ptr<ConnectionInfo> ec(new FakeEagerConnection(svc));
+    boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
 
     boost::shared_ptr<IStatCounter> statCounter;
     boost::asio::strand* strand;
@@ -110,7 +111,7 @@ void test_collated_counters() {
     boost::shared_ptr<StatServer> server;
     Mmap *mm(NewMmap());
     server = makeServer(mm, svc);
-    boost::shared_ptr<ConnectionInfo> ec(new FakeEagerConnection(svc));
+    boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
 
     boost::shared_ptr<IStatCounter> statCounter;
     boost::asio::strand* strand;
@@ -185,7 +186,7 @@ void test_blacklist() {
     boost::shared_ptr<StatServer> server;
     Mmap *mm(NewMmap());
     server = makeServerWithBlacklist(mm, svc, 10);
-    boost::shared_ptr<ConnectionInfo> ec(new FakeEagerConnection(svc));
+    boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
 
     server->handleCmd("#hostname hostname1", ec);
     svc.poll();
@@ -213,7 +214,7 @@ void test_blacklist() {
     assert_equal(boost::shared_ptr<IStatCounter>((IStatCounter*)0), statCounter);
     assert_equal(false, ec->opened());
 
-    boost::shared_ptr<ConnectionInfo> ecg(new FakeEagerConnection(svc));
+    boost::shared_ptr<ConnectionInfo> ecg = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
 
     server->handleCmd("#hostname hostname7", ecg);
     svc.poll();
@@ -251,7 +252,7 @@ void test_start_with_missing_blacklist() {
     boost::shared_ptr<StatServer> server;
     Mmap *mm(NewMmap());
     server = makeServerWithBlacklist(mm, svc, 10);
-    boost::shared_ptr<ConnectionInfo> ec(new FakeEagerConnection(svc));
+    boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
 
     boost::shared_ptr<IStatCounter> statCounter;
     boost::asio::strand* strand = 0;

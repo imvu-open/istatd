@@ -122,6 +122,8 @@ private:
         EagerConnection &operator*() const { return *ci_->asEagerConnection(); }
     };
     friend EagerConnection *get_pointer(Tramp const &t);
+
+    friend struct EagerConnectionEnabler;
 };
 
 inline EagerConnection *get_pointer(EagerConnection::Tramp const &t) { return t.operator->(); }

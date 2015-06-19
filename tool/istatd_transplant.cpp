@@ -45,6 +45,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/make_shared.hpp>
 
 #include "istat/StatFile.h"
 #include "istat/Mmap.h"
@@ -682,7 +683,7 @@ void ServerState::start()
     {
         std::cerr << "ServerState::start()" << std::endl;
     }
-    boost::shared_ptr<ServerClient> client(new ServerClient(*this, svc_));
+    boost::shared_ptr<ServerClient> client = boost::make_shared<ServerClient>(boost::ref(*this), boost::ref(svc_));
     acceptor_.async_accept(client->socket_,
             boost::bind(&ServerState::on_accept, this, _1, client));
 }
@@ -945,7 +946,7 @@ void ClientConnection::do_file(std::string const &path)
     }
     //  open file
     std::string fullpath(root_ + path);
-    boost::shared_ptr<FileState> fs(new FileState());
+    boost::shared_ptr<FileState> fs = boost::make_shared<FileState>();
     fs->filepath = path;
     try
     {
@@ -1250,7 +1251,7 @@ void do_client()
     
 
     //  connect to server
-    boost::shared_ptr<ClientConnection> cc(new ClientConnection(gSvc));
+    boost::shared_ptr<ClientConnection> cc = boost::make_shared<ClientConnection>(boost::ref(gSvc));
     cc->start(arg_connect.get(), terminate(arg_store.get(), "/"));
     //  run until nothing else to do
     gSvc.run();

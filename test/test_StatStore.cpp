@@ -4,6 +4,8 @@
 #include "../daemon/StatCounterFactory.h"
 #include "../daemon/StatStore.h"
 #include <boost/filesystem.hpp>
+#include <boost/make_shared.hpp>
+
 
 using namespace istat;
 
@@ -95,7 +97,7 @@ void run_tests(void)
         std::string storepath("/tmp/test/statstore");
         boost::filesystem::remove_all(storepath);
         boost::filesystem::create_directories(storepath);
-        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, rp));
+        boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storepath, mm, boost::ref(rp));
         StatStore store(storepath, getuid(), service, statCounterFactory, mm);
 
         store.record("taco", 42.42);
@@ -133,7 +135,7 @@ void run_tests(void)
         std::string storepath("/tmp/test/statstore");
         boost::filesystem::remove_all(storepath);
         boost::filesystem::create_directories(storepath);
-        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, rp));
+        boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storepath, mm, boost::ref(rp));
         StatStore store(storepath, getuid(), service, statCounterFactory, mm);
 
         assert_equal(store.hasAvailableSpace(), false);
@@ -147,7 +149,7 @@ void run_tests(void)
         std::string storepath("/tmp/test/statstore");
         boost::filesystem::remove_all(storepath);
         boost::filesystem::create_directories(storepath);
-        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory(storepath, mm, rp));
+        boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storepath, mm, boost::ref(rp));
         StatStore store(storepath, getuid(), service, statCounterFactory, mm);
 
         assert_equal(store.hasAvailableSpace(), true);

@@ -4,6 +4,7 @@
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/make_shared.hpp>
 
 #include "istat/strfunc.h"
 #include "Logs.h"
@@ -89,7 +90,7 @@ StatCounter::StatCounter(std::string const &pathName, bool isCollated, time_t ze
         oc.suffix = ri.name;
         assert(ri.stats.statHit == &ri.stats.nHits);
         assert(ri.stats.statMiss == &ri.stats.nMisses);
-        oc.file = boost::shared_ptr<istat::StatFile>(new istat::StatFile(pathName + "/" + oc.suffix, ri.stats, set, mm));
+        oc.file = boost::make_shared<istat::StatFile>(pathName + "/" + oc.suffix, ri.stats, set, mm);
 
         counters_.push_back(oc);
         if(i == 0)

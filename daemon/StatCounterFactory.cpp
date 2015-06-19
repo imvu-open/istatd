@@ -3,6 +3,7 @@
 #include "Logs.h"
 #include "istat/strfunc.h"
 
+#include <boost/make_shared.hpp>
 #include <string>
 
 
@@ -16,5 +17,5 @@ StatCounterFactory::StatCounterFactory(std::string const &root_path, istat::Mmap
 boost::shared_ptr<IStatCounter> StatCounterFactory::create(std::string const &name, bool isCollated, time_t zeroTime)
 {
     std::string fullpath = rootPath_ + "/" + istat::counter_filename(name);
-    return boost::shared_ptr<IStatCounter>(new StatCounter(fullpath, isCollated, zeroTime, mm_, policy_));
+    return boost::make_shared<StatCounter>(fullpath, isCollated, zeroTime, mm_, policy_);
 }

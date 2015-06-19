@@ -14,6 +14,7 @@
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/make_shared.hpp>
 #include <iostream>
 #include <dirent.h>
 #include <algorithm>
@@ -193,7 +194,7 @@ boost::shared_ptr<StatStore::AsyncCounter> StatStore::openCounter(std::string co
         //  I hold the lock while creating the file, which is sub-optimal
         //  but avoids racing.
         LogSpam << "StatStore::openCounter(" << name << ") ... creating";
-        asyncCounter = boost::shared_ptr<StatStore::AsyncCounter>(new StatStore::AsyncCounter(svc_, factory_->create(xform, isCollated, zeroTime)));
+        asyncCounter = boost::make_shared<StatStore::AsyncCounter>(boost::ref(svc_), factory_->create(xform, isCollated, zeroTime));
         if (!asyncCounter)
         {
             return asyncCounter;
@@ -426,7 +427,7 @@ public:
     virtual void purge(std::string rootPath) {}
 
 };
-static boost::shared_ptr<DeletedCounter> theDeletedCounter(new DeletedCounter);
+static boost::shared_ptr<DeletedCounter> theDeletedCounter = boost::make_shared<DeletedCounter>();
 
 class Deleter
 {

@@ -4,6 +4,8 @@
 #include <istat/Log.h>
 #include <istat/Atomic.h>
 
+#include <boost/make_shared.hpp>
+
 #include <iostream>
 #include <string.h>
 #include <stdio.h>
@@ -40,8 +42,7 @@ namespace istat
     };
 
     static lock logFileLock_;
-    static boost::shared_ptr<LogInstance> cerrLog_(
-        boost::shared_ptr<LogInstance>(new StderrLog()));
+    static boost::shared_ptr<LogInstance> cerrLog_(boost::make_shared<StderrLog>());
     static boost::shared_ptr<LogInstance> logFile_;
     static std::string g_logFileName_ = "./istat.log";
     static LogLevel g_logLevel_ = LL_Warning;
@@ -57,7 +58,7 @@ namespace istat
         //  must be called with lock held
         if (!logFile_)
         {
-            logFile_ = boost::shared_ptr<LogInstance>(new LogInstanceFile(g_logFileName_.c_str()));
+            logFile_ = boost::make_shared<LogInstanceFile>(g_logFileName_.c_str());
         }
         return logFile_;
     }

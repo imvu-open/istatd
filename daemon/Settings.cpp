@@ -10,6 +10,7 @@
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
+#include <boost/make_shared.hpp>
 
 #include <map>
 #include <set>
@@ -209,7 +210,7 @@ void RealSettingsFactory::loadSettingsPath(std::string const &path, std::string 
     std::map<std::string, boost::shared_ptr<ISettings> >::iterator ptr(files_.find(name));
     if (ptr == files_.end())
     {
-        set = boost::shared_ptr<ISettings>(new RealSettings(this, name));
+        set = boost::make_shared<RealSettings>(this, name);
         files_[name] = set;
     }
     else
@@ -483,7 +484,7 @@ public:
             bool allowed = (allowCreate_.find(domain) != allowCreate_.end());
             if (allowed)
             {
-                settings_[domain] = settings = boost::shared_ptr<ISettings>(new FakeSettings(this, domain));
+                settings_[domain] = settings = boost::make_shared<FakeSettings>(this, domain);
             }
         }else if(saved != saved_.end())
         {
@@ -532,7 +533,7 @@ public:
     {
         if (settings_.find(fileName) == settings_.end())
         {
-            settings_[fileName] = boost::shared_ptr<FakeSettings>(new FakeSettings(this, fileName));
+            settings_[fileName] = boost::make_shared<FakeSettings>(this, fileName);
         }
     }
     void set(std::string const &fileName, std::string const &name, std::string const &value)

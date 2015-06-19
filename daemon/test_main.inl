@@ -5,6 +5,7 @@
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
+#include <boost/make_shared.hpp>
 
 #include <json/json.h>
 
@@ -32,13 +33,13 @@ boost::shared_ptr<StatFile> _create_stat_file(istat::StatFile::Settings &init, t
     char cd[PATH_MAX];
     char *c = getcwd(cd, PATH_MAX);
     assert_false(c == NULL);
-    boost::shared_ptr<StatFile> sfile(new StatFile("testdata.tst", Stats(), init, mm, true));
+    boost::shared_ptr<StatFile> sfile = boost::make_shared<StatFile>("testdata.tst", Stats(), init, mm, true);
     return sfile;
 }
 
 boost::shared_ptr<StatCounter> _create_stat_counter(boost::shared_ptr<StatFile> sfile)
 {
-    boost::shared_ptr<StatCounter> statCounter(new StatCounter(sfile, 5, 1024, "5s", false));
+    boost::shared_ptr<StatCounter> statCounter = boost::make_shared<StatCounter>(sfile, 5, 1024, "5s", false);
     return statCounter;
 }
 
@@ -73,11 +74,11 @@ void test_RequestInFlight()
 
     {
         Mmap *mm2 = NewMmap(); // we never dispose this because of a race D:
-RetentionPolicy rp("10s:10d,5m:140d,1h:5y");
-RetentionPolicy xrp("");
-        boost::shared_ptr<IStatCounterFactory> statCounterFactory(new StatCounterFactory("testdir", mm2, rp));
+        RetentionPolicy rp("10s:10d,5m:140d,1h:5y");
+        RetentionPolicy xrp("");
+        boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>("testdir", mm2, boost::ref(rp));
 
-        boost::shared_ptr<StatStore> storep(new StatStore("testdir", getuid(), svc, statCounterFactory, mm2));
+        boost::shared_ptr<StatStore> storep = boost::make_shared<StatStore>("testdir", getuid(), boost::ref(svc), statCounterFactory, mm2);
         storep->record("a.b", 1000, 1, 2, 3, 4, 5);
 
         std::string jsonresp;

@@ -10,6 +10,7 @@
 #include <istat/Atomic.h>
 
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 #include <iostream>
 
 
@@ -150,7 +151,7 @@ void ReplicaServer::on_connection()
     while (!!(conn = listen_.nextConn()))
     {
         LogWarning << "Connection from" << conn->endpointName() << "in ReplicaServer";
-        boost::shared_ptr<ReplicaConnection> other(new ReplicaConnection(conn, this));
+        boost::shared_ptr<ReplicaConnection> other = boost::make_shared<ReplicaConnection>(boost::ref(conn), this);
         other->self_ = other;
         other->go();
     }
