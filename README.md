@@ -1,6 +1,8 @@
 istatd
 ======
 
+[![Build Status](https://travis-ci.org/ambakshi/istatd.svg?branch=master)](https://travis-ci.org/ambakshi/istatd)
+
 Check with jwatte@imvu.com for more information. Released under MIT 
 license. All rights reserved. Copyright 2011-2014 IMVU, Inc. Some
 contributions in the contrib subdirectory may be released under 

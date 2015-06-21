@@ -1,0 +1,8 @@
+language: cpp
+compiler: gcc
+sudo: required
+install:
+  - sudo apt-get update
+  - sudo ./install-deps.sh
+  - if [ -x /usr/bin/python2 ]; then test -e /usr/bin/python && echo Done || sudo ln -sfn python2 /usr/bin/python; fi
+script: ./configure && make

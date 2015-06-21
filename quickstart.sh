@@ -18,4 +18,4 @@ mkdir -p /var/tmp/istatd-quickstart/store
 mkdir -p /var/tmp/istatd-quickstart/settings
 ln -sf `pwd`/files /var/tmp/istatd-quickstart/files
 echo "istatd starting up -- hit localhost:18011 in a browser to see it in action"
-bin/istatd --config quickstart.cfg --user `logname`
+bin/istatd --config quickstart.cfg --user ${LOGNAME:-`logname`}

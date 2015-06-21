@@ -35,7 +35,7 @@ TOUCH=touch
 
 INSTALL_DIRS:=
 INSTALL_DSTS:=
-CXX:=g++#./gstlfilt/gfilt
+CXX?=g++ #./gstlfilt/gfilt
 LXXFLAGS:=-Lobj/ $(patsubst %,-l%,$(LIBS))
 ifeq ($(OPT),)
 OPT := -O2
@@ -47,7 +47,7 @@ SYS_LIBS:=$(BOOST_SYSTEM) $(BOOST_THREAD) -lboost_signals -lpthread $(STATGRAB) 
 all:	$(DIR_DEPS) $(LIB_DEPS) $(BINS) tests ftests
 
 dpkg:
-	env DEB_BUILD_OPTIONS="nostrip" debuild -us -uc   
+	env DEB_BUILD_OPTIONS="nostrip" debuild -us -uc
 	@echo done
 
 build:	$(DIR_DEPS) $(BINS)
