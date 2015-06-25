@@ -8,67 +8,25 @@
 
 namespace istat
 {
-
     static char pidstr[20];
 
+    void LogFormatterLog::BufDeleter::operator() (std::stringstream *ssbuf)
+    {
+        if (ssbuf)
+        {
+            *ssbuf << std::endl;
+            std::string s(boost::posix_time::to_iso_extended_string(boost::posix_time::second_clock::local_time()));
+            s += pidstr;
+            s += ssbuf->str();
+            LogConfig::outputToFile(level_, s.c_str(), s.size());
+            delete ssbuf;
+            ssbuf = 0;
+         }
+    }
+
     LogFormatterLog::LogFormatterLog(bool enabled, LogLevel level) :
-        ptr_(enabled ? new int(1) : 0),
-        buf_(enabled ? new std::stringstream() : 0),
-        level_(level)
+        buf_(boost::shared_ptr<std::stringstream>(enabled ? new std::stringstream() : NULL, BufDeleter(level)))
     {
         snprintf(pidstr, 20, " (%d)", getpid());
-    }
-    
-    LogFormatterLog::LogFormatterLog(LogFormatterLog const &lo) :
-        ptr_(lo.ptr_),
-        buf_(lo.buf_),
-        level_(lo.level_)
-    {
-        if (ptr_)
-        {
-            ++*ptr_;
-        }
-    }
-
-    LogFormatterLog::~LogFormatterLog()
-    {
-        reduce();
-    }
-
-    LogFormatterLog &LogFormatterLog::operator=(LogFormatterLog const &lo)
-    {
-        reduce();
-        ptr_ = lo.ptr_;
-        buf_ = lo.buf_;
-        level_ = lo.level_;
-        if (ptr_)
-        {
-            ++*ptr_;
-        }
-        return *this;
-    }
-
-    void LogFormatterLog::reduce()
-    {
-        if (ptr_)
-        {
-            if (!--*ptr_)
-            {
-                finish();
-            }
-        }
-    }
-
-    void LogFormatterLog::finish()
-    {
-        *buf_ << std::endl;
-        std::string s(boost::posix_time::to_iso_extended_string(boost::posix_time::second_clock::local_time()));
-        s += pidstr;
-        s += buf_->str();
-        LogConfig::outputToFile(level_, s.c_str(), s.size());
-        delete ptr_;
-        ptr_ = 0;
-        delete buf_;
-        buf_ = 0;
     }
 }

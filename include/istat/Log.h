@@ -43,17 +43,17 @@ namespace istat
     {
     public:
         LogFormatterLog(bool enabled, LogLevel level);
-        LogFormatterLog(LogFormatterLog const &o);
-        ~LogFormatterLog();
-        LogFormatterLog &operator=(LogFormatterLog const &o);
         template<typename T> inline LogFormatterLog &operator<<(T const &t);
     private:
-        void reduce();
-        void finish();
-        //  TODO: look up how to do action-on-delete with boost::shared_ptr<>
-        int *ptr_;
-        std::stringstream *buf_;
-        LogLevel level_;
+        boost::shared_ptr<std::stringstream> buf_;
+
+        class BufDeleter {
+        public:
+            BufDeleter(LogLevel level) : level_(level) {}
+            void operator() (std::stringstream *buf);
+        private:
+            LogLevel level_;
+        };
     };
 
     //  LogConfig contains logging configuration parameters 
