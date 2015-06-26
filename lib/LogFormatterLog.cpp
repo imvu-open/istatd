@@ -25,7 +25,7 @@ namespace istat
     }
 
     LogFormatterLog::LogFormatterLog(bool enabled, LogLevel level) :
-        buf_(boost::shared_ptr<std::stringstream>(enabled ? new std::stringstream() : NULL, BufDeleter(level)))
+        buf_(boost::shared_ptr<std::stringstream>(enabled ? new std::stringstream() : NULL, LogFormatterLog::BufDeleter(level)))
     {
         snprintf(pidstr, 20, " (%d)", getpid());
     }
