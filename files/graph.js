@@ -2329,6 +2329,8 @@ var SettingsModel = Backbone.Model.extend({
             password_hash: password_hash
         });
         this.login(username, password_hash, true);
+        //Grrrr this causes istatd to actually save the user to disk
+        saveSettings(username, '', '', function () {} );
     },
 
     /* OK, I know -- getting the hash from the server and checking it client
