@@ -1,3 +1,23 @@
+istatd (0.82-1) UNRELEASED; urgency=low
+
+  [ fang fang ]
+  * use boost::make_shared to create shared_ptr
+
+  [ Leonidas Loucas ]
+  * change istatd to use jquery min. this is what is in the package we build as well
+
+  [ fang fang ]
+  * use shared_ptr to handle stringstream resources in LogFormatterLog
+  * Add virtual destructor to IStatCounterFactory to eliminate warning messages when use make_shared and complile with g++4.4
+
+  [ Leonidas Loucas ]
+  * hack to make istatd create user files on disk
+
+  [ fang fang ]
+  * Fix segmentation faults that can occur when run certain commands in admin server.
+
+ -- Fang Fang <ffang@imvu.com>  Thu, 20 Aug 2015 03:12:51 -0700
+
 istatd (0.81-1) UNRELEASED; urgency=low
 
   [ Leonidas Loucas ]
