@@ -140,8 +140,7 @@ void RealSettingsFactory::flush(IComplete *complete)
 
 void RealSettingsFactory::flush_one(std::string const &name, IComplete *complete)
 {
-    svc_.post(boost::bind(&IComplete::on_complete, complete));
-    (debugSettings ? LogDebug : LogSpam) << "RealSettingsFactory::flush()";
+    (debugSettings ? LogDebug : LogSpam) << "RealSettingsFactory::flush_one()";
     //  no need to asynchronize the actual work more than this
     //  because file I/O is not async
     grab aholdof(lock_);

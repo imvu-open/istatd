@@ -100,7 +100,7 @@ void Blacklist::load()
                     std::string name(base, cur);
                     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
                     blacklistSet_.insert(name);
-                    LogNotice << "Blacklist::load blackist host ( " << name << " ).";
+                    LogNotice << "Blacklist::load blacklist host ( " << name << " ).";
                 }
                 base = cur + 1;
             }

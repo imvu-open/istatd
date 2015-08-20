@@ -1,4 +1,3 @@
-
 #include "AdminServer.h"
 #include "HttpServer.h"
 #include "StatServer.h"
@@ -31,11 +30,6 @@ public:
     void go();
     void on_disconnect();
     void on_data();
-    void store_flush_complete();
-    void settings_flush_complete();
-    void flush_complete();
-    void sync_complete();
-    void generic_complete();
 
     void doCmd(std::string const &cmd);
     void huh();
@@ -43,8 +37,61 @@ public:
 
     boost::shared_ptr<ConnectionInfo> ec_;
     AdminServer *as_;
-};
 
+private:
+    class GenericComplete : public IComplete
+    {
+    public:
+        GenericComplete(boost::shared_ptr<ConnectionInfo> const &ec) : ec_(ec) {}
+        virtual void on_complete()
+        {
+            LogSpam << "AdminConnection::GenericComplete::on_complete()";
+            if (ec_->opened())
+            {
+                ec_->writeOut("ok\r\n");
+            }
+            else
+            {
+                LogWarning << "AdminConnection::GenericComplete: can't write \"ok\" to closed connection";
+            }
+            delete this;
+        }
+
+    private:
+        boost::shared_ptr<ConnectionInfo> ec_;
+    };
+
+    class FlushComplete : public IComplete
+    {
+    public:
+        FlushComplete(boost::shared_ptr<ConnectionInfo> const &ec, StatServer *ss) : ec_(ec), ss_(ss) {}
+        virtual void on_complete()
+        {
+            LogSpam << "AdminConnection::FlushComplete::on_complete()";
+            ss_->syncAgent(new GenericComplete(ec_));
+            delete this;
+        }
+    private:
+        boost::shared_ptr<ConnectionInfo> ec_;
+        StatServer *ss_;
+    };
+
+    class StoreFlushComplete : public IComplete
+    {
+    public:
+        StoreFlushComplete(boost::shared_ptr<ConnectionInfo> const &ec, AdminServer *as) : ec_(ec), as_(as) {}
+        virtual void on_complete()
+        {
+            LogSpam << "AdminConnection::StoreFlushComplete::on_complete()";
+            ISettingsFactory &sfac = istat::Env::get<ISettingsFactory>();
+            sfac.flush(new FlushComplete(ec_, as_->ssp_));
+            delete this;
+        }
+    private:
+        boost::shared_ptr<ConnectionInfo> ec_;
+        AdminServer *as_;
+    };
+};
 
 AdminServer::AdminServer(unsigned int port, std::string listen_address, boost::asio::io_service &svc, IHttpServerInfo *hsp, StatServer *ssp, ReplicaServer *rs, ReplicaOf *ro) :
     svc_(svc),
@@ -226,12 +273,12 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
         boost::shared_ptr<IStatStore> st(as_->ssp_->store());
         if (!st)
         {
-            store_flush_complete();
+            (new StoreFlushComplete(ec_, as_))->on_complete();
         }
         else
         {
-            st->flushAll(heap_complete<AdminConnection, &AdminConnection::store_flush_complete>(this));
-        }
+            st->flushAll(new StoreFlushComplete(ec_, as_));
+       }
         return;
     }
     if (cmd == "purge")
@@ -393,7 +440,7 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
             return;
         }
         ISettingsFactory &sfac = istat::Env::get<ISettingsFactory>();
-        sfac.flush_one(args.front(), heap_complete<AdminConnection, &AdminConnection::generic_complete>(this));
+        sfac.flush_one(args.front(), new GenericComplete(ec_));
     }
     if (cmd == "load.setting")
     {
@@ -403,7 +450,7 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
             return;
         }
         ISettingsFactory &sfac = istat::Env::get<ISettingsFactory>();
-        sfac.reloadSettings(args.front(), heap_complete<AdminConnection, &AdminConnection::generic_complete>(this));
+        sfac.reloadSettings(args.front(), new GenericComplete(ec_));
     }
     if (cmd == "quit")
     {
@@ -412,33 +459,3 @@ void AdminConnection::cmdArgs(std::string const &cmd, std::vector<std::string> c
     }
     ec_->writeOut("huh? ('help' for help) (received '" + cmd + "')\r\n");
 }
-
-void AdminConnection::store_flush_complete()
-{
-    ISettingsFactory &sfac = istat::Env::get<ISettingsFactory>();
-    sfac.flush(heap_complete<AdminConnection, &AdminConnection::settings_flush_complete>(this));
-}
-
-void AdminConnection::settings_flush_complete()
-{
-    flush_complete();
-}
-
-void AdminConnection::flush_complete()
-{
-    LogSpam << "AdminConnection::flush_complete()";
-    as_->ssp_->syncAgent(heap_complete<AdminConnection, &AdminConnection::sync_complete>(this));
-}
-
-void AdminConnection::sync_complete()
-{
-    LogSpam << "AdminConnection::sync_complete()";
-    ec_->writeOut("ok\r\n");
-}
-
-void AdminConnection::generic_complete()
-{
-    LogSpam << "AdminConnection::generic_complete()";
-    ec_->writeOut("ok\r\n");
-}
-
