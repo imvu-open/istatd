@@ -19,6 +19,9 @@ override_dh_auto_build:
 override_dh_auto_configure:
 	./configure
 
+override_dh_strip:
+	dh_strip -pistatd-server --dbg-package=istatd-server-dbg
+
+	dh_strip -pistatd-agent --dbg-package=istatd-agent-dbg
 %:
 	dh  $@
-

@@ -32,3 +32,21 @@ Description: IMVU Statistics gathering/forwarding/aggregating/storage Agent
  The istatd-agent package is installed on any "managed" host where an
  administrator desired to gather, aggregate and forward data to the istatd
  server.
+
+Package: istatd-server-dbg
+Architecture: any
+Section: debug
+Priority: extra
+Depends:
+    istatd-server (= ${binary:Version})
+Description: debugging symbols for istatd-server
+ This package contains the debugging symbols for istatd-server.
+ 
+Package: istatd-agent-dbg
+Architecture: any
+Section: debug
+Priority: extra
+Depends:
+    istatd-agent (= ${binary:Version})
+Description: debugging symbols for istatd-agent
+ This package contains the debugging symbols for istatd-agent.
