@@ -963,6 +963,7 @@ public:
         catch (std::exception const &x)
         {
             formatError(x.what());
+            return;
         }
         delete this;
     }
