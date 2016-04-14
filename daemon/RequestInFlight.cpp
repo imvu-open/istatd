@@ -128,6 +128,10 @@ void RequestInFlight::go()
         {
             do_POST(url, params);
         }
+        else if (req_->method() == "OPTIONS")
+        {
+            do_OPTIONS(url);
+        }
         else
         {
             do_UNKNOWN(req_->method());
@@ -217,6 +221,15 @@ void RequestInFlight::do_POST(std::string const &url, std::map<std::string, std:
         }
         reportError("No such POST target", 404);
     }
+}
+
+void RequestInFlight::do_OPTIONS(std::string const &url)
+{
+    if (debugHttp.enabled())
+    {
+        LogDebug << "http do_OPTIONS" << url;
+    }
+    complete(204);  //  no data, but headers
 }
 
 

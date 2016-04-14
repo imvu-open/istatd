@@ -327,9 +327,14 @@ void HttpRequest::doReply(int code, std::string const &ctype, std::string const 
     headers += ctype;
     headers += "\r\n";
 
-    headers += "Content-Length: ";
-    headers += boost::lexical_cast<std::string>(reply_.size());
-    headers += "\r\n";
+    if (method() == "OPTIONS" && (url() == "/*" || url() == "/%2A")) {
+        headers += "Access-Control-Allow-Origin: *\r\n";
+    }
+    if (reply_.size()) {
+        headers += "Content-Length: ";
+        headers += boost::lexical_cast<std::string>(reply_.size());
+        headers += "\r\n";
+    }
 
     headers += "Connection: close";
     headers += "\r\n";

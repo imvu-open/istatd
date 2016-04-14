@@ -51,6 +51,7 @@ private:
 
     void do_GET(std::string const &url, std::map<std::string, std::string> &params, std::string const &left);
     void do_POST(std::string const &url, std::map<std::string, std::string> &params);
+    void do_OPTIONS(std::string const &url);
     void do_UNKNOWN(std::string const &method);
 
     void on_multigetBody();

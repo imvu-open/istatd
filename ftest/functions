@@ -240,6 +240,10 @@ function http_post_json {
     curl -d "$2" -s -X POST "$1" 2>&1
 }
 
+function http_options {
+    curl -i -s -X OPTIONS "$1" 2>&1
+}
+
 function admin_port_from_profile {
     grep admin-port ftest/$1.cfg | sed -e 's/.* //'
 }
