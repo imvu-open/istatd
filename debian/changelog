@@ -1,3 +1,13 @@
+istatd (0.84-1) UNRELEASED; urgency=low
+
+  [ Jon Watte ]
+  * Also allow off-site access to /files/
+  * Store more data while attempting to resume a connection.
+
+  [ Leonidas Loucas ]
+
+ -- Leonidas Loucas <lloucas@mail-relay-outgoing.prod.imvu.com>  Thu, 14 Apr 2016 12:35:43 -0700
+
 istatd (0.83-1) UNRELEASED; urgency=low
 
   [ fang fang ]
