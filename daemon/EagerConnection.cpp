@@ -17,7 +17,7 @@ using namespace istat;
 using boost::asio::ip::tcp;
 using namespace boost::asio;
 //  Allow this to be manipulated later.
-size_t maxBufferSize = 64*1024;
+size_t maxBufferSize = 512*1024;
 
 struct EagerConnectionEnabler : public EagerConnection {
        EagerConnectionEnabler(boost::asio::io_service &svc) : EagerConnection(svc) {}
