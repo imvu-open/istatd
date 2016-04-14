@@ -327,7 +327,9 @@ void HttpRequest::doReply(int code, std::string const &ctype, std::string const 
     headers += ctype;
     headers += "\r\n";
 
-    if (method() == "OPTIONS" && (url() == "/*" || url() == "/%2A")) {
+    if ((method() == "OPTIONS") &&
+            ((url() == "/*") || (url() == "/%2A") || (url() == "/%2a") || (url().substr(0, 7) == "/files/"))
+       ) {
         headers += "Access-Control-Allow-Origin: *\r\n";
     }
     if (reply_.size()) {

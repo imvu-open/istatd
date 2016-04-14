@@ -203,7 +203,7 @@ void RequestInFlight::do_POST(std::string const &url, std::map<std::string, std:
     }
     std::map<std::string, std::string>::iterator pval;
 
-    if ((url == "/*") || (url == "/%2A"))
+    if ((url == "/*") || (url == "/%2A") || (url == "/%2a"))
     {
         req_->onBody_.connect(boost::bind(&RequestInFlight::on_multigetBody, shared_from_this()));
         req_->readBody();
