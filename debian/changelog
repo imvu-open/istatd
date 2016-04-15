@@ -1,3 +1,9 @@
+istatd (0.85-2) UNRELEASED; urgency=low
+
+  * update collectd contrib
+
+ -- Leonidas Loucas <lloucas@mail-relay-outgoing.prod.imvu.com>  Fri, 15 Apr 2016 14:08:45 -0700
+
 istatd (0.85-1) UNRELEASED; urgency=low
 
   [ Jon Watte ]
