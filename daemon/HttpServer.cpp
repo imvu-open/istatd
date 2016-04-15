@@ -327,10 +327,30 @@ void HttpRequest::doReply(int code, std::string const &ctype, std::string const 
     headers += ctype;
     headers += "\r\n";
 
-    if ((method() == "OPTIONS") &&
-            ((url() == "/*") || (url() == "/%2A") || (url() == "/%2a") || (url().substr(0, 7) == "/files/"))
+    if ((method() == "OPTIONS")
+        || ((method() == "POST") &&
+                ((url() == "/*") || (url() == "/%2A") || (url() == "/%2a")))
+        || ((method() == "GET") &&
+                (url().substr(0, 7) == "/files/"))
        ) {
-        headers += "Access-Control-Allow-Origin: *\r\n";
+        std::string const *refer = this->header("referer");
+        std::string origin("*");
+        if (refer) {
+            int nth = 0;
+            for (std::string::const_iterator ptr(refer->begin()), end(refer->end());
+                    ptr != end; ++ptr) {
+                //  The third slash terminates the origin
+                //  https://foo.bar:port/ ...
+                if (*ptr == '/') {
+                    ++nth;
+                    if (nth == 3) {
+                        origin = std::string(refer->begin(), ptr);
+                        break;
+                    }
+                }
+            }
+        }
+        headers += "Access-Control-Allow-Origin: " + origin + "\r\n";
     }
     if (reply_.size()) {
         headers += "Content-Length: ";
