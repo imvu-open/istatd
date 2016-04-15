@@ -1,3 +1,14 @@
+istatd (0.85-1) UNRELEASED; urgency=low
+
+  [ Jon Watte ]
+  * No, really, Access-Control-Allow-Origin is the BEST IDEA EVAR!!!
+  * Test the expected Access-Control-Allow-Origin behavior.
+
+  [ Leonidas Loucas ]
+  * add some more files to debian package deploy
+
+ -- Leonidas Loucas <lloucas@mail-relay-outgoing.prod.imvu.com>  Fri, 15 Apr 2016 14:03:47 -0700
+
 istatd (0.84-1) UNRELEASED; urgency=low
 
   [ Jon Watte ]
