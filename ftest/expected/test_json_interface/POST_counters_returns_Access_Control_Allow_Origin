@@ -1,0 +1,7 @@
+HTTP/1.1 400 (that's a status code)
+Content-Type: application/json
+Access-Control-Allow-Origin: https://www.example.com
+Content-Length: 40
+Connection: close
+
+{"error":"Missing 'key' array of keys"}

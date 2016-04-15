@@ -123,6 +123,14 @@ test_name OPTIONS_returns_204
 http_options "http://localhost:18011/*" > $TEST_OUT
 assert_expected $TEST_OUT
 
+test_name GET_files_returns_Access_Control_Allow_Origin
+curl -H 'Referer: https://www.example.com/some/page.html' -i -s "http://localhost:18011/files/lenna.gif" > $TEST_OUT
+assert_expected $TEST_OUT
+
+test_name POST_counters_returns_Access_Control_Allow_Origin
+curl -X POST -H 'Referer: https://www.example.com/some/page.html' -i -s "http://localhost:18011/%2A" -d "{}" > $TEST_OUT
+assert_expected $TEST_OUT
+
 kill_server single
 start_server single --fake-time 2600
 
