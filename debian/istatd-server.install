@@ -3,6 +3,7 @@ usr/bin/splitd
 usr/share/istatd/files/32px.png
 usr/share/istatd/files/40px.png
 usr/share/istatd/files/agents.html
+usr/share/istatd/files/backbone.js
 usr/share/istatd/files/backbone-min.js
 usr/share/istatd/files/dygraph-combined.js
 usr/share/istatd/files/favicon.ico
@@ -11,8 +12,10 @@ usr/share/istatd/files/graph.js
 usr/share/istatd/files/index.html
 usr/share/istatd/files/istatd-legend.js
 usr/share/istatd/files/istatd_tree_sprite.png
+usr/share/istatd/files/jquery-2.1.1.js
 usr/share/istatd/files/jquery-2.1.1.min.js
 usr/share/istatd/files/jquery-cookie-1.4.1.js
+usr/share/istatd/files/jstree.js
 usr/share/istatd/files/jstree.min.js
 usr/share/istatd/files/jstree-style.min.css
 usr/share/istatd/files/sha256.js
