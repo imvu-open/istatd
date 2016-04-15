@@ -1,39 +1,10 @@
-/**
- * Copyright (C) 2011-2014  IMVU, Inc
- * Copyright (C) 2005-2010  Florian octo Forster
- * Copyright (C) 2008       Oleg King
- * Copyright (C) 2009       Simon Kuhnle
- * Copyright (C) 2009       Manuel Sanmartin
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; only version 2 of the License is applicable.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
- *
- * ICPU Plugin Authors:
- *   IMVU, Inc
- * Original CPU Plugin Authors:
- *   Florian octo Forster <octo at verplant.org>
- *   Oleg King <king2 at kaluga.ru>
- *   Simon Kuhnle <simon at blarzwurst.de>
- *   Manuel Sanmartin
- **/
-
-/* count cpu stats in percentages. mostly lifted from collectd's src/cpu.c plugin */
-
-#include <collectd/collectd.h>
-#include <collectd/common.h>
-#include <collectd/plugin.h>
+/* mostly lifted from collectd's cpu.c */
+#include <collectd.h>
+#include <common.h>
+#include <plugin.h>
 
 #include <statgrab.h>
+#include "config.h"
 
 #define ICPU_PLUGIN_NAME "icpu"
 
@@ -63,8 +34,11 @@ static int icpu_init() {
 
 static int icpu_read() {
     sg_cpu_percents *cp;
-
+    #if defined(LIBSTATGRAB_API_0_90)
+    cp = sg_get_cpu_percents(NULL);
+    #else
     cp = sg_get_cpu_percents();
+    #endif
     if (cp == NULL) {
         ERROR("icpu plugin: sg_get_cpu_percents failed.");
         return -1;

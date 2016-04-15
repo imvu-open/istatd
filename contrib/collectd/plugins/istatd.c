@@ -27,11 +27,11 @@
  * This plugin writes collectd stats to istatd.  It started life as the collectd
  * CSV plugin.
  */
-#include <collectd/collectd.h>
-#include <collectd/plugin.h>
-#include <collectd/common.h>
-#include <collectd/utils_cache.h>
-#include <collectd/utils_parse_option.h>
+#include <collectd.h>
+#include <plugin.h>
+#include <common.h>
+#include <utils_cache.h>
+#include <utils_parse_option.h>
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <stdbool.h>
 
 #define ISTATD_PLUGIN_DEBUG 0
 
@@ -48,10 +49,12 @@
 static const char *config_keys[] =
 {
     "Port",
+    "Suffix",
 };
 static int config_keys_num = STATIC_ARRAY_SIZE (config_keys);
 
 static int istatd_agent_port = 0;
+static bool add_suffixes = true;
 static char *counter_suffix = "";
 static char *istatd_categories = "/etc/istatd.categories";
 
@@ -281,12 +284,16 @@ static char *get_my_hostname(char *buffer, int buffer_len) {
     return buffer;
 }
 
-static char *get_counter_suffix(char *buffer, int buffer_len, const char* fname, const char* hostname) {
+static char *get_counter_suffix(char *buffer, int buffer_len, const char* fname, const char* hostname, const bool should_add_suffixes) {
     const char *validchars = "ABCDEFGHIJKLMNOPQRSTUVWXZY"
                              "abcdefghijklmnopqrstuvwxzy"
                              "0123456789"
                              "-_.";
     memset(buffer,'\0',buffer_len);
+    if (!should_add_suffixes)
+    {
+        return buffer;
+    }
 
     FILE *f = fopen(fname, "rt");
     if (f != NULL) {
@@ -342,15 +349,43 @@ static int istatd_config (const char *key, const char *value)
     {
         INFO("processing port value %s", value);
         istatd_agent_port = atoi(value);
+        return (0);
+    }
+    else if (strcasecmp ("suffix", key) == 0)
+    {
+        INFO("processing suffix value %s", value);
+        if ( IS_TRUE ( value ) )
+        {
+          add_suffixes = true;
+        }
+        else
+        {
+          add_suffixes = false;
+        }
+        return (0);
+    }
+    return (-1);
+} /* int istatd_config */
+
+static int should_skip_recording(const value_list_t *vl)
+{
+    if ((strcmp(vl->plugin, "disk") == 0) && strncmp("md", vl->plugin_instance, 2) != 0 && isdigit(vl->plugin_instance[strlen(vl->plugin_instance)-1])) {
+        // we don't needs disk.sda1 or disk.sdb2, etc.
+        return (1);
     }
     else
     {
-        return (-1);
+        return (0);
     }
+}
+
+
+static int istatd_init (void)
+{
     char *hostname = get_my_hostname((char *)malloc(128), 128);
-    counter_suffix = get_counter_suffix((char*)malloc(2048), 2048, istatd_categories, hostname);
+    counter_suffix = get_counter_suffix((char*)malloc(2048), 2048, istatd_categories, hostname, add_suffixes);
     return (0);
-} /* int istatd_config */
+} /* int istatd_init */
 
 #if ISTATD_PLUGIN_DEBUG
 static void log_incoming_data(const data_set_t *ds, const value_list_t *vl)
@@ -380,7 +415,7 @@ static int istatd_write (const data_set_t *ds, const value_list_t *vl,
     log_incoming_data(ds, vl);
 #endif
 
-    if ((strcmp(vl->plugin, "disk") == 0) && isdigit(vl->plugin_instance[strlen(vl->plugin_instance)-1])) {
+    if (should_skip_recording(vl)) {
         // we don't needs disk.sda1 or disk.sdb2, etc.
         return (0);
     }
@@ -396,5 +431,6 @@ void module_register (void)
     INFO ("istatd plugin: register");
     plugin_register_config ("istatd", istatd_config,
             config_keys, config_keys_num);
+    plugin_register_init ("istatd", istatd_init);
     plugin_register_write ("istatd", istatd_write, /* user_data = */ NULL);
 } /* void module_register */

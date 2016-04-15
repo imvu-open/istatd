@@ -30,6 +30,7 @@ gauge_t *uc_get_rate(const data_set_t *dset, const value_list_t *vl) {
         if (dset->ds[i].type != DS_TYPE_GAUGE) {
             INFO ("uc_get_rate: %d, calc fake rate", i);
             rates[i] = (gauge_t)(val/10.0);
+            INFO ("uc_get_rate: %f, calc fake rate was ", rates[i]);
         }
     }
 
@@ -51,6 +52,9 @@ int plugin_register_config (const char *name,
         int (*callback) (const char *key, const char *val),
         const char **keys, int keys_num) { return 0;}
 
+int plugin_register_init (const char *name,
+        int (*callback) (void)) { return 0;}
+
 int plugin_register_write (const char *name,
         plugin_write_cb callback, user_data_t *user_data) { return 0;}
 
@@ -63,7 +67,19 @@ static void c_assert_str_equal(const char *fname, int line, const char *s1, cons
     }
 }
 
+static void c_assert_equal(const char *fname, int line, const int s1, const int s2) {
+    if (s1 != s2) {
+        fprintf(stderr, "ERROR %s: %d - \"%d\" does not equal \"%d\"\n", fname, line, s1, s2);
+        error_count++;
+    }
+}
+
+
 #define assert_str_equal(s1,s2) c_assert_str_equal(__FILE__, __LINE__, (s1), (s2))
+#define assert_equal(v1,v2) c_assert_equal(__FILE__, __LINE__, (v1), (v2))
+#define assert_true(b1) c_assert_equal(__FILE__, __LINE__, (b1), (1))
+#define assert_false(b1) c_assert_equal(__FILE__, __LINE__, (b1), (0))
+
 
 void test_make_istatd_metric_name() {
     char buffer[1024];
@@ -151,8 +167,8 @@ void make_fake_data(data_set_t *dset, value_list_t *vl,
 
     vl->values = values;
     vl->values_len = num_values;
-    vl->time = (cdtime_t)0;
-    vl->interval = (cdtime_t)10;
+    vl->time = TIME_T_TO_CDTIME_T(0);
+    vl->interval = TIME_T_TO_CDTIME_T(10);
     strcpy(vl->host, "localhost");
     strcpy(vl->plugin, plugin);
     strcpy(vl->plugin_instance, plugin_instance);
@@ -177,7 +193,7 @@ void test_map_to_istatd() {
     make_fake_data(&ds, &vl, DS_TYPE_COUNTER, "cpu", "", "idle", "", values, 1);
 
     map_to_istatd(buffer, sizeof(buffer), &ds, &vl);
-    assert_str_equal("cpu.idle^buildbot.linu-15-14^host.linu-15-14 0.900000\n", buffer);
+    assert_str_equal("*cpu.idle^buildbot.linu-15-14^host.linu-15-14 9\n", buffer);
     destroy_fake_data(&ds, &vl);
 
     // test memcache_ps_count
@@ -216,8 +232,8 @@ void test_map_to_istatd() {
     values[1].derive = 5.0;
     make_fake_data(&ds, &vl, DS_TYPE_DERIVE, "interface", "eth0", "if_packets", "", values, 2);
     map_to_istatd(buffer, sizeof(buffer), &ds, &vl);
-    assert_str_equal("interface.eth0.if_packets.in^buildbot.linu-15-14^host.linu-15-14 0.100000\n"
-                     "interface.eth0.if_packets.out^buildbot.linu-15-14^host.linu-15-14 0.500000\n"
+    assert_str_equal("*interface.eth0.if_packets.fake_data_source^buildbot.linu-15-14^host.linu-15-14 1\n"
+                     "*interface.eth0.if_packets.fake_data_source^buildbot.linu-15-14^host.linu-15-14 5\n"
                      , buffer);
     destroy_fake_data(&ds, &vl);
 
@@ -256,21 +272,90 @@ void test_get_counter_suffix() {
     char *suffix;
 
     // test non-existant file
-    suffix = get_counter_suffix(buffer, sizeof(buffer), "test_data/does_not_exist", "fakehost");
+    suffix = get_counter_suffix(buffer, sizeof(buffer), "test_data/does_not_exist", "fakehost", true);
     assert_str_equal("^host.fakehost", suffix);
 
     // test empty file
-    suffix = get_counter_suffix(buffer, sizeof(buffer), "test_data/empty_istatd.categories", "fakehost");
+    suffix = get_counter_suffix(buffer, sizeof(buffer), "test_data/empty_istatd.categories", "fakehost", true);
     assert_str_equal("^host.fakehost", suffix);
 
     // test sample file
-    suffix = get_counter_suffix(buffer, sizeof(buffer), "test_data/istatd.categories", "fakehost");
+    suffix = get_counter_suffix(buffer, sizeof(buffer), "test_data/istatd.categories", "fakehost", true);
     assert_str_equal("^class^trailing_ws^leading_ws^surrounded_ws^clean_me_up__por_-favor5^host.fakehost", suffix);
+
+    //Test no suffix addition
+
+    // test non-existant file
+    suffix = get_counter_suffix(buffer, sizeof(buffer), "test_data/does_not_exist", "fakehost", false);
+    assert_str_equal("", suffix);
+
+    // test empty file
+    suffix = get_counter_suffix(buffer, sizeof(buffer), "test_data/empty_istatd.categories", "fakehost", false);
+    assert_str_equal("", suffix);
+
+    // test sample file
+    suffix = get_counter_suffix(buffer, sizeof(buffer), "test_data/istatd.categories", "fakehost", false);
+    assert_str_equal("", suffix);
 }
+
+void test_should_skip_recording() {
+    value_list_t vl;
+    int res = 0;
+
+    memset(&vl, 0, sizeof(vl));
+    strcpy(vl.type, "type");
+    strcpy(vl.plugin, "disk");
+    strcpy(vl.plugin_instance, "sda1");
+    strcpy(vl.type_instance, "more");
+    res = should_skip_recording(&vl);
+    assert_true(res);
+
+    memset(&vl, 0, sizeof(vl));
+    strcpy(vl.type, "type");
+    strcpy(vl.plugin, "disk");
+    strcpy(vl.plugin_instance, "sdb");
+    strcpy(vl.type_instance, "more");
+    res = should_skip_recording(&vl);
+    assert_false(res);
+
+    memset(&vl, 0, sizeof(vl));
+    strcpy(vl.type, "type");
+    strcpy(vl.plugin, "disk");
+    strcpy(vl.plugin_instance, "md0");
+    strcpy(vl.type_instance, "more");
+    res = should_skip_recording(&vl);
+    assert_false(res);
+
+    memset(&vl, 0, sizeof(vl));
+    strcpy(vl.type, "type");
+    strcpy(vl.plugin, "disk");
+    strcpy(vl.plugin_instance, "sdmd0");
+    strcpy(vl.type_instance, "more");
+    res = should_skip_recording(&vl);
+    assert_true(res);
+
+    memset(&vl, 0, sizeof(vl));
+    strcpy(vl.type, "type");
+    strcpy(vl.plugin, "cpu");
+    strcpy(vl.plugin_instance, "idle");
+    strcpy(vl.type_instance, "more");
+    res = should_skip_recording(&vl);
+    assert_false(res);
+
+    memset(&vl, 0, sizeof(vl));
+    strcpy(vl.type, "type");
+    strcpy(vl.plugin, "others");
+    strcpy(vl.plugin_instance, "idle");
+    strcpy(vl.type_instance, "more");
+    res = should_skip_recording(&vl);
+    assert_false(res);
+}
+
 
 int main(int argc, char** argv) {
     test_make_istatd_metric_name();
     test_map_to_istatd();
     test_get_counter_suffix();
+    test_should_skip_recording();
     return(0);
 }

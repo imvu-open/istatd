@@ -1,11 +1,12 @@
 CC=gcc
-CFLAGS+= -I/usr/include -Wall -DHAVE_CONFIG_H 
+CFLAGS+= -I/usr/include -Wall -DHAVE_CONFIG_H -I. -I/usr/include/collectd -I/usr/include/collectd/core
 LDFLAGS+= -L/usr/lib -lstatgrab -shared -fPIC
 PLUGIN_INSTALL_DIR = /usr/lib/collectd
 
 build: istatd ipcu
 
 istatd:
+	./statgrab_detect.sh
 	$(CC) plugins/istatd.c $(CFLAGS) $(LDFLAGS) -o plugins/istatd.so 
 
 ipcu:
