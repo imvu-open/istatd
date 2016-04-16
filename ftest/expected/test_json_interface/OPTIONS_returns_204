@@ -1,5 +1,6 @@
 HTTP/1.1 204 (that's a status code)
 Content-Type: application/json
 Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
 Connection: close
 

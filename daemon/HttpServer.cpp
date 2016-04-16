@@ -351,6 +351,7 @@ void HttpRequest::doReply(int code, std::string const &ctype, std::string const 
             }
         }
         headers += "Access-Control-Allow-Origin: " + origin + "\r\n";
+        headers += "Access-Control-Allow-Credentials: true\r\n";
     }
     if (reply_.size()) {
         headers += "Content-Length: ";

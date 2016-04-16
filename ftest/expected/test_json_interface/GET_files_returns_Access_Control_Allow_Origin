@@ -1,5 +1,6 @@
 HTTP/1.1 404 (that's a status code)
 Content-Type: application/json
 Access-Control-Allow-Origin: https://www.example.com
+Access-Control-Allow-Credentials: true
 Connection: close
 
