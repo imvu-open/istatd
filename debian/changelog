@@ -1,3 +1,12 @@
+istatd (0.86-1) UNRELEASED; urgency=low
+
+  [ Jon Watte ]
+  * Also, allow credentials (even though istatd doesn't use them)
+
+  [ Leonidas Loucas ]
+
+ -- Leonidas Loucas <lloucas@mail-relay-outgoing.prod.imvu.com>  Mon, 18 Apr 2016 10:57:36 -0700
+
 istatd (0.85-2) UNRELEASED; urgency=low
 
   * update collectd contrib
