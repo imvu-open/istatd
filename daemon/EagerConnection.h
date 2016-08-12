@@ -33,8 +33,8 @@ public:
     virtual size_t readIn(void *ptr, size_t maxSize) = 0;
     virtual size_t peekIn(void *ptr, size_t maxSize) = 0;
     virtual void consume(size_t n) = 0;
-    virtual void writeOut(void const *data, size_t size) = 0;
-    virtual void writeOut(std::string const &str) = 0;
+    virtual size_t writeOut(void const *data, size_t size) = 0;
+    virtual size_t writeOut(std::string const &str) = 0;
 
     virtual ~ConnectionInfo() {}
     boost::signals2::signal<void ()> onConnect_;
@@ -61,8 +61,8 @@ public:
     size_t readIn(void *ptr, size_t maxSize);
     size_t peekIn(void *ptr, size_t maxSize);
     void consume(size_t n);
-    void writeOut(void const *data, size_t size);
-    void writeOut(std::string const &str);
+    size_t writeOut(void const *data, size_t size);
+    size_t writeOut(std::string const &str);
     void abort();
     boost::asio::ip::tcp::endpoint endpoint() const;
     //  if there's some data, call onData_

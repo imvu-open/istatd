@@ -78,6 +78,7 @@ size_t to_size_t(std::string const &str)
 
 StatServer::StatServer(int statPort, std::string listenAddress,
     std::string const &agentFw,
+    size_t agentCount,
     time_t agentInterval,
     Blacklist::Configuration &blacklistCfg,
     boost::asio::io_service &svc,
@@ -86,8 +87,8 @@ StatServer::StatServer(int statPort, std::string listenAddress,
     port_(statPort),
     forwardInterval_(agentInterval),
     agent_(agentFw),
+    agentCount_(agentCount),
     statStore_(statStore),
-    forward_(EagerConnection::create(svc)),
     input_(svc),
     svc_(svc),
     udpSocket_(svc),
@@ -120,9 +121,13 @@ StatServer::StatServer(int statPort, std::string listenAddress,
         blacklist_ = boost::make_shared<Blacklist>(boost::ref(svc), boost::ref(blacklistCfg));
     }
 
-    if (hasAgent())
+    if (!agent_.empty())
     {
-        startResolveAgent();
+        for (size_t i = 0; i < agentCount_; ++i) {
+            forward_.push_back(EagerConnection::create(svc));
+        }
+
+        startResolveAgents();
         gotSomething = true;
     }
     if (!statStore_)
@@ -283,10 +288,8 @@ void StatServer::refreshKeys()
     statStore_->refreshKeys();
 }
 
-void StatServer::startResolveAgent()
+void StatServer::startResolveAgents()
 {
-    forward_->onData_.connect(boost::bind(&StatServer::on_forwardData, this));
-    forward_->onWrite_.connect(boost::bind(&StatServer::on_forwardWrite, this, _1));
     std::stringstream info;
     //  integers:
     //  - non-digit to confuse very old agents
@@ -295,53 +298,54 @@ void StatServer::startResolveAgent()
     info << "#proto x 1 1\r\n";
     info << "#version " << __DATE__ << " " << __TIME__ << "\r\n";
     info << "#hostname " << boost::asio::ip::host_name() << "\r\n";
-    forward_->open(agent_, info.str());
+
     forwardTimer_.expires_from_now(boost::posix_time::seconds(forwardInterval_));
     forwardTimer_.async_wait(boost::bind(&StatServer::on_forwardTimer, this));
-    forward_->asEagerConnection()->startRead();
+
+    for (size_t i = 0; i < agentCount_; ++i) {
+        forward_[i]->onData_.connect(boost::bind(&StatServer::on_forwardData, this, i));
+        forward_[i]->onWrite_.connect(boost::bind(&StatServer::on_forwardWrite, this, i, _1));
+        forward_[i]->open(agent_, info.str());
+        forward_[i]->asEagerConnection()->startRead();
+    }
 }
 
-void StatServer::on_forwardWrite(size_t n)
+void StatServer::on_forwardWrite(size_t forwardIndex, size_t n)
 {
-    std::list<AgentFlushRequest *> afrs;
+    FlushRequestList afrs;
     {
         grab aholdof(agentMutex_);
         if (agentFlushRequests_.empty())
         {
             return;
         }
-        for (std::list<AgentFlushRequest *>::iterator ptr(agentFlushRequests_.begin()), end(agentFlushRequests_.end());
+        for (FlushRequestList::iterator ptr(agentFlushRequests_.begin()), end(agentFlushRequests_.end());
             ptr != end;)
         {
-            std::list<AgentFlushRequest *>::iterator x = ptr;
+            FlushRequestList::iterator x = ptr;
             ++ptr;
-            if ((*x)->completed(n))
+            if ((*x)->completed(forwardIndex, n))
             {
                 afrs.push_back(*x);
                 agentFlushRequests_.erase(x);
             }
         }
     }
-    while (!afrs.empty())
-    {
-        delete afrs.front();
-        afrs.pop_front();
-    }
 }
 
-void StatServer::on_forwardData()
+void StatServer::on_forwardData(size_t forwardIndex)
 {
     LogSpam << "StatServer::on_forwardData()";
     //  This really should never happen, because the server on the other end
     //  will never send anything back!
-    size_t sz = forward_->pendingIn();
+    size_t sz = forward_[forwardIndex]->pendingIn();
     if (sz == 0)
     {
         return;
     }
     std::string s;
-    s.resize(forward_->pendingIn());
-    forward_->readIn(&s[0], sz);
+    s.resize(forward_[forwardIndex]->pendingIn());
+    forward_[forwardIndex]->readIn(&s[0], sz);
     LogError << "Unexpected data back from agent forward server: " << s;
 }
 
@@ -556,10 +560,12 @@ bool StatServer::handle_meta_info(std::string const &cmd, boost::shared_ptr<Conn
     istat::trim(left);
     istat::trim(right);
     metaInfo(ec)->info_[left.substr(1)] = right;
-    if (forward_->opened())
-    {
+
+    for (ForwardList::iterator i = forward_.begin(); i !=  forward_.end(); ++i) {
         // we do not bucketize the agent info ... direct forward
-        forward_->writeOut(cmd + "\n");
+        if ((*i)->opened()) {
+            (*i)->writeOut(cmd + "\n");
+        }
     }
 
     return true;
@@ -575,7 +581,7 @@ bool StatServer::handle_reserved_cmd(std::string const &cmd, boost::shared_ptr<C
 void StatServer::handle_record(std::string const &ctr, double val)
 {
     statStore_->record(ctr, val);
-    if (forward_->opened())
+    if (hasAgent())
     {
         handle_forward(ctr, 0, val, val*val, val, val, 1);
     }
@@ -584,7 +590,7 @@ void StatServer::handle_record(std::string const &ctr, double val)
 void StatServer::handle_record(std::string const &ctr, time_t time, double val)
 {
     statStore_->record(ctr, time, val);
-    if (forward_->opened())
+    if (hasAgent())
     {
         handle_forward(ctr, time, val, val*val, val, val, 1);
     }
@@ -593,7 +599,7 @@ void StatServer::handle_record(std::string const &ctr, time_t time, double val)
 void StatServer::handle_record(std::string const &ctr, time_t time, double val, double sumSq, double min, double max, size_t n)
 {
     statStore_->record(ctr, time, val, sumSq, min, max, n);
-    if (forward_->opened())
+    if (hasAgent())
     {
         handle_forward(ctr, time, val, sumSq, min, max, n);
     }
@@ -628,17 +634,25 @@ void StatServer::handle_forward(std::string const &ctr, time_t time, double val,
     }
 }
 
-void StatServer::clearForward()
+void StatServer::clearForward(AgentFlushRequest * agentFlushRequest)
 {
     std::tr1::unordered_map<std::string, Bucketizer> buckets;
     {
         grab aholdof(forwardMutex_);
         buckets.swap(forwardBuckets_);
     }
-    if (forward_->opened() && buckets.size())
+    ForwardList conns;
+    for (ForwardList::iterator i = forward_.begin(); i < forward_.end(); ++i) {
+        if ((*i)->opened()) {
+            conns.push_back(*i);
+        }
+    }
+    size_t count = conns.size();
+    if ((count > 0) && buckets.size())
     {
+        size_t forwardIndex = 0;
         //  if not opened, then we lose this bucket
-        std::stringstream ss;
+        std::stringstream ss[count];
         for (std::tr1::unordered_map<std::string, Bucketizer>::iterator
             ptr(buckets.begin()), end (buckets.end());
             ptr != end;
@@ -650,7 +664,7 @@ void StatServer::clearForward()
                 for (unsigned int i = 0 ; i < bizer.BUCKET_COUNT; i++) {
                     istat::Bucket b = bizer.get(i);
                     if (b.count() > 0) {
-                        ss << (*ptr).first << " " << b.time() << " " << b.sum() << "\r\n";
+                        ss[forwardIndex] << (*ptr).first << " " << b.time() << " " << b.sum() << "\r\n";
                     }
                 }
             }
@@ -659,20 +673,29 @@ void StatServer::clearForward()
                 for (unsigned int i = 0 ; i < bizer.BUCKET_COUNT; i++) {
                     istat::Bucket b = bizer.get(i);
                     if (b.count() > 0) {
-                        ss << (*ptr).first << " " << b.time() << " " << b.sum() << " " <<
+                        ss[forwardIndex] << (*ptr).first << " " << b.time() << " " << b.sum() << " " <<
                             b.sumSq() << " " << b.min() << " " << b.max() << " " << b.count() << "\r\n";
                     }
                 }
             }
+            ++forwardIndex;
+            forwardIndex %= count;
         }
-        std::string str(ss.str());
-        forward_->writeOut(str);
+        for (size_t i = 0; i < count; ++i) {
+            std::string str(ss[i].str());
+            if (!str.empty()) {
+                size_t pending = conns[i]->writeOut(str);
+                if (agentFlushRequest != NULL) {
+                    agentFlushRequest->add(i, pending);
+                }
+            }
+        }
     }
 }
 
 void StatServer::on_forwardTimer()
 {
-    clearForward();
+    clearForward(NULL);
     forwardTimer_.expires_from_now(boost::posix_time::seconds(forwardInterval_));
     forwardTimer_.async_wait(boost::bind(&StatServer::on_forwardTimer, this));
 }
@@ -690,20 +713,13 @@ void StatServer::getConnected(std::vector<MetaInfo> &agents)
 
 void StatServer::syncAgent(IComplete *complete)
 {
-    size_t size = agentQueueSize();
-    if (!hasAgent() || size == 0)
+    boost::shared_ptr<AgentFlushRequest> agentFlushRequest(new AgentFlushRequest(complete));
+    clearForward(agentFlushRequest.get());
+    if (!agentFlushRequest->completed())
     {
-        svc_.post(boost::bind(&IComplete::on_complete, complete));
-        return;
+        grab aholdof(agentMutex_);
+        agentFlushRequests_.push_back(agentFlushRequest);
     }
-    grab aholdof(agentMutex_);
-    agentFlushRequests_.push_back(new AgentFlushRequest(size, complete));
-    clearForward();
-}
-
-size_t StatServer::agentQueueSize()
-{
-    return forward_->pendingOut();
 }
 
 void StatServer::close_connection(boost::shared_ptr<ConnectionInfo> const &ec)
@@ -801,8 +817,7 @@ void StatServer::on_udp_recv(boost::system::error_code const &err, size_t bytes)
 }
 
 
-AgentFlushRequest::AgentFlushRequest(size_t n, IComplete *comp) :
-    n_(n),
+AgentFlushRequest::AgentFlushRequest(IComplete *comp) :
     comp_(comp)
 {
 }
@@ -812,15 +827,34 @@ AgentFlushRequest::~AgentFlushRequest()
     comp_->on_complete();
 }
 
-bool AgentFlushRequest::completed(size_t n)
+void AgentFlushRequest::add(size_t index, size_t n)
 {
-    if (n >= n_)
-    {
-        n_ = 0;
-        return true;
+    if ((index + 1) > sizes_.size()) {
+        sizes_.resize(index + 1, 0);
     }
-    n_ -= n;
-    return false;
+    sizes_[index] = n;
+}
+
+bool AgentFlushRequest::completed() const
+{
+    for (SizeList::const_iterator i = sizes_.begin(); i != sizes_.end(); ++i) {
+        if (*i > 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool AgentFlushRequest::completed(size_t index, size_t n)
+{
+    if (index < sizes_.size()) {
+        if (n >= sizes_[index]) {
+            sizes_[index] = 0;
+        } else {
+            sizes_[index] -= n;
+        }
+    }
+    return completed();
 }
 
 #endif  //  !STAT_SERVER_TEST_ONLY

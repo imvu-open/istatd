@@ -187,12 +187,12 @@ void EagerConnection::consume(size_t n)
     }
 }
 
-void EagerConnection::writeOut(std::string const &str)
+size_t EagerConnection::writeOut(std::string const &str)
 {
-    writeOut(str.c_str(), str.size());
+    return writeOut(str.c_str(), str.size());
 }
 
-void EagerConnection::writeOut(void const *data, size_t size)
+size_t EagerConnection::writeOut(void const *data, size_t size)
 {
     LogSpam << "EagerConnection::writeOut(" << size << ")";
     if (!opened_)
@@ -224,6 +224,7 @@ void EagerConnection::writeOut(void const *data, size_t size)
     }
     outgoing_.insert(outgoing_.end(), (char const *)data, (char const *)data + size);
     startWrite();
+    return outgoing_.size();
 }
 
 void EagerConnection::abort()

@@ -39,11 +39,14 @@ class IStatServer : public boost::noncopyable
 class AgentFlushRequest : public boost::noncopyable
 {
 public:
-    AgentFlushRequest(size_t n, IComplete *comp);
+    explicit AgentFlushRequest(IComplete *comp);
     ~AgentFlushRequest();
-    bool completed(size_t n);
+    void add(size_t index, size_t n);
+    bool completed() const;
+    bool completed(size_t index, size_t n);
 private:
-    size_t n_;
+    typedef std::vector<size_t> SizeList;
+    SizeList sizes_;
     IComplete *comp_;
 };
 
@@ -81,8 +84,8 @@ public:
     virtual size_t readIn(void *ptr, size_t maxSize) { return 0; }
     virtual size_t peekIn(void *ptr, size_t maxSize) { return 0; }
     virtual void consume(size_t n) {}
-    virtual void writeOut(void const *data, size_t size) {}
-    virtual void writeOut(std::string const &str) {}
+    virtual size_t writeOut(void const *data, size_t size) { return 0; }
+    virtual size_t writeOut(std::string const &str) { return 0; }
 };
 
 class StatServer : IStatServer
@@ -95,7 +98,7 @@ public:
         HandleBlacklisted = 2
     };
 
-    StatServer(int statPort, std::string listenAddr, std::string const &agentFw,
+    StatServer(int statPort, std::string listenAddr, std::string const &agentFw, size_t agentCount,
         time_t agentInterval,
         Blacklist::Configuration &blacklistCfg,
         boost::asio::io_service &svc,
@@ -103,7 +106,7 @@ public:
         int udpBufferSize);
     ~StatServer();
     inline bool hasStore() const { return hasStatStore_; }
-    inline bool hasAgent() const { return !agent_.empty(); }
+    inline bool hasAgent() const { return !forward_.empty(); }
     inline boost::asio::io_service &service() { return svc_; }
     inline boost::shared_ptr<IStatStore> store() const
         {
@@ -122,18 +125,19 @@ public:
 
 private:
     typedef std::tr1::unordered_map<void *, boost::shared_ptr<MetaInfo> > InfoHashMap;
+    typedef std::vector<boost::shared_ptr<ConnectionInfo> > ForwardList;
+    typedef std::list<boost::shared_ptr<AgentFlushRequest> > FlushRequestList;
 
-    void startResolveAgent();
-    void on_forwardData();
+    void startResolveAgents();
+    void on_forwardData(size_t forwardIndex);
     void on_connection();
-    void on_forwardWrite(size_t n);
+    void on_forwardWrite(size_t forwardIndex, size_t n);
     void on_inputData(boost::shared_ptr<ConnectionInfo> ec);
     void on_inputLost(boost::shared_ptr<ConnectionInfo> ec);
     void recvOneUdp();
     void on_udp_recv(boost::system::error_code const &err, size_t bytes);
     void forwardCmd(std::string cmd);
     void reschedule_udp_recv(bool success, const std::string &reason);
-    size_t agentQueueSize();
     void startReport();
     void onReport(boost::system::error_code const &err);
     void reportMemory();
@@ -152,7 +156,7 @@ private:
     void handle_record(std::string const &ctr, time_t time, double val, double sumSq, double min, double max, size_t n);
     void handle_forward(std::string const &ctr, time_t time, double val, double sumSq, double min, double max, size_t n);
     void on_forwardTimer();
-    void clearForward();
+    void clearForward(AgentFlushRequest * agentFlushRequest);
 
     boost::shared_ptr<MetaInfo> metaInfo(boost::shared_ptr<ConnectionInfo> const &ec);
 
@@ -160,11 +164,12 @@ private:
     int backoffSeconds_;
     time_t forwardInterval_;
     std::string agent_;
+    size_t agentCount_;
 
     bool hasStatStore_;
     boost::shared_ptr<IStatStore> statStore_;
 
-    boost::shared_ptr<ConnectionInfo> forward_;
+    ForwardList forward_;
     EagerConnectionFactory input_;
     boost::asio::io_service &svc_;
     boost::asio::ip::udp::socket udpSocket_;
@@ -184,7 +189,7 @@ private:
 
     int64_t numConnected_;
     ::lock agentMutex_;
-    std::list<AgentFlushRequest *> agentFlushRequests_;
+    FlushRequestList agentFlushRequests_;
     ::lock metaMutex_;
     InfoHashMap metaInfo_;
     time_t metaInterval_;

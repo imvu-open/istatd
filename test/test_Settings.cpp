@@ -1,27 +1,15 @@
 
 #include "../daemon/Settings.h"
-#include "../daemon/IComplete.h"
 #include <boost/asio/io_service.hpp>
 #include <istat/test.h>
 #include <istat/Log.h>
 #include <sys/stat.h>
 
+#include "TestComplete.h"
+
 using namespace istat;
 
 boost::asio::io_service svc;
-class complete : public IComplete
-{
-public:
-    complete() : complete_(false) {}
-    bool complete_;
-    operator complete *() {
-        complete_ = false;
-        return this;
-    }
-    void on_complete() {
-        complete_ = true;
-    }
-};
 complete comp;
 
 void pump_and_run()

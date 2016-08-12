@@ -8,6 +8,7 @@
 #include <istat/istattime.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/tokenizer.hpp>
 #include <istat/Log.h>
 
 #include "../daemon/StatServer.h"
@@ -18,6 +19,8 @@
 #include "../daemon/FakeEagerConnection.h"
 #include "../daemon/Blacklist.h"
 
+#include "TestComplete.h"
+
 #define BUFSIZE 256
 
 using namespace istat;
@@ -26,10 +29,7 @@ using namespace istat;
 RetentionPolicy rp("10s:1d,5m:2d,1h:1y");
 RetentionPolicy xrp("");
 
-boost::shared_ptr<StatServer> makeServer(Mmap *mm, boost::asio::io_service &svc) {
-    int port = 0;
-    std::string agent("");
-
+boost::shared_ptr<StatServer> makeServer(Mmap *mm, boost::asio::io_service &svc, int port = 0, std::string agent = "", size_t agentCount = 1) {
     Blacklist::Configuration blacklistCfg = {};
     blacklistCfg.path = std::string("");
     blacklistCfg.period = 0;
@@ -39,7 +39,7 @@ boost::shared_ptr<StatServer> makeServer(Mmap *mm, boost::asio::io_service &svc)
     boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storePath, mm, boost::ref(rp));
     boost::shared_ptr<IStatStore> statStore = boost::make_shared<StatStore>(storePath, getuid(), boost::ref(svc), statCounterFactory, mm);
     statStore->setAggregateCount(2);
-    return boost::make_shared<StatServer>(port, listenAddress, agent, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256);
+    return boost::make_shared<StatServer>(port, listenAddress, agent, agentCount, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256);
 }
 
 boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_service &svc, int period) {
@@ -55,7 +55,7 @@ boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_
     boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storePath, mm, boost::ref(rp));
     boost::shared_ptr<IStatStore> statStore = boost::make_shared<StatStore>(storePath, getuid(), boost::ref(svc), statCounterFactory, mm);
     statStore->setAggregateCount(2);
-    return boost::make_shared<StatServer>(port, listenAddress, agent, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256);
+    return boost::make_shared<StatServer>(port, listenAddress, agent, 1, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256);
 }
 
 void test_counter() {
@@ -279,6 +279,80 @@ void test_start_with_blacklist_disabled_due_to_0_period() {
     assert_equal(boost::shared_ptr<Blacklist>((Blacklist*)0), server->blacklist());
 }
 
+struct FakeServer {
+    FakeServer(boost::asio::io_service &svc) : acceptor_(svc), nConnects_(0) {
+        acceptor_.onConnection_.connect(boost::bind(&FakeServer::on_connection, this));
+        acceptor_.listen(0, std::string());
+    }
+    std::string address() {
+        std::stringstream ss;
+        ss << "localhost:" << acceptor_.localPort();
+        return ss.str();
+    }
+    void on_connection() {
+        boost::shared_ptr<ConnectionInfo> ec(acceptor_.nextConn());
+        streams_.push_back(std::string());
+        ec->onData_.connect(boost::bind(&FakeServer::on_inputData, this, ec, nConnects_));
+        ec->asEagerConnection()->startRead();
+        ++nConnects_;
+    }
+    void on_inputData(boost::shared_ptr<ConnectionInfo> ec, size_t streamIndex) {
+        size_t len = ec->pendingIn();
+        std::string data;
+        data.resize(len);
+        ec->readIn(&data[0], len);
+        streams_[streamIndex] += data;
+    }
+    std::vector<std::string> lines(size_t streamIndex) {
+        std::vector<std::string> result;
+        boost::char_separator<char> sep("\r\n");
+        boost::tokenizer<boost::char_separator<char> > tokens(streams_[streamIndex], sep);
+        for (boost::tokenizer<boost::char_separator<char> >::iterator i = tokens.begin(); i != tokens.end(); ++i) {
+            if (!i->empty() && ((*i)[0] != '#')) {
+                result.push_back(*i);
+            }
+        }
+        return result;
+    }
+    EagerConnectionFactory acceptor_;
+    std::vector<std::string> streams_;
+    size_t nConnects_;
+};
+
+void test_multiple_forward_agents() {
+    boost::asio::io_service svc;
+
+    FakeServer server(svc);
+
+    const size_t count = 4;
+    const size_t multiple = 5;
+
+    Mmap *mm(NewMmap());
+    boost::shared_ptr<StatServer> agent = makeServer(mm, svc, 0, server.address(), count);
+    svc.poll();
+
+    assert_equal(count, server.nConnects_);
+
+    boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
+    for (size_t i = 0; i < (count * multiple); ++i) {
+        std::stringstream ss;
+        ss << "something.different." << i << " 42";
+        agent->handleCmd(ss.str(), ec);
+    }
+    complete comp;
+    agent->syncAgent(&comp);
+
+    svc.poll();
+    assert_true(comp.complete_);
+
+    for (size_t i = 0; i < count; ++i ) {
+        assert_equal(multiple, server.lines(i).size());
+        for (size_t j = 0; j < multiple; ++j) {
+            assert_contains(server.lines(i)[j], "something.different");
+        }
+    }
+}
+
 void func() {
     test_collated_counters();
     test_multiple_counters();
@@ -288,6 +362,7 @@ void func() {
     test_blacklist();
     test_start_with_missing_blacklist();
     test_start_with_blacklist_disabled_due_to_0_period();
+    test_multiple_forward_agents();
 }
 
 int main(int argc, char const *argv[]) {

@@ -153,6 +153,7 @@ Argument<std::string> listenAddress("listen-address", "", "IP address on which t
 Argument<int> httpPort("http-port", 8000, "Port to listen to for HTTP status service. 0 to disable.");
 Argument<int> statPort("stat-port", 8111, "Port to listen to for incoming statistics. 0 to disable.");
 Argument<std::string> agent("agent", "", "Agent to forward to, rather than save data locally.");
+Argument<int> agentCount("agentCount", 1, "How many agent connections to open");
 Argument<std::string> replicaOf("replica-of", "", "Source to pull-replicate from. Incompatible with stat-port.");
 Argument<int> replicaPort("replica-port", 0, "Port that others can pull-replicate from. Requires store.");
 Argument<int> flush("flush", 300, "How often (in seconds) to flush stats files to disk.");
@@ -942,7 +943,7 @@ int main(int argc, char const *argv[])
         Blacklist::Configuration cfg = {};
         cfg.path = blacklist_path.get();
         cfg.period = blacklist_period.get();
-        StatServer ss(statPort.get(), listenAddress.get(), agent.get(), std::max(agentInterval.get(), 1), cfg, g_service, statStore, udpBufferSize.get());
+        StatServer ss(statPort.get(), listenAddress.get(), agent.get(), std::max(agentCount.get(), 1), std::max(agentInterval.get(), 1), cfg, g_service, statStore, udpBufferSize.get());
         if (replicaPort.get())
         {
             reps = new ReplicaServer(replicaPort.get(), listenAddress.get(), g_service, statStore);

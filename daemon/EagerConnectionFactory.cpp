@@ -61,6 +61,10 @@ boost::shared_ptr<ConnectionInfo> EagerConnectionFactory::nextConn()
     return ret;
 }
 
+int EagerConnectionFactory::localPort() const {
+    return acceptor_.local_endpoint().port();
+}
+
 void EagerConnectionFactory::startAccept()
 {
     LogSpam << "EagerConnectionFactory::startAccept()";
