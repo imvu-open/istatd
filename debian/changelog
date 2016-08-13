@@ -1,3 +1,10 @@
+istatd (0.87-1) UNRELEASED; urgency=low
+
+  [ Eric Hohenstein ]
+  * add support for multiple forwarding agent connections to work around single-core stream handling limitation for very high volume streams
+
+ -- Eric Hohenstein <ehohenstein@imvu.com>  Sat, 13 Aug 2016 01:49:10 -0700
+
 istatd (0.86-1) UNRELEASED; urgency=low
 
   [ Jon Watte ]
