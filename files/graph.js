@@ -2309,7 +2309,7 @@ var SettingsModel = Backbone.Model.extend({
         if (!_.isUndefined(login_cookie)) {
             var piece = login_cookie.split(':');
             var user = this.users.findWhere({username: piece[0]});
-            if (!_.isUndefined(user) && user.get('password_hash') === piece[1]) {
+            if (!_.isUndefined(user)) {
                 return user.get('username');
             }
             else {
@@ -2359,16 +2359,10 @@ var SettingsModel = Backbone.Model.extend({
             );
         }
         else {
-            if (user.get('password_hash') == password_hash) {
-                $.cookie('login', username + ':' + password_hash, {expires: 12, path: '/'});
-                this.trigger('logged_in', user);
-            }
-            else {
-                console.log('Your hash was ' + password_hash);
-                console.log('Desired hash was ' + user.get('password_hash'));
-                console.log('Username was ' + username);
-                errorDialog('Bad password. Check log for proper hash and edit user file.');
-            }
+            //  The fake, client-side password was causing more problems than it solved.
+            //  Carry the data forward, but don't enforce it.
+            $.cookie('login', username + ':' + password_hash, {expires: 12, path: '/'});
+            this.trigger('logged_in', user);
         }
 
     },
