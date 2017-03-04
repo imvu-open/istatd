@@ -1,3 +1,4 @@
+#include <limits>
 
 #include "istat/Bucket.h"
 #include "istat/test.h"
@@ -31,6 +32,19 @@ void func()
     assert_equal(a.count(), 2);
     assert_equal(a.time(), 100000);
     
+
+    Bucket b2(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(), 1, 100000);
+    a.update(b2);
+    assert_equal(a.sum(), std::numeric_limits<float>::max());
+    assert_equal(a.sumSq(), std::numeric_limits<float>::max());
+    assert_equal(a.min(), 2);
+    assert_equal(a.max(), std::numeric_limits<float>::max());
+    assert_equal(a.count(), 3);
+    assert_equal(a.time(), 100000);
+    assert_equal(a.avg(), std::numeric_limits<float>::max());
+
+
+
     Bucket c(98.6215057F, 4863.10059F, 49.2929001F, 49.3286018F, 2, 0);
     assert_equal(0, c.sdev());
 }

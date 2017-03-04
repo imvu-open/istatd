@@ -6,6 +6,15 @@
 #include <cmath>
 #include <ctime>
 #include <iostream>
+#include <limits>
+
+float stabilizeFloat(float f) {
+    return -std::numeric_limits<float>::infinity() == f
+      ? std::numeric_limits<float>::min()
+      : std::numeric_limits<float>::infinity() == f
+      ? std::numeric_limits<float>::max()
+      : f;
+}
 
 namespace istat
 {
@@ -42,22 +51,22 @@ namespace istat
 
     double Bucket::sum() const
     {
-        return sum_;
+        return stabilizeFloat(sum_);
     }
 
     float Bucket::sumSq() const
     {
-        return sumSq_;
+        return stabilizeFloat(sumSq_);
     }
 
     float Bucket::min() const
     {
-        return min_;
+        return stabilizeFloat(min_);
     }
 
     float Bucket::max() const
     {
-        return max_;
+        return stabilizeFloat(max_);
     }
 
     int Bucket::count() const
@@ -120,7 +129,7 @@ namespace istat
 
     double Bucket::avg() const
     {
-        return count_ > 0 ? double(sum_) / double(count_) : 0;
+        return stabilizeFloat(count_ > 0 ? double(sum_) / double(count_) : 0);
     }
 
     float Bucket::sdev() const
@@ -135,7 +144,7 @@ namespace istat
         {
             diff = 0;
         }
-        return sqrt(diff / (double(count_) * (double(count_) - 1)));
+        return stabilizeFloat(sqrt(diff / (double(count_) * (double(count_) - 1))));
     }
 }
 

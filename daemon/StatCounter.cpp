@@ -531,7 +531,7 @@ boost::shared_ptr<istat::StatFile> StatCounter::pickTrailingStatFile(time_t seas
     for (std::vector<StatCounter::OneCounter>::iterator ptr(counters_.begin()), end(counters_.end()); ptr != end; ++ptr)
     {
         boost::shared_ptr<istat::StatFile> sf = (*ptr).file;
-        if (!sf->header().flags & istat::FILE_FLAG_IS_TRAILING)
+        if (!(sf->header().flags & istat::FILE_FLAG_IS_TRAILING))
         {
             continue;
         }
