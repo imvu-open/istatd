@@ -1,3 +1,13 @@
+istatd (0.88-1) UNRELEASED; urgency=low
+
+  [ Leonidas Loucas ]
+  * Make sure that istatd handles inf correctly
+
+  [ Jon Watte ]
+  * Minor config tweaks
+
+ -- Leonidas Loucas <lloucas@imvu.com>  Fri, 03 Mar 2017 16:13:53 -0800
+
 istatd (0.87-1) UNRELEASED; urgency=low
 
   [ Eric Hohenstein ]
