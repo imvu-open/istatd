@@ -25,9 +25,9 @@ EagerConnectionFactory::~EagerConnectionFactory()
 {
 }
 
-void EagerConnectionFactory::listen(int port, std::string listen_address)
+void EagerConnectionFactory::listen(int port, std::string listen_address, int listenOverflowBacklog)
 {
-    LogSpam << "EagerConnectionFactory::listen(" << port << ")";
+    LogSpam << "EagerConnectionFactory::listen(" << port << ", " << listen_address << ", " << listenOverflowBacklog << ")";
     try
     {
         acceptor_.open(tcp::v4());
@@ -37,12 +37,12 @@ void EagerConnectionFactory::listen(int port, std::string listen_address)
         } else {
             acceptor_.bind(tcp::endpoint(tcp::v4(), port));
         }
-        acceptor_.listen();
+        acceptor_.listen(listenOverflowBacklog);
         startAccept();
     }
     catch (...)
     {
-        LogError << "EagerConnectionFactory::listen(" << port << "): unknown exception";
+        LogError << "EagerConnectionFactory::listen(" << port << ", " << listen_address << ", " << listenOverflowBacklog << "): unknown exception";
     }
 }
 

@@ -20,7 +20,7 @@ struct ReplicaServerInfo
 class ReplicaServer : public boost::noncopyable
 {
 public:
-    ReplicaServer(int port, std::string listen_address, boost::asio::io_service &svc, boost::shared_ptr<IStatStore> &ss);
+    ReplicaServer(int port, std::string listen_address, boost::asio::io_service &svc, boost::shared_ptr<IStatStore> &ss, int listenOverflowBacklog);
     ~ReplicaServer();
     
     void getInfo(ReplicaServerInfo &oInfo);
@@ -28,6 +28,7 @@ public:
 private:
     friend class ReplicaConnection;
     int port_;
+    int listenOverflowBacklog_;
     EagerConnectionFactory listen_;
     boost::shared_ptr<IStatStore> ss_;
     LoopbackCounter numConnectionsGauge_;

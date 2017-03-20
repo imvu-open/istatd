@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <istat/test.h>
 #include <istat/istattime.h>
+#include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/tokenizer.hpp>
@@ -39,7 +40,7 @@ boost::shared_ptr<StatServer> makeServer(Mmap *mm, boost::asio::io_service &svc,
     boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storePath, mm, boost::ref(rp));
     boost::shared_ptr<IStatStore> statStore = boost::make_shared<StatStore>(storePath, getuid(), boost::ref(svc), statCounterFactory, mm);
     statStore->setAggregateCount(2);
-    return boost::make_shared<StatServer>(port, listenAddress, agent, agentCount, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256);
+    return boost::make_shared<StatServer>(port, listenAddress, agent, agentCount, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256, 256);
 }
 
 boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_service &svc, int period) {
@@ -55,7 +56,7 @@ boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_
     boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storePath, mm, boost::ref(rp));
     boost::shared_ptr<IStatStore> statStore = boost::make_shared<StatStore>(storePath, getuid(), boost::ref(svc), statCounterFactory, mm);
     statStore->setAggregateCount(2);
-    return boost::make_shared<StatServer>(port, listenAddress, agent, 1, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256);
+    return boost::make_shared<StatServer>(port, listenAddress, agent, 1, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256, 256);
 }
 
 void test_counter() {
@@ -282,7 +283,7 @@ void test_start_with_blacklist_disabled_due_to_0_period() {
 struct FakeServer {
     FakeServer(boost::asio::io_service &svc) : acceptor_(svc), nConnects_(0) {
         acceptor_.onConnection_.connect(boost::bind(&FakeServer::on_connection, this));
-        acceptor_.listen(0, std::string());
+        acceptor_.listen(0, std::string(), boost::asio::socket_base::max_connections);
     }
     std::string address() {
         std::stringstream ss;

@@ -17,7 +17,7 @@ class AdminServer
 {
 public:
     AdminServer(unsigned int port, std::string listen_address, boost::asio::io_service &svc, IHttpServerInfo *hsp, StatServer *ssp,
-        ReplicaServer *rs, ReplicaOf *ro);
+        ReplicaServer *rs, ReplicaOf *ro, int listenOverflowBacklog);
     ~AdminServer();
 
     void on_connection();
@@ -31,6 +31,7 @@ public:
     LoopbackCounter numAdminCommands_;
 
     boost::shared_ptr<EagerConnectionFactory> fac_;
+    int listenOverflowBacklog_;
 };
 
 

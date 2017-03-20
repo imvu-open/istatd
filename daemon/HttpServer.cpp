@@ -20,8 +20,9 @@ using namespace boost::asio;
 
 DebugOption debugHttp("http");
 
-HttpServer::HttpServer(int port, boost::asio::io_service &svc, std::string listen_addr) :
+HttpServer::HttpServer(int port, boost::asio::io_service &svc, std::string listen_addr, int listenOverflowBacklog) :
     port_(port),
+    listenOverflowBacklog_(listenOverflowBacklog),
     svc_(svc),
     acceptor_(svc),
     timer_(svc)
@@ -37,7 +38,7 @@ HttpServer::HttpServer(int port, boost::asio::io_service &svc, std::string liste
         } else {
             acceptor_.bind(tcp::endpoint(tcp::v4(), port));
         }
-        acceptor_.listen();
+        acceptor_.listen(listenOverflowBacklog_);
         acceptOne();
     }
 }

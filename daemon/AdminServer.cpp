@@ -93,7 +93,7 @@ private:
     };
 };
 
-AdminServer::AdminServer(unsigned int port, std::string listen_address, boost::asio::io_service &svc, IHttpServerInfo *hsp, StatServer *ssp, ReplicaServer *rs, ReplicaOf *ro) :
+AdminServer::AdminServer(unsigned int port, std::string listen_address, boost::asio::io_service &svc, IHttpServerInfo *hsp, StatServer *ssp, ReplicaServer *rs, ReplicaOf *ro, int listenOverflowBacklog) :
     svc_(svc),
     hsp_(hsp),
     ssp_(ssp),
@@ -101,7 +101,8 @@ AdminServer::AdminServer(unsigned int port, std::string listen_address, boost::a
     ro_(ro),
     numAdminConnections_("admin.connections", TypeEvent),
     numAdminCommands_("admin.commands", TypeEvent),
-    fac_(new EagerConnectionFactory(svc))
+    fac_(new EagerConnectionFactory(svc)),
+    listenOverflowBacklog_(listenOverflowBacklog)
 {
     LogNotice << "AdminServer(" << port << ")";
     if (port == 0 || port > 65535)
@@ -109,7 +110,7 @@ AdminServer::AdminServer(unsigned int port, std::string listen_address, boost::a
         throw std::runtime_error("Bad port number in AdminServer: " + boost::lexical_cast<std::string>(port));
     }
     fac_->onConnection_.connect(boost::bind(&AdminServer::on_connection, this));
-    fac_->listen(port, listen_address);
+    fac_->listen(port, listen_address, listenOverflowBacklog_);
 }
 
 AdminServer::~AdminServer()
