@@ -123,8 +123,9 @@ public:
 };
 
 
-ReplicaServer::ReplicaServer(int port, std::string listen_address, boost::asio::io_service &svc, boost::shared_ptr<IStatStore> &ss) :
+ReplicaServer::ReplicaServer(int port, std::string listen_address, boost::asio::io_service &svc, boost::shared_ptr<IStatStore> &ss, int listenOverflowBacklog) :
     port_(port),
+    listenOverflowBacklog_(listenOverflowBacklog),
     listen_(svc),
     ss_(ss),
     numConnectionsGauge_("replica.connections", TypeGauge),
@@ -132,7 +133,7 @@ ReplicaServer::ReplicaServer(int port, std::string listen_address, boost::asio::
     replicaRequestEvents_("replica.events", TypeEvent)
 {
     listen_.onConnection_.connect(boost::bind(&ReplicaServer::on_connection, this));
-    listen_.listen(port, listen_address);
+    listen_.listen(port, listen_address, listenOverflowBacklog_);
 }
 
 ReplicaServer::~ReplicaServer()

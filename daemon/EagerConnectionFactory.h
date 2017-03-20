@@ -15,7 +15,7 @@ class EagerConnectionFactory
 public:
     EagerConnectionFactory(boost::asio::io_service &svc);
     ~EagerConnectionFactory();
-    void listen(int port, std::string listen_address);
+    void listen(int port, std::string listen_address, int listenOverflowBacklog);
     boost::shared_ptr<ConnectionInfo> nextConn();
     boost::signals2::signal<void ()> onConnection_;
     int localPort() const;

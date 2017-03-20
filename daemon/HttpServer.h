@@ -133,7 +133,7 @@ public:
 class HttpServer : public IHttpServerInfo
 {
 public:
-    HttpServer(int port, boost::asio::io_service &svc, std::string listen_addr);
+    HttpServer(int port, boost::asio::io_service &svc, std::string listen_addr, int listenOverflowBacklog);
     virtual ~HttpServer();
     inline boost::asio::io_service &svc() { return svc_; }
     //  You will see the request *before* headers are parsed. 
@@ -146,6 +146,7 @@ private:
     void handleAccept(boost::system::error_code const &e, HttpRequestHolder const &req);
     HttpServerInfo sInfo_;
     int port_;
+    int listenOverflowBacklog_;
     boost::asio::io_service &svc_;
     boost::asio::ip::tcp::acceptor acceptor_;
     boost::asio::deadline_timer timer_;

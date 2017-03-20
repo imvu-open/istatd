@@ -83,7 +83,8 @@ StatServer::StatServer(int statPort, std::string listenAddress,
     Blacklist::Configuration &blacklistCfg,
     boost::asio::io_service &svc,
     boost::shared_ptr<IStatStore> &statStore,
-    int udpBufferSize) :
+    int udpBufferSize,
+    int listenOverflowBacklog) :
     port_(statPort),
     forwardInterval_(agentInterval),
     agent_(agentFw),
@@ -95,6 +96,7 @@ StatServer::StatServer(int statPort, std::string listenAddress,
     udpEndpoint_(new UdpConnectionInfo()),
     udpTimer_(svc),
     udpBufferSize_(udpBufferSize),
+    listenOverflowBacklog_(listenOverflowBacklog),
     reportTimer_(svc),
     udpBackoffMs_(50),
     nConnects_("statserver.connects", TypeEvent),
@@ -147,7 +149,7 @@ StatServer::StatServer(int statPort, std::string listenAddress,
     if (statPort > 0)
     {
         input_.onConnection_.connect(boost::bind(&StatServer::on_connection, this));
-        input_.listen(statPort, listenAddress);
+        input_.listen(statPort, listenAddress, listenOverflowBacklog_);
         udpSocket_.open(udp::v4());
         udpSocket_.set_option(udp::socket::receive_buffer_size(udpBufferSize_ * 1024));
         if (listenAddress.length() > 0) {
