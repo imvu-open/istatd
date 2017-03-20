@@ -1,3 +1,10 @@
+istatd (0.89-1) UNRELEASED; urgency=low
+
+  [ Leonidas Loucas ]
+  * Allow listen overflow backlog configuration. add a config param --listen-overflow-backlog, defaulting to boost::asio::socket_base::max_connections
+
+ -- Leonidas Loucas <lloucas@imvu.com>  Mon, 20 Mar 2017 16:13:53 -0800
+
 istatd (0.88-1) UNRELEASED; urgency=low
 
   [ Leonidas Loucas ]
