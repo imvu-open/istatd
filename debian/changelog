@@ -1,3 +1,12 @@
+istatd (0.90-1) UNRELEASED; urgency=low
+
+  [ Leonidas Loucas ]
+  * Add configuration to disable recursive aggregate counter creation. add a
+  config param --dont-recursively-create-counters, defaulting to false (
+      preserves old behavior of creating recursive counters )
+
+ -- Leonidas Loucas <lloucas@imvu.com>  Tue, 21 Mar 2017 12:13:53 -0800
+
 istatd (0.89-1) UNRELEASED; urgency=low
 
   [ Leonidas Loucas ]

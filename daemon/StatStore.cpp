@@ -35,7 +35,8 @@ StatStore::StatStore(std::string const &path, int uid,
     boost::shared_ptr<IStatCounterFactory> factory,
     istat::Mmap *mm, long flushMs,
     long minimumRequiredSpace,
-    int pruneEmptyDirsMs
+    int pruneEmptyDirsMs,
+    bool recursivelyCreateCounters
     ) :
     path_(path),
     svc_(svc),
@@ -51,6 +52,7 @@ StatStore::StatStore(std::string const &path, int uid,
     numLoaded_(0),
     aggregateCount_(0),
     pruneEmptyDirsMs_(pruneEmptyDirsMs),
+    recursivelyCreateCounters_(recursivelyCreateCounters),
     queuedRefreshes_(0)
 {
     if(minimumRequiredSpace_ == -1)
@@ -202,13 +204,17 @@ boost::shared_ptr<StatStore::AsyncCounter> StatStore::openCounter(std::string co
         counters[xform] = asyncCounter;
         keys_.add(xform, asyncCounter->statCounter_->isCollated());
     }
-    //  strip the leaf name "extension"
-    std::string sex(name);
-    stripext(sex);
-    if (sex != name)
+
+    if(recursivelyCreateCounters_ && create)
     {
-        //  recursively create counters up the chain
-        openCounter(sex, create, zeroTime);
+        //  strip the leaf name "extension"
+        std::string sex(name);
+        stripext(sex);
+        if (sex != name)
+        {
+            //  recursively create counters up the chain
+            openCounter(sex, create, zeroTime);
+        }
     }
     return asyncCounter;
 }

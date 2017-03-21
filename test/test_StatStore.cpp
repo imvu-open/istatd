@@ -125,6 +125,19 @@ void run_tests(void)
         assert_equal("taco", (*ptr).first);
         assert_equal(false, (*ptr).second.isLeaf);
         assert_equal(CounterResponse::DisplayTypeAggregate, (*ptr).second.counterType);
+
+        store.record("ortz.bell", 42.42);
+        std::list<std::pair<std::string, CounterResponse> > oList3;
+        store.listMatchingCounters("ortz*", oList3);
+        assert_equal(2, oList3.size());
+        std::list<std::pair<std::string, CounterResponse> >::iterator ptr2 = oList3.begin();
+        assert_equal("ortz.bell", (*ptr2).first);
+        assert_equal(true, (*ptr2).second.isLeaf);
+        assert_equal(CounterResponse::DisplayTypeGauge, (*ptr2).second.counterType);
+        std::advance(ptr2, 1);
+        assert_equal("ortz", (*ptr2).first);
+        assert_equal(false, (*ptr2).second.isLeaf);
+        assert_equal(CounterResponse::DisplayTypeAggregate, (*ptr2).second.counterType);
     }
     mm->dispose();
 
@@ -153,6 +166,28 @@ void run_tests(void)
         StatStore store(storepath, getuid(), service, statCounterFactory, mm);
 
         assert_equal(store.hasAvailableSpace(), true);
+    }
+    mm->dispose();
+
+    mm = NewMmap();
+    {
+        boost::asio::io_service service;
+
+        std::string storepath("/tmp/test/statstore");
+        boost::filesystem::remove_all(storepath);
+        boost::filesystem::create_directories(storepath);
+        boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storepath, mm, boost::ref(rp));
+        StatStore store(storepath, getuid(), service, statCounterFactory, mm, -1, 60000, false);
+
+        // Still end up with the aggregates in the key list as this is divorced from creating the file on disk
+        store.record("ortz.bell", 42.42);
+        std::list<std::pair<std::string, CounterResponse> > oList3;
+        store.listMatchingCounters("ortz*", oList3);
+        assert_equal(2, oList3.size());
+        std::list<std::pair<std::string, CounterResponse> >::iterator ptr2 = oList3.begin();
+        assert_equal("ortz.bell", (*ptr2).first);
+        assert_equal(true, (*ptr2).second.isLeaf);
+        assert_equal(CounterResponse::DisplayTypeGauge, (*ptr2).second.counterType);
     }
     mm->dispose();
 }

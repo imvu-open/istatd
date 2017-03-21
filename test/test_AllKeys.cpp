@@ -36,8 +36,24 @@ void test_allkeys_manipulation() {
     assert_equal(0, oList2.size());
 }
 
+void test_allkeys_match() {
+    AllKeys ak;
+
+    ak.add("a.file.that.is.nested", true);
+    ak.add("a.file.that.is.non", false);
+    ak.add("a.different.file", true);
+    ak.add("a.other.different.file", false);
+
+    std::string s("a.different*");
+    std::list<std::pair<std::string, CounterResponse> > oList;
+    ak.match(s, oList);
+    assert_equal(2, oList.size());
+
+}
+
 void func() {
     test_allkeys_manipulation();
+    test_allkeys_match();
 }
 
 int main(int argc, char const *argv[]) {

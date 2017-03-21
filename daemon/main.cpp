@@ -183,6 +183,7 @@ Argument<int> blacklist_period("blacklist-period", 60, "How often to check the f
 Argument<bool> disallow_compressed_responses("disallow-compressed-responses", false, "Should istatd-server disallow compression of http responses by accept-encoding");
 Argument<int> udpBufferSize("udp-buffer-size", 1024, "Buffer size for UDP sockets, in Kilobytes");
 Argument<int> listenOverflowBacklog("listen-overflow-backlog", boost::asio::socket_base::max_connections, "Listen overflow backlog, defaults to boost::asio::socket_base::max_connections");
+Argument<bool> dontRecursivelyCreateCounters("dont-recursively-create-counters", false, "Should we disable recursing up the counter chain (split on .) and make parent counters");
 
 
 void usage()
@@ -936,7 +937,7 @@ int main(int argc, char const *argv[])
             storepath = combine_paths(initialDir_, storepath);
             boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storepath, mm, boost::ref(retentionPolicy));
 
-            StatStore * ss = new StatStore(storepath, dropped_uid(), g_service, statCounterFactory, mm, flush.get()*1000, minimumRequiredSpace.get(), pruneEmptyDirectoriesInterval.get()*1000);
+            StatStore * ss = new StatStore(storepath, dropped_uid(), g_service, statCounterFactory, mm, flush.get()*1000, minimumRequiredSpace.get(), pruneEmptyDirectoriesInterval.get()*1000, !dontRecursivelyCreateCounters.get());
             LoopbackCounter::setup(ss, g_service);
             statStore = boost::shared_ptr<IStatStore>(ss);
         }
