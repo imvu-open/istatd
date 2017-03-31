@@ -6,8 +6,13 @@ source "$SCRIPTDIR/functions"
 let START_TIME=1111123450
 let END_TIME=$START_TIME+9000
 
+echo "Creating stat files"
 create_stat_files single foo.bar $START_TIME $END_TIME
+echo "Starting server"
 start_server single --fake-time $END_TIME
+
+
+echo "started server"
 
 test_name old_packets_within_file_interval_are_accepted
     let LONG_TIME_AGO=$END_TIME-12000
@@ -27,7 +32,7 @@ test_name packets_from_crazy_times_make_sane_statfile
     let TIME_4=$START_TIME
     let TIME_5=$START_TIME+10
     let TIME_6=$START_TIME+20
-    
+
     send_stat single foo.baz $TIME_4 1337
     send_stat single foo.baz $TIME_2 1337
     send_stat single foo.baz $TIME_1 1337

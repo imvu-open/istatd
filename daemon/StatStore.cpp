@@ -131,7 +131,7 @@ void StatStore::record(std::string const &ctr, time_t time, double value, double
     {
         --maxAgg;
 
-        boost::shared_ptr<StatStore::AsyncCounter> asyncCounter = openCounter(cname, true, time);
+        boost::shared_ptr<StatStore::AsyncCounter> asyncCounter = openCounter(cname, true, false, time);
         if (!!asyncCounter)
         {
             ++IStatCounter::enqueueRecords_;
@@ -158,7 +158,7 @@ void StatStore::find(std::string const &ctr, boost::shared_ptr<IStatCounter> &st
 }
 
 //  this takes the name un-munged
-boost::shared_ptr<StatStore::AsyncCounter> StatStore::openCounter(std::string const &name, bool create, time_t zeroTime)
+boost::shared_ptr<StatStore::AsyncCounter> StatStore::openCounter(std::string const &name, bool create, bool onlyExisting, time_t zeroTime)
 {
     if (name == "")
     {
@@ -196,7 +196,13 @@ boost::shared_ptr<StatStore::AsyncCounter> StatStore::openCounter(std::string co
         //  I hold the lock while creating the file, which is sub-optimal
         //  but avoids racing.
         LogSpam << "StatStore::openCounter(" << name << ") ... creating";
-        asyncCounter = boost::make_shared<StatStore::AsyncCounter>(boost::ref(svc_), factory_->create(xform, isCollated, zeroTime));
+        boost::shared_ptr<IStatCounter> statCounter = factory_->create(xform, isCollated, zeroTime, onlyExisting);
+        if (!statCounter)
+        {
+            return boost::shared_ptr<StatStore::AsyncCounter>((StatStore::AsyncCounter *)0);
+        }
+
+        asyncCounter = boost::make_shared<StatStore::AsyncCounter>(boost::ref(svc_), statCounter);
         if (!asyncCounter)
         {
             return asyncCounter;
@@ -213,7 +219,7 @@ boost::shared_ptr<StatStore::AsyncCounter> StatStore::openCounter(std::string co
         if (sex != name)
         {
             //  recursively create counters up the chain
-            openCounter(sex, create, zeroTime);
+            openCounter(sex, create, onlyExisting, zeroTime);
         }
     }
     return asyncCounter;
@@ -405,7 +411,7 @@ void StatStore::loadCtr(std::string const &file)
     std::replace(cname.begin(), cname.end(), '/', '.');
     try
     {
-        openCounter(cname, true);
+        openCounter(cname, true, !recursivelyCreateCounters_);
     }
     catch (std::exception const &x)
     {
@@ -495,7 +501,7 @@ void StatStore::deleteCounter(std::string const &ctr, IComplete *complete)
 
 void StatStore::deleteCounter(std::string const &ctr, Deleter* deleter, IComplete *complete)
 {
-    boost::shared_ptr<StatStore::AsyncCounter> aCount = openCounter(ctr, false, 0);
+    boost::shared_ptr<StatStore::AsyncCounter> aCount = openCounter(ctr, false, false, 0);
     if (!!aCount)
     {
         boost::shared_ptr<IStatCounter> oldPtr = aCount->statCounter_;

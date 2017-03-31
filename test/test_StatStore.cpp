@@ -98,46 +98,63 @@ void run_tests(void)
         boost::filesystem::remove_all(storepath);
         boost::filesystem::create_directories(storepath);
         boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storepath, mm, boost::ref(rp));
-        StatStore store(storepath, getuid(), service, statCounterFactory, mm);
+        {
+            StatStore store(storepath, getuid(), service, statCounterFactory, mm);
 
-        store.record("taco", 42.42);
-        std::list<std::pair<std::string, CounterResponse> > oList;
-        store.listMatchingCounters("bbq", oList);
-        assert_equal(0, oList.size());
-        store.listMatchingCounters("taco is delicious!", oList);
-        assert_equal(0, oList.size());
-        store.listMatchingCounters("taco", oList);
-        assert_equal(1, oList.size());
-        store.record("taco.bell", 42.42);
-        store.record("*taco.cheese", 42.42);
-        std::list<std::pair<std::string, CounterResponse> > oList2;
-        store.listMatchingCounters("taco*", oList2);
-        assert_equal(3, oList2.size());
-        std::list<std::pair<std::string, CounterResponse> >::iterator ptr = oList2.begin();
-        assert_equal("taco.bell", (*ptr).first);
-        assert_equal(true, (*ptr).second.isLeaf);
-        assert_equal(CounterResponse::DisplayTypeGauge, (*ptr).second.counterType);
-        std::advance(ptr, 1);
-        assert_equal("taco.cheese", (*ptr).first);
-        assert_equal(true, (*ptr).second.isLeaf);
-        assert_equal(CounterResponse::DisplayTypeEvent, (*ptr).second.counterType);
-        std::advance(ptr, 1);
-        assert_equal("taco", (*ptr).first);
-        assert_equal(false, (*ptr).second.isLeaf);
-        assert_equal(CounterResponse::DisplayTypeAggregate, (*ptr).second.counterType);
+            store.record("taco", 42.42);
+            std::list<std::pair<std::string, CounterResponse> > oList;
+            store.listMatchingCounters("bbq", oList);
+            assert_equal(0, oList.size());
+            store.listMatchingCounters("taco is delicious!", oList);
+            assert_equal(0, oList.size());
+            store.listMatchingCounters("taco", oList);
+            assert_equal(1, oList.size());
+            store.record("taco.bell", 42.42);
+            store.record("*taco.cheese", 42.42);
+            std::list<std::pair<std::string, CounterResponse> > oList2;
+            store.listMatchingCounters("taco*", oList2);
+            assert_equal(3, oList2.size());
+            std::list<std::pair<std::string, CounterResponse> >::iterator ptr = oList2.begin();
+            assert_equal("taco.bell", (*ptr).first);
+            assert_equal(true, (*ptr).second.isLeaf);
+            assert_equal(CounterResponse::DisplayTypeGauge, (*ptr).second.counterType);
+            std::advance(ptr, 1);
+            assert_equal("taco.cheese", (*ptr).first);
+            assert_equal(true, (*ptr).second.isLeaf);
+            assert_equal(CounterResponse::DisplayTypeEvent, (*ptr).second.counterType);
+            std::advance(ptr, 1);
+            assert_equal("taco", (*ptr).first);
+            assert_equal(false, (*ptr).second.isLeaf);
+            assert_equal(CounterResponse::DisplayTypeAggregate, (*ptr).second.counterType);
 
-        store.record("ortz.bell", 42.42);
-        std::list<std::pair<std::string, CounterResponse> > oList3;
-        store.listMatchingCounters("ortz*", oList3);
-        assert_equal(2, oList3.size());
-        std::list<std::pair<std::string, CounterResponse> >::iterator ptr2 = oList3.begin();
-        assert_equal("ortz.bell", (*ptr2).first);
-        assert_equal(true, (*ptr2).second.isLeaf);
-        assert_equal(CounterResponse::DisplayTypeGauge, (*ptr2).second.counterType);
-        std::advance(ptr2, 1);
-        assert_equal("ortz", (*ptr2).first);
-        assert_equal(false, (*ptr2).second.isLeaf);
-        assert_equal(CounterResponse::DisplayTypeAggregate, (*ptr2).second.counterType);
+            store.record("ortz.bell", 42.42);
+            std::list<std::pair<std::string, CounterResponse> > oList3;
+            store.listMatchingCounters("ortz*", oList3);
+            assert_equal(2, oList3.size());
+            std::list<std::pair<std::string, CounterResponse> >::iterator ptr2 = oList3.begin();
+            assert_equal("ortz.bell", (*ptr2).first);
+            assert_equal(true, (*ptr2).second.isLeaf);
+            assert_equal(CounterResponse::DisplayTypeGauge, (*ptr2).second.counterType);
+            std::advance(ptr2, 1);
+            assert_equal("ortz", (*ptr2).first);
+            assert_equal(false, (*ptr2).second.isLeaf);
+            assert_equal(CounterResponse::DisplayTypeAggregate, (*ptr2).second.counterType);
+        }
+        { // Ensure that in the normal config, we do recursively create the counters on scan
+            boost::filesystem::remove_all(storepath + "/ortz/10s");
+            assert_equal(false, boost::filesystem::exists(storepath + "/ortz/10s"));
+            StatStore store(storepath, getuid(), service, statCounterFactory, mm);
+
+            // Still end up with the aggregates in the key list as this is divorced from creating the file on disk
+            std::list<std::pair<std::string, CounterResponse> > oList3;
+            store.listMatchingCounters("ortz*", oList3);
+            assert_equal(2, oList3.size());
+            std::list<std::pair<std::string, CounterResponse> >::iterator ptr2 = oList3.begin();
+            assert_equal("ortz.bell", (*ptr2).first);
+            assert_equal(true, (*ptr2).second.isLeaf);
+            assert_equal(CounterResponse::DisplayTypeGauge, (*ptr2).second.counterType);
+            assert_equal(true, boost::filesystem::exists(storepath + "/ortz/10s"));
+        }
     }
     mm->dispose();
 
@@ -177,17 +194,34 @@ void run_tests(void)
         boost::filesystem::remove_all(storepath);
         boost::filesystem::create_directories(storepath);
         boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storepath, mm, boost::ref(rp));
-        StatStore store(storepath, getuid(), service, statCounterFactory, mm, -1, 60000, false);
+        {
+            StatStore store(storepath, getuid(), service, statCounterFactory, mm, -1, -1, 60000, false);
 
-        // Still end up with the aggregates in the key list as this is divorced from creating the file on disk
-        store.record("ortz.bell", 42.42);
-        std::list<std::pair<std::string, CounterResponse> > oList3;
-        store.listMatchingCounters("ortz*", oList3);
-        assert_equal(2, oList3.size());
-        std::list<std::pair<std::string, CounterResponse> >::iterator ptr2 = oList3.begin();
-        assert_equal("ortz.bell", (*ptr2).first);
-        assert_equal(true, (*ptr2).second.isLeaf);
-        assert_equal(CounterResponse::DisplayTypeGauge, (*ptr2).second.counterType);
+            // Still end up with the aggregates in the key list as this is divorced from creating the file on disk
+            store.record("ortz.bell", 42.42);
+            std::list<std::pair<std::string, CounterResponse> > oList3;
+            store.listMatchingCounters("ortz*", oList3);
+            assert_equal(2, oList3.size());
+            std::list<std::pair<std::string, CounterResponse> >::iterator ptr2 = oList3.begin();
+            assert_equal("ortz.bell", (*ptr2).first);
+            assert_equal(true, (*ptr2).second.isLeaf);
+            assert_equal(CounterResponse::DisplayTypeGauge, (*ptr2).second.counterType);
+        }
+        { // Ensure that in the no recursive config, we do recursively create the counters on scan
+            boost::filesystem::remove_all(storepath + "/ortz/10s");
+            assert_equal(false, boost::filesystem::exists(storepath + "/ortz/10s"));
+            StatStore store(storepath, getuid(), service, statCounterFactory, mm, -1, -1, 60000, false);
+
+            // Still end up with the aggregates in the key list as this is divorced from creating the file on disk
+            std::list<std::pair<std::string, CounterResponse> > oList3;
+            store.listMatchingCounters("ortz*", oList3);
+            assert_equal(2, oList3.size());
+            std::list<std::pair<std::string, CounterResponse> >::iterator ptr2 = oList3.begin();
+            assert_equal("ortz.bell", (*ptr2).first);
+            assert_equal(true, (*ptr2).second.isLeaf);
+            assert_equal(CounterResponse::DisplayTypeGauge, (*ptr2).second.counterType);
+            assert_equal(false, boost::filesystem::exists(storepath + "/ortz/10s"));
+        }
     }
     mm->dispose();
 }

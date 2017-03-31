@@ -106,7 +106,7 @@ private:
     volatile int queuedRefreshes_;
 
     //  openCounter() takes an un-munged name!
-    boost::shared_ptr<AsyncCounter> openCounter(std::string const &name, bool create=false, time_t zeroTime=0);
+    boost::shared_ptr<AsyncCounter> openCounter(std::string const &name, bool create=false, bool onlyExisting=false, time_t zeroTime=0);
 
     void scheduleRefresh();
     void refreshAllKeys();
