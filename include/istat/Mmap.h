@@ -6,6 +6,11 @@
 
 namespace istat
 {
+    enum AllocationStrategy {
+      allocateAll = 1,
+      allocateSparse = 2
+    };
+
     class Mmap
     {
     public:
@@ -22,6 +27,8 @@ namespace istat
         virtual int64_t availableSpace(char const *path) = 0;
         virtual void dispose() = 0;
         virtual void counters(int64_t *oMaps, int64_t *oUnmaps, int64_t *oOpens, int64_t *oCloses) = 0;
+
+        virtual void setAllocationStrategy(AllocationStrategy as) = 0;
     protected:
         virtual ~Mmap() {}
     };

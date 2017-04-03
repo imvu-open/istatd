@@ -184,6 +184,7 @@ Argument<bool> disallow_compressed_responses("disallow-compressed-responses", fa
 Argument<int> udpBufferSize("udp-buffer-size", 1024, "Buffer size for UDP sockets, in Kilobytes");
 Argument<int> listenOverflowBacklog("listen-overflow-backlog", boost::asio::socket_base::max_connections, "Listen overflow backlog, defaults to boost::asio::socket_base::max_connections");
 Argument<bool> dontRecursivelyCreateCounters("dont-recursively-create-counters", false, "Should we disable recursing up the counter chain (split on .) and make parent counters");
+Argument<int> allocationStrategy("allocation-strategy", static_cast<int>(istat::allocateAll), "The allocation strategy used when making files. 1 = write all as 0, 2 = sparse file");
 
 
 void usage()
@@ -849,6 +850,8 @@ int main(int argc, char const *argv[])
     {
         LogConfig::setOutputFile(log_file_path.c_str());
     }
+
+    mm->setAllocationStrategy(static_cast<AllocationStrategy>(allocationStrategy.get()));
 
     // test convert the address to ensure it's convertable without exceptions before entering main code
     if (listenAddress.get().length() > 0) {

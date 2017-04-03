@@ -82,6 +82,10 @@ public:
     virtual void counters(int64_t *oMaps, int64_t *oUnmaps, int64_t *oOpens, int64_t *oCloses)
     {
     }
+
+    void setAllocationStrategy(AllocationStrategy as)
+    {
+    }
 private:
     int64_t freeSpace_;
 };

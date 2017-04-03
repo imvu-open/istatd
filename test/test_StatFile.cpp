@@ -105,6 +105,10 @@ public:
         *oOpens = open_;
         *oCloses = close_;
     }
+    void setAllocationStrategy(AllocationStrategy as)
+    {
+        mm->setAllocationStrategy(as);
+    }
 };
 
 void setUp()
