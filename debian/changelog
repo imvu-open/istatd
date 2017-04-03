@@ -1,3 +1,11 @@
+istatd (0.91-1) UNRELEASED; urgency=low
+
+  [ Leonidas Loucas ]
+  * allow a sparse allocation strategy (--allocation-strategy=2), defaults to normal preallocate strategy (--allocation-strategy=1, or default)
+  * allow --dont-recursively-create-counters to work after a restart of istatd
+
+ -- Leonidas Loucas <lloucas@imvu.com>  Mon, 3 Apr 2017 12:13:53 -0800
+
 istatd (0.90-1) UNRELEASED; urgency=low
 
   [ Leonidas Loucas ]
