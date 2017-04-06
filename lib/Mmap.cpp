@@ -17,6 +17,7 @@
 
 namespace istat
 {
+
     std::string dirname(std::string const &path)
     {
         size_t pos = path.find_last_of('/');
@@ -49,6 +50,7 @@ namespace istat
         int64_t nOpens_;
         int64_t nCloses_;
         void *hint_;
+        AllocationStrategy allocationStrategy_;
         virtual int open(char const *name, int flags)
         {
             int i = ::open(name, flags, 0664);
@@ -91,7 +93,10 @@ namespace istat
             int ret = ::ftruncate(i, size);
             if (ret >= 0 && size > 0)
             {
-                ret = ::posix_fallocate(i, 0, size);
+                if (allocationStrategy_ == allocateAll)
+                {
+                    ret = ::posix_fallocate(i, 0, size);
+                }
             }
             return ret;
         }
@@ -195,6 +200,11 @@ namespace istat
             *oUnmaps = nUnmaps_;
             *oOpens = nOpens_;
             *oCloses = nCloses_;
+        }
+
+        virtual void setAllocationStrategy(AllocationStrategy as)
+        {
+            allocationStrategy_ = as;
         }
     };
 

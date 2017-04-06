@@ -39,6 +39,15 @@ function assert_equal {
     fi
 }
 
+function assert_lt {
+    LHS=$1
+    RHS=$2
+    MSG=$3
+    if ! [ "$LHS" -lt "$RHS" ]; then
+        failure "'$LHS' not less than '$RHS': $MSG"
+    fi
+}
+
 function setup_test {
     rm -rf "$DBDIR"
 }
@@ -77,6 +86,22 @@ function cleanup_exit {
     cleanup_inner
     echo "Saving state in $DBDIR"
     exit 1
+}
+
+function counter_size {
+    CONFIG=$1
+    COUNTER=$2
+    FILENAME=$DBDIR/$CONFIG-store/`echo $COUNTER | tr [.] [/]`
+    SIZE=$(du --block-size=1 "$FILENAME" | awk '{print $1;}')
+    echo $SIZE
+}
+
+function counter_size_apparent {
+    CONFIG=$1
+    COUNTER=$2
+    FILENAME=$DBDIR/$CONFIG-store/`echo $COUNTER | tr [.] [/]`
+    SIZE=$(du --block-size=1 --apparent-size "$FILENAME" | awk '{print $1;}')
+    echo $SIZE
 }
 
 function wait_for_file {

@@ -55,7 +55,7 @@ test_name GET_after_delete_and_purge
 curl -s "http://localhost:18011/?q=*" > $TEST_OUT
 
 cat $TEST_OUT | grep -q "tep.asd.dds" && failure "Found unexpected tep.asd.dds counter in json response after purge"
-cat $TEST_OUT | grep -q "tep.tep_live" || failure "Did not find expected tep.tep_live counter in json response after purge"
+cat $TEST_OUT | grep -q "tep.tep_live.and_let_die" || failure "Did not find expected tep.tep_live counter in json response after purge"
 
 
 kill_server single

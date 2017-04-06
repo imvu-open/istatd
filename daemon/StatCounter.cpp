@@ -143,6 +143,7 @@ StatCounter::~StatCounter()
     }
 }
 
+
 bool StatCounter::isCollated() const
 {
     return isCollated_;

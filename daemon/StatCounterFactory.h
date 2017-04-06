@@ -13,7 +13,8 @@ class StatCounterFactory : public IStatCounterFactory
 public:
     StatCounterFactory(std::string const &root_path, istat::Mmap *mm, RetentionPolicy &rp);
 
-    virtual boost::shared_ptr<IStatCounter> create(std::string const &name, bool isCollated, time_t zeroTime);
+    virtual boost::shared_ptr<IStatCounter> create(std::string const &name, bool isCollated, time_t zeroTime, bool onlyExisting);
+    virtual bool statCounterFilesExist(std::string const &pathName);
 
     std::string& rootPath()
     {
