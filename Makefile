@@ -111,6 +111,7 @@ $(foreach file,$(FILES_SRCS),$(eval $(call add_install,$(file),$(USR_PREFIX)/sha
 
 # add install must go before make directories
 $(foreach dir,$(INSTALL_DIRS),$(eval $(call mk_install_dir,$(patsubst %/,%,$(dir)))))
+$(foreach dir,$(INSTALL_DIRS),$(eval $(call mk_install_dir,$(dir))))
 $(call mk_install_dir,$(VAR_PREFIX)/db/istatd)
 
 install:	$(INSTALL_DIRS) $(INSTALL_DSTS)
