@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ### BEGIN INIT INFO
-# Provides:             istatd
+# Provides:             istatd-agent
 # Required-Start:  
 # Required-Stop:   
 # Default-Start:        2 3 4 5
