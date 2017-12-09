@@ -40,7 +40,7 @@ LXXFLAGS:=-Lobj/ $(patsubst %,-l%,$(LIBS))
 ifeq ($(OPT),)
 OPT := -O2
 endif
-CXXFLAGS:=-pipe $(OPT) -g -I. -Iinclude -MMD -D_LARGEFILE64_SOURCE -Wall -Werror
+CXXFLAGS:=-std=gnu++98 -pipe $(OPT) -g -I. -Iinclude -MMD -D_LARGEFILE64_SOURCE -Wall -Werror
 SYS_LIBS:=$(BOOST_SYSTEM) $(BOOST_THREAD) -lboost_signals -lpthread $(STATGRAB) \
   $(BOOST_FILESYSTEM) $(BOOST_IOSTREAMS) -lboost_date_time $(LIBRT)
 

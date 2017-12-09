@@ -21,7 +21,17 @@ override_dh_auto_configure:
 
 override_dh_strip:
 	dh_strip -pistatd-server --dbg-package=istatd-server-dbg
-
 	dh_strip -pistatd-agent --dbg-package=istatd-agent-dbg
+
+override_dh_auto_install:
+	mkdir -p $(CURDIR)/debian/tmp/etc/default
+	mkdir -p $(CURDIR)/debian/tmp/etc/init.d
+	mkdir -p $(CURDIR)/debian/tmp/usr/bin
+	mkdir -p $(CURDIR)/debian/tmp/usr/lib
+	mkdir -p $(CURDIR)/debian/tmp/usr/include/istat/
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/istatd/files/
+	mkdir -p $(CURDIR)/debian/tmp/var/db/istatd/settings/
+	dh_auto_install
+
 %:
 	dh  $@

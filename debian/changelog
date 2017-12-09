@@ -1,3 +1,13 @@
+istatd (0.91-3) UNRELEASED; urgency=medium
+
+  [ Luc Lanthier ]
+  * init.d scripts service namespace conflict resolved
+  * packaging rules adjusted according to debian/stretch needs:
+    make directories for install during packaging
+  * use -std=gnu++98 standard for compile
+
+ -- Luc Lanthier <llanthier@imvu.com>  Fri, 08 Dec 2017 15:20:53 -0800
+
 istatd (0.91-2) UNRELEASED; urgency=medium
 
   [ Luc Lanthier ]
