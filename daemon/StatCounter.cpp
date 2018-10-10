@@ -25,6 +25,7 @@ LoopbackCounter IStatCounter::eagerconns_("counter.eagerconns", TypeCounted);
 LoopbackCounter IStatCounter::recordsRejected_("counter.rejected", TypeEvent);
 LoopbackCounter IStatCounter::countersClosed_("counter.closed", TypeEvent);
 LoopbackCounter IStatCounter::countersCreated_("counter.created", TypeEvent);
+LoopbackCounter IStatCounter::countersFlushed_("counter.flushed", TypeEvent);
 DebugOption debugRecord("record");
 DebugOption debugRejectedCounters("rejectedCounters");
 
@@ -386,6 +387,7 @@ void StatCounter::purge(std::string rootPath)
         ++ptr)
     {
         ptr->file->flush();
+        ++countersFlushed_;
 
         std::string counterBackupPath = ptr->file->getPath();
         boost::algorithm::replace_all(counterBackupPath, rootPath, backupDir);
@@ -466,6 +468,7 @@ void StatCounter::flush(boost::shared_ptr<IStatStore> const &store)
     {
         ptr->file->flush();
         store->iterateSignal(ptr->file->header());
+        ++countersFlushed_;
     }
 }
 

@@ -21,6 +21,7 @@ public:
     static LoopbackCounter recordsRejected_;
     static LoopbackCounter countersClosed_;
     static LoopbackCounter countersCreated_;
+    static LoopbackCounter countersFlushed_;
 
     virtual ~IStatCounter() {};
 
