@@ -179,7 +179,7 @@ private:
     int udpBufferSize_;
     int listenOverflowBacklog_;
     boost::asio::deadline_timer reportTimer_;
-    char udpBuffer_[4096];
+    char udpBuffer_[65536];
     int udpBackoffMs_;
     LoopbackCounter nConnects_;
     LoopbackCounter nDrops_;
