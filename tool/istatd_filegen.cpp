@@ -39,7 +39,7 @@ void usage()
 // depth would be 3 in this case (3 levels of 100 each)
 // returns modified path
 std::string pathify(std::string s, int depth, int counter) {
-    char buf[16];
+    char buf[256];
     
     int divisor = 1;
     int i;
@@ -48,7 +48,7 @@ std::string pathify(std::string s, int depth, int counter) {
     }
     for (int j = 0 ; j <= i; ++j) {
         int chunk = counter / divisor;
-        snprintf(buf, 16, "/lev%d_%02d", j, chunk);
+        snprintf(buf, sizeof(buf), "/lev%d_%02d", j, chunk);
         s.append(buf);
         counter = counter % divisor;
         divisor = divisor / 100;
