@@ -712,7 +712,10 @@ void RequestInFlight::generateCounterData(
             startTime = endTime - 900;
         }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
         if (endTime < startTime) {
+#pragma GCC diagnostic pop
             if (endTime) {
                 throw std::runtime_error("end must be greater than start!");
             }
