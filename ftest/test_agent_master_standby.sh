@@ -23,11 +23,8 @@ send_stat agent_to_store_n_forward "test.counter" 40 44
 send_stat agent_to_store_n_forward "test.counter" 50 45
 
 flush_istatd agent_to_store_n_forward
-sleep 1 # terrible
 flush_istatd store_n_forward
-sleep 1 # terrible
 flush_istatd master
-sleep 1 # terrible
 
 test_counter store_n_forward "test/counter/10s" 42 43 44 45
 test_counter master "test/counter/10s" 42 43 44 45

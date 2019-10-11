@@ -22,7 +22,6 @@ send_stat ${INSTANCE} "test.counter" 30 43
 send_stat ${INSTANCE} "test.counter" 40 44
 send_stat ${INSTANCE} "test.counter" 50 45
 flush_istatd ${INSTANCE}
-sleep 1 # terrible
 flush_istatd master
 
 test_counter master "test/counter/10s" 42 43 44 45
