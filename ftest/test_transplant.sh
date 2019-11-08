@@ -79,7 +79,7 @@ function kill_transplant {
 echo "starting server"
 EXIT_HOOK="kill_transplant"
 echo "$TRANSPLANT" --listen 9156 --store "$MASTERDIR" --pidfile master-pid.pid --debug
-     "$TRANSPLANT" --listen 9156 --store "$MASTERDIR" --pidfile master-pid.pid --debug > "$DBDIR/master.log" 2>&1 &
+     "$TRANSPLANT" --listen 9156 --store "$MASTERDIR" --pidfile master-pid.pid --debug > "$DBDIR/master.log" 2>&1 </dev/null &
 MASTERPID="$!"
 
 wait_for_file "$MASTERDIR/master-pid.pid"

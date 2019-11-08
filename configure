@@ -1,6 +1,6 @@
 #!/bin/bash
 # Simple configuration script for people who expect such a script to exist.
-# Please do not convert istatd to autotools. We will likely not accept such 
+# Please do not convert istatd to autotools. We will likely not accept such
 # a conversion. Thanks for your interest in istatd, and good luck!
 
 set -e
@@ -10,7 +10,7 @@ rm -f makevars.config
 rm -f config.h
 
 # Find Python version 2.
-# If this fails, you need to create appropriate aliases or symlinks for 
+# If this fails, you need to create appropriate aliases or symlinks for
 # testing to work!
 /usr/bin/env python -V
 /usr/bin/env python2 -V
@@ -18,6 +18,28 @@ rm -f config.h
 if curl --help >/dev/null 2>&1; then echo "Found curl in path."; else
     echo "You need to install the command-line tool 'curl'."
     exit 1
+fi
+
+if ! which jq >/dev/null 2>&1; then
+    case "`uname`" in
+        [Dd]arwin)
+            jqos=osx ;;
+        [Ll]inux)
+            jqos=linux ;;
+        *)
+            echo "You need to install the command-line tool 'jq'."
+            echo "Try http://stedolan.github.io/jq or your package manager."
+            exit 1 ;;
+    esac
+    if [ "`uname -m`" = "x86_64" ]; then
+        jqos="${jqos}64"
+    else
+        jqos="${jqos}32"
+    fi
+    mkdir -p bin
+    curl -sSL "http://stedolan.github.io/jq/download/${jqos}/jq" > jq.$$
+    mv jq.$$ jq
+    chmod +x jq
 fi
 
 if cat /dev/null | zlib-flate -compress; then echo "Found zlib-flate in path."; else

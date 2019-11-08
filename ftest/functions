@@ -14,7 +14,7 @@ export EXIT_HOOK=""
 
 # do a bit of a fail-safe to make sure we don't hang forever
 export ALARMPARENT=$$
-(sleep 30; echo "Test process timed out."; kill -9 $ALARMPARENT; [ -z "$DEBUG_ISTATD" ] && killall -q -9 istatd && killall -q -9 istatd_transplant; exit 1) &
+(sleep 30; echo "Test process timed out."; kill -9 $ALARMPARENT; [ -z "$DEBUG_ISTATD" ] && killall -q -9 istatd && killall -q -9 istatd_transplant; exit 1) </dev/null &
 ALARMCHILD=$!
 
 function failure {
@@ -157,7 +157,7 @@ function start_server {
     fi
     [ -f ftest/$CONFIG.cfg ] || failure "cannot find config file ftest/$CONFIG.cfg"
     if [ -z "$DEBUG_ISTATD" ]; then
-        bin/istatd --debug segv --config ftest/$CONFIG.cfg $maybe_store --settings $DBDIR/$CONFIG-settings --pid-file $DBDIR/$CONFIG-pid.pid --log-file $DBDIR/$CONFIG-log.log --daemonize $* > $DBDIR/$CONFIG-stdouterr 2>&1
+        bin/istatd --debug segv --config ftest/$CONFIG.cfg $maybe_store --settings $DBDIR/$CONFIG-settings --pid-file $DBDIR/$CONFIG-pid.pid --log-file $DBDIR/$CONFIG-log.log --daemonize $* > $DBDIR/$CONFIG-stdouterr 2>&1 </dev/null
         istatd_launch=$?
     else
         echo "========= start istatd with these arguments =========="
@@ -296,13 +296,13 @@ function test_counter {
     #flush_istatd $PROFILE
     VALUES=( `bin/istatd_filedump $FILENAME | tail -n +2 | sed -e 's/[^,]*,\\([^,]*\\),.*/\\1/'` )
     COUNT=${#VALUES[@]}
-    
+
     if [ $COUNT != $# ]; then
         bin/istatd_filedump $FILENAME
         failure "Wrong file length for $FILENAME - expected exactly $# bucket(s), but got $COUNT bucket(s) instead."
     else
         for (( i=1; i<=$COUNT; i++ )); do
-            value=${VALUES[$i - 1]} 
+            value=${VALUES[$i - 1]}
             if [ $value != ${!i} ]; then
                 bin/istatd_filedump $FILENAME
                 failure "Wrong sum in bucket $i of $FILENAME - expected ${!i}, but got $value instead."
@@ -557,6 +557,26 @@ function assert_files_equal {
     rm -f $TMPF
 }
 
+function assert_json_equal {
+    FILE1=$1
+    FILE2=$2
+    EXP="'$3|@csv'"
+    TMPF1=/var/tmp/assert_json_equal_$$-1.csv
+    TMPF2=/var/tmp/assert_json_equal_$$-2.csv
+    TMPF=/var/tmp/assert_json_equal_$$.txt
+    jq  -r $EXP $FILE1 | sort > $TMPF1
+    jq  -r $EXP $FILE2 | sort > $TMPF2
+    if ! diff $TMPF1 $TMPF2 > $TMPF 2>&1; then
+        echo "FAILURE: $TEST_NAME"
+        echo "test_output < $FILE1"
+        echo "test_expect > $FILE2"
+        cat $TMPF $TMPF1 $TMPF2
+        rm -f $TMPF $TMPF1 $TMPF2
+        exit 1
+    fi
+    rm -f $TMPF $TMPF1 $TMPF2
+}
+
 function assert_expected {
     RESULT_F=$1
     EXPECT_F=ftest/expected/$FTEST_NAME/$TEST_NAME
@@ -565,13 +585,21 @@ function assert_expected {
     assert_files_equal $RESULT_F $EXPECT_F
 }
 
+function assert_expected_json {
+    RESULT_F=$1
+    EXPECT_F=ftest/expected/$FTEST_NAME/$TEST_NAME
+    [ -d ftest/expected ] || failure "dir does not exist: ftest/expected"
+    [ -d ftest/expected/$FTEST_NAME ] || failure "dir does not exist: ftest/expected/$FTEST_NAME"
+    assert_json_equal $RESULT_F $EXPECT_F '.matching_names[]|[.name,.is_leaf,.type]'
+}
+
 TEST_NUM=0
 TEST_OUT=/var/tmp/test_out_$$
 EXPECT_OUT=/var/tmp/expect_out_$$
 TEST_NAME=""
 function test_name {
     TEST_NAME=$1
-    let TEST_NUM=$TEST_NUM+1    
+    let TEST_NUM=$TEST_NUM+1
     TEST_NUM_STR=`printf "%03d" $TEST_NUM`
     TEST_OUT=$DBDIR/test_${TEST_NUM_STR}
     EXPECT_OUT=$DBDIR/expect_${TEST_NUM_STR}
