@@ -453,9 +453,9 @@ static void onHttpRequest(StatServer *ss, HttpRequestHolder const &req)
     req->onError_.connect(boost::bind(printRequest, req, ss));
 }
 
-static uid_t dropped_uid()
+static int dropped_uid()
 {
-    uid_t uid = -1;
+    int uid = -1;
     try
     {
         uid = boost::lexical_cast<int>(user.get());
@@ -470,12 +470,12 @@ static uid_t dropped_uid()
 void drop_privileges()
 {
     LogSpam << "drop_privileges()";
-    uid_t uid = dropped_uid();
+    int uid = dropped_uid();
     if (uid < 0)
     {
         throw std::runtime_error("User " + user.get() + " is not known.");
     }
-    if ((geteuid() != uid) && (seteuid(uid) < 0))
+    if ((int(geteuid()) != uid) && (seteuid(uid) < 0))
     {
         throw std::runtime_error("Could not seteuid(" + boost::lexical_cast<std::string>(uid) + ").");
     }
