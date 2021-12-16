@@ -749,6 +749,15 @@ GraphSurface.prototype.renderData = function GraphSurface_renderData(seriesKeys,
         }
     }, 1);
 }
+
+GraphSurface.prototype.getTextWidth = function(text) {
+    if (!this.context) {
+        this.context = document.createElement("canvas").getContext("2d");
+        this.context.font = "16px sans-serif";
+    }
+    return Math.ceil(this.context.measureText(text).width);
+}
+
 GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
     var $div = $('.graphdiv', this.$self);
     $div.css({"margin-left": 0, "margin-top": 10, "background": "transparent"});
@@ -876,12 +885,16 @@ GraphSurface.prototype.repaint = guard(function GraphSurface_repaint() {
             annotations.push({
                 series: key,
                 x: ann_min_ts,
+                width: GraphSurface.prototype.getTextWidth(ann_min.toString()) + 2,
+                height: 14,
                 shortText: ann_min.toString(),
                 text: key + " min " + ann_min.toString()
             });
             annotations.push({
                 series: key,
                 x: ann_max_ts,
+                width: GraphSurface.prototype.getTextWidth(ann_max.toString()) + 2,
+                height: 14,
                 shortText: ann_max.toString(),
                 text: key + " max " + ann_max.toString()
             });
