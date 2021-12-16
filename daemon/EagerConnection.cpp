@@ -37,7 +37,11 @@ EagerConnection::EagerConnection(boost::asio::io_service &svc) :
     socket_(svc),
     resolver_(svc),
     timer_(svc),
+#if BOOST_VERSION >= 106700
+    strand_(svc.get_executor())
+#else
     strand_(svc)
+#endif
 {
     init();
     ++IStatCounter::eagerconns_;
@@ -326,7 +330,11 @@ void EagerConnection::tryLater()
             }
             LogWarning << "Trying again in " << backoff_ << " seconds.";
             timer_.expires_from_now(boost::posix_time::seconds(backoff_));
+#if BOOST_VERSION >= 106700
+            timer_.async_wait(boost::asio::bind_executor(strand_, boost::bind(&EagerConnection::startResolve,
+#else
             timer_.async_wait(strand_.wrap(boost::bind(&EagerConnection::startResolve,
+#endif
                 Tramp(shared_from_this()))));
         }
     }
@@ -336,7 +344,11 @@ void EagerConnection::startConnect(tcp::endpoint endpoint)
 {
     LogNotice << "Connecting to " << endpoint;
     socket_.async_connect(endpoint,
+#if BOOST_VERSION >= 106700
+        boost::asio::bind_executor(strand_, boost::bind(&EagerConnection::on_connect, Tramp(shared_from_this()),
+#else
         strand_.wrap(boost::bind(&EagerConnection::on_connect, Tramp(shared_from_this()),
+#endif
             placeholders::error, endpoint)));
 }
 
@@ -374,7 +386,11 @@ void EagerConnection::startWrite()
             writePending_ = true;
             char const *ptr = &writeBuf_[0];
             boost::asio::async_write(socket_, boost::asio::buffer(ptr, writeBuf_.size()),
+#if BOOST_VERSION >= 106700
+                boost::asio::bind_executor(strand_, boost::bind(&EagerConnection::on_write,
+#else
                 strand_.wrap(boost::bind(&EagerConnection::on_write,
+#endif
                     Tramp(shared_from_this()), placeholders::error, placeholders::bytes_transferred)));
         }
     }
@@ -425,7 +441,11 @@ void EagerConnection::startRead()
         inBuf_.resize(16384);
         char *ptr = &inBuf_[0];
         boost::asio::async_read(socket_, boost::asio::buffer(ptr, 16384), boost::asio::transfer_at_least(1),
+#if BOOST_VERSION >= 106700
+            boost::asio::bind_executor(strand_, boost::bind(&EagerConnection::on_read, Tramp(shared_from_this()),
+#else
             strand_.wrap(boost::bind(&EagerConnection::on_read, Tramp(shared_from_this()),
+#endif
                 placeholders::error, placeholders::bytes_transferred)));
     }
 }

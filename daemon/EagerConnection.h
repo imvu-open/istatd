@@ -11,6 +11,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/detail/atomic_count.hpp>
+#include <boost/version.hpp>
 
 #include "Signal.h"
 
@@ -101,7 +102,11 @@ private:
     boost::asio::ip::tcp::socket socket_;
     boost::asio::ip::tcp::resolver resolver_;
     boost::asio::deadline_timer timer_;
+#if BOOST_VERSION >= 106700
+    boost::asio::strand<boost::asio::io_service::executor_type> strand_;
+#else
     boost::asio::strand strand_;
+#endif
     lock mutex_;
     buffer writeBuf_;
     buffer outgoing_;

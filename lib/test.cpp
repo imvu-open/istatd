@@ -10,6 +10,7 @@
 #include <sstream>
 #include <iomanip>
 #include <boost/filesystem.hpp>
+#include <boost/version.hpp>
 
 #define TEST_FAIL_SHOULD_THROW 0
 
@@ -77,7 +78,11 @@ namespace istat
         {
             std::ostringstream oss;
             oss << "getcwd(...) failed: "
+#if BOOST_VERSION >= 106700
+                << boost::system::error_code(errno, boost::system::system_category()).message();
+#else
                 << boost::system::error_code(errno, boost::system::get_system_category()).message();
+#endif
             test_fail(oss.str());
         }
     }

@@ -9,6 +9,7 @@
 #include "AllKeys.h"
 #include <istat/Header.h>
 
+#include <boost/version.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -33,8 +34,11 @@ public:
     virtual void record(std::string const &ctr, time_t time, double value) = 0;
     virtual void record(std::string const &ctr, time_t time, double value, double valueSq, double min, double max, size_t cnt) = 0;
 
+#if BOOST_VERSION >= 106700
+    virtual void find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand<boost::asio::io_service::executor_type> * &strand) = 0;
+#else
     virtual void find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand * &strand) = 0;
-
+#endif
     virtual void listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList) = 0;
 
     virtual std::string const &getLocation() const = 0;
@@ -67,7 +71,11 @@ public:
     inline void record(std::string const &ctr, double value) {}
     inline void record(std::string const &ctr, time_t time, double value) {}
     inline void record(std::string const &ctr, time_t time, double value, double valueSq, double min, double max, size_t cnt) {}
+#if BOOST_VERSION >= 106700
+    inline void find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand<boost::asio::io_service::executor_type> * &strand) { strand = 0; }
+#else
     inline void find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand * &strand) { strand = 0; }
+#endif
     inline void listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList) {}
     inline std::string const &getLocation() const { static std::string ss; return ss; }
     inline void flushAll(IComplete *cmp) {}

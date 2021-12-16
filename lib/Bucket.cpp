@@ -24,7 +24,7 @@ namespace istat
         if (clear)
         {
             /* allow for placement new to not clear the data */
-            memset(this, 0, sizeof(*this));
+            memset((char*)this, 0, sizeof(*this));
         }
     }
 

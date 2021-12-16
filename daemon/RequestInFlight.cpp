@@ -254,16 +254,26 @@ public:
     size_t maxSamples_;
     bool trailing_;
     boost::shared_ptr<RequestInFlight> req_;
+#if BOOST_VERSION >= 106700
+    std::map<boost::shared_ptr<IStatCounter>, std::pair<boost::asio::strand<boost::asio::io_service::executor_type> *, std::string> > data;
+#else
     std::map<boost::shared_ptr<IStatCounter>, std::pair<boost::asio::strand *, std::string> > data;
+#endif
     int64_t num;
     lock strmLock;
     std::string delim;
     bool wrote_;
     bool compact_;
 
+#if BOOST_VERSION >= 106700
+    void add(boost::shared_ptr<IStatCounter> const &ctr, boost::asio::strand<boost::asio::io_service::executor_type> *strand, std::string const &name)
+    {
+        data[ctr] = std::pair<boost::asio::strand<boost::asio::io_service::executor_type> *, std::string>(strand, name);
+#else
     void add(boost::shared_ptr<IStatCounter> const &ctr, boost::asio::strand *strand, std::string const &name)
     {
         data[ctr] = std::pair<boost::asio::strand *, std::string>(strand, name);
+#endif
     }
 
     void go(std::string const &d)
@@ -277,10 +287,17 @@ public:
         else
         {
             num = data.size();
+#if BOOST_VERSION >= 106700
+            for (std::map<boost::shared_ptr<IStatCounter>, std::pair<boost::asio::strand<boost::asio::io_service::executor_type> *, std::string> >::iterator
+                ptr(data.begin()), end(data.end()); ptr != end; ++ptr)
+            {
+                boost::asio::post((*ptr).second.first->get_inner_executor().context(), boost::asio::bind_executor(*((*ptr).second.first),
+#else
             for (std::map<boost::shared_ptr<IStatCounter>, std::pair<boost::asio::strand *, std::string> >::iterator
                 ptr(data.begin()), end(data.end()); ptr != end; ++ptr)
             {
                 (*ptr).second.first->get_io_service().post((*ptr).second.first->wrap(
+#endif
                     boost::bind(&MultiCounterWorker::workOne, shared_from_this(), (*ptr).first, (*ptr).second.second)));
             }
         }
@@ -422,7 +439,11 @@ void RequestInFlight::on_multigetBody()
         {
             std::string name(keys[i].asString());
             boost::shared_ptr<IStatCounter> counter;
+#if BOOST_VERSION >= 106700
+            boost::asio::strand<boost::asio::io_service::executor_type> *strand = 0;
+#else
             boost::asio::strand *strand = 0;
+#endif
             statStore->find(name, counter, strand);
             if (!counter)
             {
@@ -726,7 +747,11 @@ void RequestInFlight::generateCounterData(
     }
 
     boost::shared_ptr<IStatCounter> statCounter;
+#if BOOST_VERSION >= 106700
+    boost::asio::strand<boost::asio::io_service::executor_type> *strand = 0;
+#else
     boost::asio::strand *strand = 0;
+#endif
 
     storePtr->find(cname, statCounter, strand);
 
@@ -736,11 +761,19 @@ void RequestInFlight::generateCounterData(
         return;
     }
     if (format == "json") {
+#if BOOST_VERSION >= 106700
+        svc_.post(boost::asio::bind_executor(*strand,
+#else
         svc_.post(strand->wrap(
+#endif
             boost::bind(&RequestInFlight::generateCounterJson,
                 shared_from_this(), statCounter, startTime, endTime, sampleCount, trailing)));
     } else if (format == "csv") {
+#if BOOST_VERSION >= 106700
+        svc_.post(boost::asio::bind_executor(*strand,
+#else
         svc_.post(strand->wrap(
+#endif
             boost::bind(&RequestInFlight::generateCounterCSV,
                 shared_from_this(), statCounter, startTime, endTime, sampleCount, trailing)));
     } else {

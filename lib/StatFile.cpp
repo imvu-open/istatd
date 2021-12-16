@@ -177,7 +177,7 @@ namespace istat
         settings_.lambda = fileHeader_->lambda;
         settings_.season = fileHeader_->season;
         settings_.fixed_count = fileHeader_->fixed_count;
-        strncpy(fileHeader_->name, path.c_str(), sizeof(fileHeader_->name));
+        strncpy(fileHeader_->name, path.c_str(), sizeof(fileHeader_->name) - 1);
         fileHeader_->name[sizeof(fileHeader_->name)-1] = 0;
     }
 
@@ -514,7 +514,7 @@ namespace istat
             bp = writableBucket(targetBucketIndex);
             if (bp->time() != targetBucketTime)
             {
-                memset(bp, 0, sizeof(*bp));
+                memset((char*)bp, 0, sizeof(*bp));
             }
         }
 

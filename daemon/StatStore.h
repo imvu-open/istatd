@@ -13,6 +13,7 @@
 #include <map>
 #include <list>
 #include <vector>
+#include <boost/version.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/asio/io_service.hpp>
@@ -43,7 +44,11 @@ public:
     virtual void record(std::string const &ctr, time_t time, double value);
     virtual void record(std::string const &ctr, time_t time, double value, double valueSq, double min, double max, size_t cnt);
 
+#if BOOST_VERSION >= 106700
+    virtual void find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand<boost::asio::io_service::executor_type> * &strand);
+#else
     virtual void find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand * &strand);
+#endif
 
     virtual void listMatchingCounters(std::string const &pat, std::list<std::pair<std::string, CounterResponse> > &oList);
 
@@ -67,10 +72,18 @@ public:
         AsyncCounter(boost::asio::io_service &svc,
                      boost::shared_ptr<IStatCounter> statCounter)
             : statCounter_(statCounter),
+#if BOOST_VERSION >= 106700
+            strand_(svc.get_executor()) {
+#else
             strand_(svc) {
+#endif
         }
         boost::shared_ptr<IStatCounter> statCounter_;
+#if BOOST_VERSION >= 106700
+        boost::asio::strand<boost::asio::io_service::executor_type> strand_;
+#else
         boost::asio::strand strand_;
+#endif
     };
     typedef std::map<std::string, boost::shared_ptr<AsyncCounter> > CounterMap;
 
@@ -85,7 +98,11 @@ private:
     std::string path_;
     boost::asio::io_service &svc_;
     boost::asio::deadline_timer pruneEmptyDirsTimer_;
+#if BOOST_VERSION >= 106700
+    boost::asio::strand<boost::asio::io_service::executor_type> refreshStrand_;
+#else
     boost::asio::strand refreshStrand_;
+#endif
     boost::asio::deadline_timer syncTimer_;
     boost::asio::deadline_timer availCheckTimer_;
     Shards::iterator syncIterator_;

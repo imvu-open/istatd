@@ -10,6 +10,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/version.hpp>
 #include <istat/Log.h>
 
 #include "../daemon/StatServer.h"
@@ -68,7 +69,11 @@ void test_counter() {
     boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
 
     boost::shared_ptr<IStatCounter> statCounter;
+#if BOOST_VERSION >= 106700
+    boost::asio::strand<boost::asio::io_service::executor_type>* strand = 0;
+#else
     boost::asio::strand* strand = 0;
+#endif
     server->handleCmd("something.different 4242", ec);
     svc.poll();
 
@@ -92,7 +97,11 @@ void test_multiple_counters() {
     boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
 
     boost::shared_ptr<IStatCounter> statCounter;
+#if BOOST_VERSION >= 106700
+    boost::asio::strand<boost::asio::io_service::executor_type>* strand;
+#else
     boost::asio::strand* strand;
+#endif
     server->handleCmd("test.counter^a^b^c 4242", ec);
     svc.poll();
 
@@ -115,7 +124,11 @@ void test_collated_counters() {
     boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
 
     boost::shared_ptr<IStatCounter> statCounter;
+#if BOOST_VERSION >= 106700
+    boost::asio::strand<boost::asio::io_service::executor_type>* strand;
+#else
     boost::asio::strand* strand;
+#endif
     time_t now = 1000000000 - 1000;
     istat::FakeTime ft(now);
     char buffer[BUFSIZE];
@@ -204,7 +217,11 @@ void test_blacklist() {
     assert_true(it != metaInfo.end());
 
     boost::shared_ptr<IStatCounter> statCounter;
+#if BOOST_VERSION >= 106700
+    boost::asio::strand<boost::asio::io_service::executor_type>* strand = 0;
+#else
     boost::asio::strand* strand = 0;
+#endif
     server->handleCmd("i.should.be.blacklisted 4242", ec);
     svc.poll();
 
@@ -232,7 +249,11 @@ void test_blacklist() {
     assert_true(it != metaInfoG.end());
 
     boost::shared_ptr<IStatCounter> statCounterG;
+#if BOOST_VERSION >= 106700
+    boost::asio::strand<boost::asio::io_service::executor_type>* strandG = 0;
+#else
     boost::asio::strand* strandG = 0;
+#endif
     server->handleCmd("i.should.not.be.blacklisted 4242", ecg);
     svc.poll();
 
@@ -256,7 +277,11 @@ void test_start_with_missing_blacklist() {
     boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
 
     boost::shared_ptr<IStatCounter> statCounter;
+#if BOOST_VERSION >= 106700
+    boost::asio::strand<boost::asio::io_service::executor_type>* strand = 0;
+#else
     boost::asio::strand* strand = 0;
+#endif
     server->handleCmd("something.differenter 4242", ec);
     svc.poll();
 

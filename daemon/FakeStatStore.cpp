@@ -8,13 +8,21 @@ FakeStatStore::~FakeStatStore() {}
 class FakeStatCounter : public IStatCounter
 {
 public:
+#if BOOST_VERSION >= 106700
+    boost::asio::strand<boost::asio::io_service::executor_type> strand_;
+#else
     boost::asio::strand strand_;
+#endif
     time_t from_, to_, interval_;
     FakeStatStore *fss_;
     std::string name_;
 
     FakeStatCounter(boost::asio::io_service &svc, time_t from, time_t to, time_t interval, FakeStatStore *fss, std::string const &name)
+#if BOOST_VERSION >= 106700
+        : strand_(svc.get_executor()), from_(from), to_(to), interval_(interval), fss_(fss), name_(name)
+#else
         : strand_(svc), from_(from), to_(to), interval_(interval), fss_(fss), name_(name)
+#endif
     {
     }
 
@@ -77,7 +85,11 @@ void FakeStatStore::record(std::string const &name, time_t time, double value, d
     fakeCounters_[name]->record(time, value, valueSq, min, max, cnt);
 }
 
+#if BOOST_VERSION >= 106700
+void FakeStatStore::find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand<boost::asio::io_service::executor_type> *&strand) {
+#else
 void FakeStatStore::find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand *&strand) {
+#endif
     std::map<std::string, boost::shared_ptr<IStatCounter> >::iterator ptr(fakeCounters_.find(ctr));
     if (ptr == fakeCounters_.end()) {
         return;

@@ -22,6 +22,7 @@
 #include <ctime>
 #include <boost/filesystem.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/version.hpp>
 
 #include "config.h"
 #include "HttpServer.h"
@@ -66,7 +67,11 @@ LoopbackCounter countExceptions("exceptions", TypeEvent);
 boost::asio::deadline_timer statsTimer_(g_service);
 time_t nextStatsTime_;
 enum { STATS_INTERVAL = 5 };
+#if BOOST_VERSION >= 106700
+boost::asio::strand<boost::asio::io_service::executor_type> statsStrand_(g_service.get_executor());
+#else
 boost::asio::strand statsStrand_(g_service);
+#endif
 std::string statSuffix_;
 std::string initialDir_;
 Mmap *mm(istat::NewMmap());
@@ -522,7 +527,11 @@ void collectLocalStats(StatServer *ss)
         nextStatsTime_ = (now + STATS_INTERVAL);
         nextStatsTime_ -= (nextStatsTime_ % STATS_INTERVAL);
         statsTimer_.expires_from_now(boost::posix_time::seconds(nextStatsTime_ - now));
+#if BOOST_VERSION >= 106700
+        statsTimer_.async_wait(boost::asio::bind_executor(statsStrand_, boost::bind(&collectLocalStats, ss)));
+#else
         statsTimer_.async_wait(statsStrand_.wrap(boost::bind(&collectLocalStats, ss)));
+#endif
     }
 
     localBegin(now);
@@ -995,7 +1004,11 @@ int main(int argc, char const *argv[])
             nextStatsTime_ += STATS_INTERVAL;
             nextStatsTime_ -= (nextStatsTime_ % STATS_INTERVAL);
             statsTimer_.expires_at(boost::posix_time::from_time_t(nextStatsTime_));
+#if BOOST_VERSION >= 106700
+            statsTimer_.async_wait(boost::asio::bind_executor(statsStrand_, boost::bind(&collectLocalStats, &ss)));
+#else
             statsTimer_.async_wait(statsStrand_.wrap(boost::bind(&collectLocalStats, &ss)));
+#endif
         }
 
         drop_privileges();

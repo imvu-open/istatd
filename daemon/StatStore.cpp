@@ -41,7 +41,11 @@ StatStore::StatStore(std::string const &path, int uid,
     path_(path),
     svc_(svc),
     pruneEmptyDirsTimer_(svc_),
+#if BOOST_VERSION >= 106700
+    refreshStrand_(svc_.get_executor()),
+#else
     refreshStrand_(svc_),
+#endif
     syncTimer_(svc_),
     availCheckTimer_(svc_),
     factory_(factory),
@@ -136,7 +140,11 @@ void StatStore::record(std::string const &ctr, time_t time, double value, double
         {
             ++IStatCounter::enqueueRecords_;
             ++IStatCounter::queueLenRecords_;
+#if BOOST_VERSION >= 106700
+            svc_.post(boost::asio::bind_executor(asyncCounter->strand_, boost::bind(&IStatCounter::record, asyncCounter->statCounter_, time, value, valueSq, min, max, cnt)));
+#else
             svc_.post(asyncCounter->strand_.wrap(boost::bind(&IStatCounter::record, asyncCounter->statCounter_, time, value, valueSq, min, max, cnt)));
+#endif
         }
         if (!stripext(cname))
         {
@@ -145,7 +153,11 @@ void StatStore::record(std::string const &ctr, time_t time, double value, double
     }
 }
 
+#if BOOST_VERSION >= 106700
+void StatStore::find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand<boost::asio::io_service::executor_type> * &strand)
+#else
 void StatStore::find(std::string const &ctr, boost::shared_ptr<IStatCounter> &statCounter, boost::asio::strand * &strand)
+#endif
 {
     boost::shared_ptr<StatStore::AsyncCounter> asyncCounter = openCounter(ctr);
     if (!asyncCounter) {
@@ -235,7 +247,11 @@ void StatStore::flushOne(Shards::iterator &iterator)
         return;
     }
     LogSpam << "StatStore::flushOne(" << key << ")";
+#if BOOST_VERSION >= 106700
+    svc_.post(boost::asio::bind_executor(value->strand_, boost::bind(&IStatCounter::flush, value->statCounter_, shared_from_this())));
+#else
     svc_.post(value->strand_.wrap(boost::bind(&IStatCounter::flush, value->statCounter_, shared_from_this())));
+#endif
 }
 
 void StatStore::syncNext()
@@ -463,8 +479,13 @@ public:
             delete this;
             return;
         }
+#if BOOST_VERSION >= 106700
+        boost::asio::post(toDelete.front().aCount->strand_.get_inner_executor().context(),
+            boost::asio::bind_executor(toDelete.front().aCount->strand_, boost::bind(&Deleter::delete_stuff, this)));
+#else
         toDelete.front().aCount->strand_.get_io_service().post(toDelete.front().aCount->strand_.wrap(
             boost::bind(&Deleter::delete_stuff, this)));
+#endif
     }
     void delete_stuff()
     {
@@ -588,7 +609,11 @@ void StatStore::scheduleRefresh()
     if(__sync_fetch_and_add(&queuedRefreshes_, 1) <= MAX_QUEUED_KEY_REFRESHES)
     {
         LogDebug << "StatStore::scheduleRefresh() - queueing a refresh. (" << queuedRefreshes_ << "/" << MAX_QUEUED_KEY_REFRESHES << ") scheduled.";
+#if BOOST_VERSION >= 106700
+        svc_.post(boost::asio::bind_executor(refreshStrand_, boost::bind(&StatStore::refreshAllKeys, this)));
+#else
         svc_.post(refreshStrand_.wrap(boost::bind(&StatStore::refreshAllKeys, this)));
+#endif
     }
     else
     {
@@ -609,7 +634,11 @@ public:
             delete this;
             return;
         }
+#if BOOST_VERSION >= 106700
+        boost::asio::post(ptrs.front()->strand_.get_inner_executor().context(), boost::asio::bind_executor(ptrs.front()->strand_,
+#else
         ptrs.front()->strand_.get_io_service().post(ptrs.front()->strand_.wrap(
+#endif
             boost::bind(&Flusher::flush_stuff, this)));
     }
     void flush_stuff()

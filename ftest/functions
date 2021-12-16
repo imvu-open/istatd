@@ -585,5 +585,5 @@ rm -rf "$DBDIR"
 mkdir -p "$DBDIR"
 chown -R `whoami` $DBDIR
 onexit cleanup_exit
-trap 'echo "child died"' SIGCHLD
+#trap 'echo "child died"' SIGCHLD
 

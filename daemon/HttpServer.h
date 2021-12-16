@@ -109,11 +109,11 @@ struct HttpServerInfo
         numErrors("http.errors.server", TypeEvent),
         httpErrors("http.errors.http", TypeEvent)
     {
-        memcpy(this, &o, sizeof(*this));
+        memcpy((char*)this, &o, sizeof(*this));
     }
     HttpServerInfo &operator=(HttpServerInfo const &o)
     {
-        memcpy(this, &o, sizeof(*this));
+        memcpy((char*)this, &o, sizeof(*this));
         return *this;
     }
     unsigned int port;
