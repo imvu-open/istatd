@@ -1,3 +1,15 @@
+istatd (0.93-1) UNRELEASED; urgency=medium
+
+  [ Eric Hohenstein ]
+  * fix a compiler warning and possibly a stack buffer overflow issue in istatd_filegen.cpp
+  * avoid a non-informative compiler warning in RequestInFlight.cpp
+  * resolve some intermittent functional test failures, remove unnecessary sleeps in functional tests
+
+  [ Fang Fang ]
+  * add support of Boost 1.67
+
+ -- Fang Fang <ffang@imvu.com>  Wed, 15 Dec 2021 18:13:24 -0800
+
 istatd (0.92-1) UNRELEASED; urgency=low
 
   [ Fang Fang ]
