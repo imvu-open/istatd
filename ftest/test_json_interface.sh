@@ -134,9 +134,10 @@ assert_expected $TEST_OUT
 kill_server single
 start_server single --fake-time 2600
 
+#this test is intermittent and fails with Boost 1.67
 test_name GET_counter_list_returns_counter_type
 curl -s "http://localhost:18011/?q=*" > $TEST_OUT
-#assert_expected $TEST_OUT
+assert_expected $TEST_OUT
 
 
 cleanup_test

@@ -60,11 +60,11 @@ StatCounter::StatCounter(std::string const &pathName, bool isCollated, time_t ze
     if(!boost::filesystem::exists(pathName))
     {
         LogNotice << "Creating new StatCounter:" << pathName;
+        if(!boost::filesystem::create_directories(pathName))
+        {
+            throw std::runtime_error("Could not create counter directory: " + pathName);
+        }
         ++countersCreated_;
-    }
-    if(!boost::filesystem::create_directories(pathName) && !boost::filesystem::exists(pathName))
-    {
-        throw std::runtime_error("Could not create counter directory: " + pathName);
     }
 
     for(size_t i = 0; i != rp.countIntervals(); ++i)
