@@ -98,7 +98,7 @@ namespace istat
     void StatFile::open(std::string const &path, Settings const *init, bool forUpdate, bool forceCreate)
     {
         Log(LL_Debug, "istat") << "StatFile::open opening " << path;
-        memset(expBucket, 0, sizeof(expBucket));
+        memset(reinterpret_cast<void *>(expBucket), 0, sizeof(expBucket));
         memset(pages, 0, sizeof(pages));
         lruNextPage_ = 0;
         fileWritable_ = forUpdate;
