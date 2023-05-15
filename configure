@@ -9,11 +9,10 @@ set -o nounset
 rm -f makevars.config
 rm -f config.h
 
-# Find Python version 2.
+# Find Python version 3.
 # If this fails, you need to create appropriate aliases or symlinks for 
 # testing to work!
-/usr/bin/env python -V
-/usr/bin/env python2 -V
+/usr/bin/env python3 -V
 
 if curl --help >/dev/null 2>&1; then echo "Found curl in path."; else
     echo "You need to install the command-line tool 'curl'."
