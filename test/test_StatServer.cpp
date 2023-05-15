@@ -47,7 +47,7 @@ boost::shared_ptr<StatServer> makeServer(Mmap *mm, boost::asio::io_service &svc,
 boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_service &svc, int period) {
     int port = 0;
     std::string agent("");
-    std::string blacklist();
+    std::string blacklist;
     Blacklist::Configuration blacklistCfg = {};
     blacklistCfg.path = std::string("/tmp/test/blacklist/ss_blacklist.set");
     blacklistCfg.period = period;
