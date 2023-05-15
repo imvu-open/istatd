@@ -1,3 +1,24 @@
+istatd (0.94-1) UNRELEASED; urgency=medium
+
+  [ James Hines ]
+  * Autosize annotations to avoid cropping data
+
+  [ Fang Fang ]
+  * fix logic in counting countersCreated_; renable a test in test_json_interface
+
+  [ Eric Hohenstein ]
+  * use python3 instead of python2 for tests since python2 has been dead for a decade
+  * remove linking with libboost_signals since it was apparently not being used and it has been removed from boost
+  * explicitly include <map> in daemon/AllKeys.h as it is a direct dependency
+  * update use of boost bind placeholders to work with boost 1.74
+  * use pointer cast to avoid an unnecessary warning from gcc
+  * fix a compile error with newer gcc
+  * include <map> directly in istatd_loadtest.cpp since it is a direct dependency
+  * hack to fix test timing out when run immediately after another test
+  * updates to tests to resolve dependency on specific json list ordering issues and format of response code strings
+
+ -- Eric Hohenstein <ehohenstein@imvu.com>  Mon, 15 May 2023 17:06:37 +0000
+
 istatd (0.93-1) UNRELEASED; urgency=medium
 
   [ Eric Hohenstein ]
