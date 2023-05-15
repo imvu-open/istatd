@@ -3,6 +3,8 @@
 SCRIPTDIR=`dirname $0`
 source "$SCRIPTDIR/functions"
 
+sleep 2
+
 start_server single
 
 send_stat single *tep^tep_die^tep_die2 1
