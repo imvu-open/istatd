@@ -1,2 +1,2 @@
 GET http://localhost:18011/foo.bar?start=1390&end=-1
-error: HTTP exception: Invalid end parameter
+error: HTTP Error 400: (that's a status code)

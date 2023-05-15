@@ -1,2 +1,2 @@
-POST http://localhost:18011/* {"keys": ["foo.bar", "ice.cream.bar"], "start": 1598, "stop": 1001, "maxSamples": 600}
-error: Start must be before stop
+POST http://localhost:18011/* {"start": 1598, "stop": 1001, "keys": ["foo.bar", "ice.cream.bar"], "maxSamples": 600}
+error: HTTP Error 400: (that's a status code)

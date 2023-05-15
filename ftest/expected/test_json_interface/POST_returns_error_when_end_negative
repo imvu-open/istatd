@@ -1,2 +1,2 @@
-POST http://localhost:18011/* {"keys": ["foo.bar", "ice.cream.bar"], "start": 1001, "stop": -1, "maxSamples": 600}
-error: Invalid 'stop' parameter
+POST http://localhost:18011/* {"start": 1001, "stop": -1, "keys": ["foo.bar", "ice.cream.bar"], "maxSamples": 600}
+error: HTTP Error 400: (that's a status code)

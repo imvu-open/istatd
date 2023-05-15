@@ -542,6 +542,29 @@ function check_counters {
     check_get "$PORT" "?q=$PATTERN" $*
 }
 
+function assert_json_files_equal {
+    FILE1=$1
+    FILE2=$2
+    TMPF=/var/tmp/assert_file_equal_$$.txt
+    if ! ftest/compare_json.py $FILE1 $FILE2 > $TMPF 2>&1 ; then
+        echo "FAILURE: $TEST_NAME"
+        echo "test_output < $FILE1"
+        echo "test_expect > $FILE2"
+        cat $TMPF
+        rm -f $TMPF
+        exit 1
+    fi
+    rm -f $TMPF
+}
+
+function assert_expected_json {
+    RESULT_F=$1
+    EXPECT_F=ftest/expected/$FTEST_NAME/$TEST_NAME
+    [ -d ftest/expected ] || failure "dir does not exist: ftest/expected"
+    [ -d ftest/expected/$FTEST_NAME ] || failure "dir does not exist: ftest/expected/$FTEST_NAME"
+    assert_json_files_equal $RESULT_F $EXPECT_F
+}
+
 function assert_files_equal {
     FILE1=$1
     FILE2=$2

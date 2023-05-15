@@ -1,4 +1,4 @@
-POST http://localhost:18011/* {"keys": ["foo.bar"], "start": 1000, "stop": 1600, "maxSamples": 600}
+POST http://localhost:18011/* {"start": 1000, "stop": 1600, "keys": ["foo.bar"], "maxSamples": 600}
 start:          1000
 stop:           1600
 interval:         10
