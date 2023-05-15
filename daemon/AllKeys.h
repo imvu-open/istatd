@@ -7,6 +7,7 @@
 
 #include "threadfunc.h"
 #include <boost/noncopyable.hpp>
+#include <map>
 #include <string>
 #include <list>
 #include <tr1/unordered_map>
