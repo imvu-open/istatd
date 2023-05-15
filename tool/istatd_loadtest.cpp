@@ -4,6 +4,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/make_shared.hpp>
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 #include <stdlib.h>
