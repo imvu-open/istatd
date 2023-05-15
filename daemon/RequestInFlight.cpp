@@ -14,7 +14,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/assign.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/foreach.hpp>
 #include <boost/iostreams/filter/gzip.hpp>

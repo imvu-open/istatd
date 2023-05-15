@@ -16,8 +16,7 @@
 #include <unistd.h>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/bind.hpp>
-#include <boost/bind/placeholders.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio/ip/host_name.hpp>
 #include <boost/make_shared.hpp>
@@ -306,7 +305,7 @@ void StatServer::startResolveAgents()
 
     for (size_t i = 0; i < agentCount_; ++i) {
         forward_[i]->onData_.connect(boost::bind(&StatServer::on_forwardData, this, i));
-        forward_[i]->onWrite_.connect(boost::bind(&StatServer::on_forwardWrite, this, i, _1));
+        forward_[i]->onWrite_.connect(boost::bind(&StatServer::on_forwardWrite, this, i, boost::placeholders::_1));
         forward_[i]->open(agent_, info.str());
         forward_[i]->asEagerConnection()->startRead();
     }
@@ -416,8 +415,8 @@ void StatServer::on_inputData(boost::shared_ptr<ConnectionInfo> ec)
     }
     ec->peekIn(&s[0], sz);
     handle_inputData(s,
-        boost::bind(&ConnectionInfo::consume, ec, _1),
-        boost::bind(&StatServer::handleCmd, this, _1, ec));
+        boost::bind(&ConnectionInfo::consume, ec, boost::placeholders::_1),
+        boost::bind(&StatServer::handleCmd, this, boost::placeholders::_1, ec));
 }
 
 StatServer::HandleStatus StatServer::handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec)

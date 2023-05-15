@@ -4,7 +4,7 @@
 #include "IStatStore.h"
 #include "Logs.h"
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <iostream>
 
 

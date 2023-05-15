@@ -7,7 +7,7 @@
 #include <string>
 #include <sys/stat.h>
 #include <boost/filesystem.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 
 LoopbackCounter countBlacklisted("blacklist.count", TypeEvent);
 

@@ -2,7 +2,7 @@
 #include "ReplicaPdus.h"
 #include "EagerConnection.h"
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <assert.h>
 
 

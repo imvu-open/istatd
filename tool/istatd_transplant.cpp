@@ -43,7 +43,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/make_shared.hpp>
 
@@ -515,8 +515,8 @@ void ServerClient::go()
             boost::bind(
                 &ServerClient::on_read,
                 shared_from_this(),
-                _1,
-                _2));
+                boost::placeholders::_1,
+                boost::placeholders::_2));
 }
 
 void ServerClient::on_read(boost::system::error_code const &err, size_t nread)
@@ -568,8 +568,8 @@ read_more:
                     boost::bind(
                         &ServerClient::on_read,
                         shared_from_this(),
-                        _1,
-                        _2));
+                        boost::placeholders::_1,
+                        boost::placeholders::_2));
         }
     }
     else
@@ -644,7 +644,7 @@ void ServerClient::write_buffer()
     }
     socket_.async_send(
             buffer(&buffer_[offset_], buffer_.size()-offset_),
-            boost::bind(&ServerClient::on_write, shared_from_this(), _1, _2));
+            boost::bind(&ServerClient::on_write, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2));
 }
 
 void ServerClient::on_write(
@@ -685,7 +685,7 @@ void ServerState::start()
     }
     boost::shared_ptr<ServerClient> client = boost::make_shared<ServerClient>(boost::ref(*this), boost::ref(svc_));
     acceptor_.async_accept(client->socket_,
-            boost::bind(&ServerState::on_accept, this, _1, client));
+            boost::bind(&ServerState::on_accept, this, boost::placeholders::_1, client));
 }
 
 void ServerState::on_accept(boost::system::error_code const &err, boost::shared_ptr<ServerClient> client)
@@ -835,7 +835,7 @@ void ClientConnection::start(std::string const &arg, std::string const &root)
     std::string portpart(arg.substr(pos+1));
     tcp::resolver resolver(svc_);
     tcp::resolver::iterator ptr = resolver.resolve(tcp::resolver::query(tcp::v4(), hostpart, portpart));
-    socket_.async_connect(ptr->endpoint(), boost::bind(&ClientConnection::on_connected, this, _1, ptr));
+    socket_.async_connect(ptr->endpoint(), boost::bind(&ClientConnection::on_connected, this, boost::placeholders::_1, ptr));
 }
 
 void ClientConnection::on_connected(boost::system::error_code const &err, tcp::resolver::iterator ptr)
@@ -1027,7 +1027,7 @@ void ClientConnection::do_offer(ProtoOffer const &offer, boost::shared_ptr<FileS
             }
             std::cerr << std::dec << std::endl << "]" << std::endl;
         }
-        socket_.async_write_some(buffer(&buf[0], buf.size()), boost::bind(&ClientConnection::on_write, this, _1, _2, fs));
+        socket_.async_write_some(buffer(&buf[0], buf.size()), boost::bind(&ClientConnection::on_write, this, boost::placeholders::_1, boost::placeholders::_2, fs));
     }
 }
 
@@ -1066,7 +1066,7 @@ void ClientConnection::on_write(
             }
             //  write some more
             socket_.async_write_some(buffer(&(fs->buffer)[fs->offset], fs->buffer.size()-fs->offset), 
-                    boost::bind(&ClientConnection::on_write, this, _1, _2, fs));
+                    boost::bind(&ClientConnection::on_write, this, boost::placeholders::_1, boost::placeholders::_2, fs));
         }
     }
     else
@@ -1088,7 +1088,7 @@ void ClientConnection::receive_response(boost::shared_ptr<FileState> fs)
     fs->buffer.resize(4);
     fs->offset = 0;
     socket_.async_read_some(buffer(&fs->buffer[0], 4), 
-            boost::bind(&ClientConnection::on_read, this, _1, _2, fs));
+            boost::bind(&ClientConnection::on_read, this, boost::placeholders::_1, boost::placeholders::_2, fs));
 }
 
 void ClientConnection::on_read(
@@ -1147,7 +1147,7 @@ void ClientConnection::on_read(
 read_more:
             //  read more
             socket_.async_read_some(buffer(&fs->buffer[fs->offset], fs->buffer.size()-fs->offset),
-                        boost::bind(&ClientConnection::on_read, this, _1, _2, fs));
+                        boost::bind(&ClientConnection::on_read, this, boost::placeholders::_1, boost::placeholders::_2, fs));
         }
     }
     else

@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <stdexcept>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/make_shared.hpp>

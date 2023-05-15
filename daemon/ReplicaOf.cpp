@@ -4,7 +4,7 @@
 #include "IStatStore.h"
 #include "Debug.h"
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 
 
 

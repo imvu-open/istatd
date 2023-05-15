@@ -7,7 +7,7 @@
 #include "istat/strfunc.h"
 #include "Debug.h"
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/make_shared.hpp>

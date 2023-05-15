@@ -5,6 +5,7 @@
 #include <istat/Env.h>
 
 #include <boost/asio.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/foreach.hpp>
 #include <iostream>
 #include <iomanip>
@@ -306,7 +307,7 @@ private:
     Mmap *mm_;
     StatServer *ss_;
 
-    void auditFunc(boost::system::system_error const &err)
+    void auditFunc(const boost::system::error_code &err)
     {
         if (debugAudit.enabled())
         {
@@ -360,7 +361,7 @@ private:
     boost::asio::io_service &svc_;
     boost::asio::deadline_timer timer_;
     int interval_;
-    void timerFunc(boost::system::system_error const &err)
+    void timerFunc(const boost::system::error_code &err)
     {
         if (debugAudit.enabled())
         {
@@ -975,7 +976,7 @@ int main(int argc, char const *argv[])
         if (httpPort.get())
         {
             hsp = new HttpServer(httpPort.get(), g_service, listenAddress.get(), listenOverflowBacklog.get());
-            hsp->onRequest_.connect(boost::bind(&onHttpRequest, &ss, _1));
+            hsp->onRequest_.connect(boost::bind(&onHttpRequest, &ss, boost::placeholders::_1));
         }
         if (adminPort.get())
         {

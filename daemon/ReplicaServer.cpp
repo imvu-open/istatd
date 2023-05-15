@@ -9,7 +9,7 @@
 
 #include <istat/Atomic.h>
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <iostream>
 
@@ -92,7 +92,7 @@ public:
             emit(buf, sz);
             return;
         }
-        iterate_ = rs_->ss_->iterateSignal.connect(boost::bind(&ReplicaConnection::on_iterate, this, _1));
+        iterate_ = rs_->ss_->iterateSignal.connect(boost::bind(&ReplicaConnection::on_iterate, this, boost::placeholders::_1));
     }
 
     void on_request(PduRequest const &req)
@@ -105,8 +105,8 @@ public:
     {
         PduProtocolState *start = proto_.state("start");
         PduProtocolState *connected = proto_.state("connected");
-        start->bindPdu<PduConnect>(boost::bind(&ReplicaConnection::on_connect, this, _1));
-        connected->bindPdu<PduRequest>(boost::bind(&ReplicaConnection::on_request, this, _1));
+        start->bindPdu<PduConnect>(boost::bind(&ReplicaConnection::on_connect, this, boost::placeholders::_1));
+        connected->bindPdu<PduRequest>(boost::bind(&ReplicaConnection::on_request, this, boost::placeholders::_1));
     }
 
     void on_disconnect()

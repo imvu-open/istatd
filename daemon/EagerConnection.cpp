@@ -7,7 +7,7 @@
 #include <istat/istattime.h>
 
 #include <boost/thread.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <iostream>
 
