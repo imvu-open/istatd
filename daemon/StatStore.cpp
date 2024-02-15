@@ -205,6 +205,24 @@ boost::shared_ptr<StatStore::AsyncCounter> StatStore::openCounter(std::string co
             LogSpam << "StatStore::openCounter(" << name << ") ... skipping creation";
             return boost::shared_ptr<StatStore::AsyncCounter>((StatStore::AsyncCounter *)0);
         }
+        if (!recursivelyCreateCounters_) {
+            // Check if name conflicts with an existing counter
+            std::string xform_prefix(xform);
+            while(stripext(xform_prefix)) {
+                if (xform_prefix != xform) {
+                    grab aholdof(counterShards_.lock(xform_prefix));
+                    CounterMap &cnts(counterShards_.map(xform_prefix));
+                    if (cnts.find(xform_prefix) != cnts.end()) {
+                        LogSpam << "StatStore::openCounter(" << name << ") ... conflicting with " << xform_prefix;
+                        return boost::shared_ptr<StatStore::AsyncCounter>((StatStore::AsyncCounter *)0);
+                    }
+                }
+                // This should never happend, but in case of an infinite loop
+                else {
+                    break;
+                }
+            }
+        }
         //  I hold the lock while creating the file, which is sub-optimal
         //  but avoids racing.
         LogSpam << "StatStore::openCounter(" << name << ") ... creating";
