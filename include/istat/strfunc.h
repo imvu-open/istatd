@@ -61,6 +61,8 @@ namespace istat
     int splitn(std::string const &s, char ch, std::string &o1, std::string &o2, std::string &o3, std::string &o4);
     int splitn(std::string const &s, char ch, std::string &o1, std::string &o2, std::string &o3, std::string &o4, std::string &o5);
     int splitn(std::string const &s, char ch, std::string &o1, std::string &o2, std::string &o3, std::string &o4, std::string &o5, std::string &o6);
+
+    void prom_munge(std::string &s);
 }
 #endif
 

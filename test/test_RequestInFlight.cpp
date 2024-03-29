@@ -13,6 +13,8 @@
 
 #include "../daemon/RequestInFlight.h"
 #include "../daemon/HttpServer.h"
+#include "../daemon/FakeHttpRequest.h"
+#include "../daemon/FakeEagerConnection.h"
 
 #define BUFSIZE 256
 
@@ -43,6 +45,14 @@ void assert_in_heavy_set(std::multimap<int, std::string> &weights, std::set<std:
 {
     get_heavy_helper(weights, set);
     assert_true(set.find(expect) != set.end());
+}
+
+boost::shared_ptr<StatServer> makeServerWithPromExporter(boost::asio::io_service & svc)
+{
+    Blacklist::Configuration blacklistCfg = {};
+    boost::shared_ptr<IPromExporter> promExporter = boost::make_shared<PromExporter>(boost::ref(svc), true);
+    boost::shared_ptr<IStatStore> statStore = boost::make_shared<NullStatStore>();
+    return boost::make_shared<StatServer>(0, "", "", 1, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), boost::ref(promExporter), 256, 256);
 }
 
 void test_parse_encoding() {
@@ -192,9 +202,50 @@ void test_choose_encoding() {
     assert_equal("", rif->hdrs_["Content-encoding"]);
 }
 
+void test_get_method_with_prom_exporter_200_reply()
+{
+    istat::FakeTime ft(1329345880);
+    boost::asio::io_service svc;
+    boost::shared_ptr<StatServer> server = makeServerWithPromExporter(svc);
+    std::string url("/metrics");
+    boost::shared_ptr<IHttpRequest> req = boost::make_shared<FakeHttpRequest>(url, "GET");
+    boost::shared_ptr<RequestInFlight> rif = boost::make_shared<RequestInFlight>(req, server.get());
+    boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
+    server->handleCmd("something.different 4242", ec);
+    svc.poll();
+    rif->goProm();
+    assert_equal("something_different 4242 1329345880000\n", ((FakeHttpRequest*)req.get())->theReply_);
+    assert_equal(200, ((FakeHttpRequest*)req.get())->code());
+}
+
+void test_get_method_with_prom_exporter_400_reply()
+{
+    boost::asio::io_service svc;
+    boost::shared_ptr<StatServer> server = makeServerWithPromExporter(svc);
+    std::string url("/files");
+    boost::shared_ptr<IHttpRequest> req = boost::make_shared<FakeHttpRequest>(url, "GET");
+    boost::shared_ptr<RequestInFlight> rif = boost::make_shared<RequestInFlight>(req, server.get());
+    rif->goProm();
+    assert_equal(400, ((FakeHttpRequest*)req.get())->code());
+}
+
+void test_unknown_method_with_prom_exporter()
+{
+    boost::asio::io_service svc;
+    boost::shared_ptr<StatServer> server = makeServerWithPromExporter(svc);
+    std::string url("/metrics");
+    boost::shared_ptr<IHttpRequest> req = boost::make_shared<FakeHttpRequest>(url, "POST");
+    boost::shared_ptr<RequestInFlight> rif = boost::make_shared<RequestInFlight>(req, server.get());
+    rif->goProm();
+    assert_equal(405, ((FakeHttpRequest*)req.get())->code());
+}
+
 void func() {
     test_parse_encoding();
     test_choose_encoding();
+    test_get_method_with_prom_exporter_200_reply();
+    test_get_method_with_prom_exporter_400_reply();
+    test_unknown_method_with_prom_exporter();
 }
 
 int main(int argc, char const *argv[]) {

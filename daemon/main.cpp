@@ -42,6 +42,8 @@
 #include "Debug.h"
 #include "Settings.h"
 #include "Blacklist.h"
+#include "PromExporter.h"
+#include "PromServer.h"
 
 
 
@@ -59,6 +61,7 @@ using namespace istat;
 boost::asio::io_service g_service;
 std::vector<boost::shared_ptr<boost::thread> > threads;
 extern DebugOption debugHttp;
+extern DebugOption debugPromServer;
 DebugOption debugSegv("segv");
 
 LoopbackCounter countExceptions("exceptions", TypeEvent);
@@ -158,6 +161,7 @@ int uid_by_name(std::string const &str)
 Argument<std::string> listenAddress("listen-address", "", "IP address on which to start listeners. empty string to accept on all interfaces.");
 Argument<int> httpPort("http-port", 8000, "Port to listen to for HTTP status service. 0 to disable.");
 Argument<int> statPort("stat-port", 8111, "Port to listen to for incoming statistics. 0 to disable.");
+Argument<int> prometheusPort("prometheus-port", 0, "Prom scraping port. 0 to disable.");
 Argument<std::string> agent("agent", "", "Agent to forward to, rather than save data locally.");
 Argument<int> agentCount("agentCount", 1, "How many agent connections to open");
 Argument<std::string> replicaOf("replica-of", "", "Source to pull-replicate from. Incompatible with stat-port.");
@@ -457,6 +461,31 @@ static void onHttpRequest(StatServer *ss, HttpRequestHolder const &req)
     }
     req->onHeader_.connect(boost::bind(printRequest, req, ss));
     req->onError_.connect(boost::bind(printRequest, req, ss));
+}
+
+static void printPromRequest(HttpRequestHolder const &req, StatServer *ss)
+{
+    if (debugPromServer.enabled())
+    {
+        LogDebug << "Prometheus serving" << req->url();
+    }
+    else
+    {
+        LogSpam << "Serving:" << req->method() << req->url();
+    }
+    boost::shared_ptr<RequestInFlight> rif = boost::make_shared<RequestInFlight>(req.p_, ss);
+    ss->service().post(boost::bind(&RequestInFlight::goProm, rif));
+}
+
+static void onPromRequest(StatServer *ss, HttpRequestHolder const &req)
+{
+    LogSpam << "onPromRequest()";
+    if (debugPromServer.enabled())
+    {
+        LogDebug << "http onPromRequest binding handlers";
+    }
+    req->onHeader_.connect(boost::bind(printPromRequest, req, ss));
+    req->onError_.connect(boost::bind(printPromRequest, req, ss));
 }
 
 static uid_t dropped_uid()
@@ -938,11 +967,14 @@ int main(int argc, char const *argv[])
     AdminServer *asp = 0;
     ReplicaServer *reps = 0;
     ReplicaOf *rof = 0;
+    PromServer *psp = 0;
+    bool promExporterEnabled = (bool) prometheusPort.get();
     try
     {
         istat::Env::set<ISettingsFactory>(*NewSettingsFactory(g_service, settings.get()));
 
         boost::shared_ptr<IStatStore> statStore;
+
 
         std::string storepath(store.get());
         if (storepath.size())
@@ -958,7 +990,8 @@ int main(int argc, char const *argv[])
         Blacklist::Configuration cfg = {};
         cfg.path = blacklist_path.get();
         cfg.period = blacklist_period.get();
-        StatServer ss(statPort.get(), listenAddress.get(), agent.get(), std::max(agentCount.get(), 1), std::max(agentInterval.get(), 1), cfg, g_service, statStore, udpBufferSize.get(), listenOverflowBacklog.get());
+        boost::shared_ptr<IPromExporter> promExporter = boost::make_shared<PromExporter>(boost::ref(g_service), promExporterEnabled);
+        StatServer ss(statPort.get(), listenAddress.get(), agent.get(), std::max(agentCount.get(), 1), std::max(agentInterval.get(), 1), cfg, g_service, statStore, promExporter, udpBufferSize.get(), listenOverflowBacklog.get());
         if (replicaPort.get())
         {
             reps = new ReplicaServer(replicaPort.get(), listenAddress.get(), g_service, statStore, listenOverflowBacklog.get());
@@ -981,6 +1014,12 @@ int main(int argc, char const *argv[])
         if (adminPort.get())
         {
             asp = new AdminServer(adminPort.get(), listenAddress.get(), g_service, hsp, &ss, reps, rof, listenOverflowBacklog.get());
+        }
+
+        if (promExporterEnabled)
+        {
+            psp = new PromServer(prometheusPort.get(), g_service, listenAddress.get(), listenOverflowBacklog.get());
+            psp->onRequest_.connect(boost::bind(&onPromRequest, &ss, boost::placeholders::_1));
         }
 
         statSuffix_ = localStats.get();

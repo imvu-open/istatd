@@ -417,6 +417,29 @@ namespace istat
         assert_false(is_valid_settings_name("^%$"));
     }
 
+    void test_prom_munge()
+    {
+        std::string a("foo bar");
+        prom_munge(a);
+        assert_equal(a, "foo_bar");
+
+        std::string b("/FOO.bar (\"quote\')");
+        prom_munge(b);
+        assert_equal(b, "_foo_bar___quote__");
+
+        std::string c("");
+        prom_munge(c);
+        assert_equal(c, "");
+
+        std::string d("foo-bar");
+        prom_munge(d);
+        assert_equal(d, "foo_bar");
+
+        std::string e("059.aez-AxZ{");
+        prom_munge(e);
+        assert_equal(e, "059_aez_axz_");
+    }
+
     void func()
     {
         test_splitn();
@@ -436,6 +459,7 @@ namespace istat
         test_js_quote();
         test_iso_8601_datetime();
         test_is_valid_settings_name();
+        test_prom_munge();
     }
 }
 

@@ -7,6 +7,8 @@
 class FakeHttpRequest : public IHttpRequest {
 public:
     FakeHttpRequest(std::string const &u) : url_(u), theCode_(-1), calls_(0) {}
+    FakeHttpRequest(std::string const &u, std::string method) : 
+        url_(u), method_(method), theCode_(-1), calls_(0) {}
 
     std::string url_;
     std::string const &url() const { return url_; }
@@ -15,6 +17,7 @@ public:
 
     std::string theReply_;
     int theCode_;
+    int code() { return theCode_; }
     unsigned int calls_;
 
     std::string theType_;

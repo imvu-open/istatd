@@ -20,6 +20,7 @@
 #include "../daemon/Retention.h"
 #include "../daemon/FakeEagerConnection.h"
 #include "../daemon/Blacklist.h"
+#include "../daemon/PromExporter.h"
 
 #include "TestComplete.h"
 
@@ -41,7 +42,8 @@ boost::shared_ptr<StatServer> makeServer(Mmap *mm, boost::asio::io_service &svc,
     boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storePath, mm, boost::ref(rp));
     boost::shared_ptr<IStatStore> statStore = boost::make_shared<StatStore>(storePath, getuid(), boost::ref(svc), statCounterFactory, mm);
     statStore->setAggregateCount(2);
-    return boost::make_shared<StatServer>(port, listenAddress, agent, agentCount, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256, 256);
+    boost::shared_ptr<IPromExporter> promExporter = boost::make_shared<NullPromExporter>();
+    return boost::make_shared<StatServer>(port, listenAddress, agent, agentCount, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), boost::ref(promExporter), 256, 256);
 }
 
 boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_service &svc, int period) {
@@ -57,7 +59,16 @@ boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_
     boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storePath, mm, boost::ref(rp));
     boost::shared_ptr<IStatStore> statStore = boost::make_shared<StatStore>(storePath, getuid(), boost::ref(svc), statCounterFactory, mm);
     statStore->setAggregateCount(2);
-    return boost::make_shared<StatServer>(port, listenAddress, agent, 1, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), 256, 256);
+    boost::shared_ptr<IPromExporter> promExporter = boost::make_shared<NullPromExporter>();
+    return boost::make_shared<StatServer>(port, listenAddress, agent, 1, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), boost::ref(promExporter), 256, 256);
+}
+
+boost::shared_ptr<StatServer> makeServerWithPromExporter(boost::asio::io_service &svc, int port = 0, std::string agent = "", size_t agentCount = 1) {
+    Blacklist::Configuration blacklistCfg = {};
+    std::string listenAddress("");
+    boost::shared_ptr<IPromExporter> promExporter = boost::make_shared<PromExporter>(boost::ref(svc), true);
+    boost::shared_ptr<IStatStore> statStore = boost::make_shared<NullStatStore>();
+    return boost::make_shared<StatServer>(port, listenAddress, agent, agentCount, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), boost::ref(promExporter), 256, 256);
 }
 
 void test_counter() {
@@ -379,6 +390,19 @@ void test_multiple_forward_agents() {
     }
 }
 
+void test_forward_to_prom_exporter()
+{
+    boost::asio::io_service svc;
+    boost::shared_ptr<StatServer> server = makeServerWithPromExporter(svc);
+    boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
+    server->handleCmd("something.different 4242", ec);
+    svc.poll();
+    std::vector<PromMetric> res;
+    server->promExporter()->dumpMetrics(res);
+    assert_equal(1, res.size());
+    assert_equal(4242, res[0].getValue());
+}
+
 void func() {
     test_collated_counters();
     test_multiple_counters();
@@ -389,6 +413,7 @@ void func() {
     test_start_with_missing_blacklist();
     test_start_with_blacklist_disabled_due_to_0_period();
     test_multiple_forward_agents();
+    test_forward_to_prom_exporter();
 }
 
 int main(int argc, char const *argv[]) {

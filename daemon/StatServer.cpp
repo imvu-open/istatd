@@ -5,6 +5,7 @@
 #include <istat/istattime.h>
 #include "StatServer.h"
 #include "StatStore.h"
+#include "PromExporter.h"
 #include "IComplete.h"
 #include "Logs.h"
 #include "Debug.h"
@@ -82,13 +83,15 @@ StatServer::StatServer(int statPort, std::string listenAddress,
     Blacklist::Configuration &blacklistCfg,
     boost::asio::io_service &svc,
     boost::shared_ptr<IStatStore> &statStore,
+    boost::shared_ptr<IPromExporter> &promExporter,
     int udpBufferSize,
-    int listenOverflowBacklog) :
+    int listenOverflowBacklog ) :
     port_(statPort),
     forwardInterval_(agentInterval),
     agent_(agentFw),
     agentCount_(agentCount),
     statStore_(statStore),
+    promExporter_(promExporter),
     input_(svc),
     svc_(svc),
     udpSocket_(svc),
@@ -586,6 +589,9 @@ void StatServer::handle_record(std::string const &ctr, double val)
     {
         handle_forward(ctr, 0, val, val*val, val, val, 1);
     }
+    if (hasPromExporter()) {
+        handle_forward_prom(ctr, 0, val);
+    }
 }
 
 void StatServer::handle_record(std::string const &ctr, time_t time, double val)
@@ -595,6 +601,9 @@ void StatServer::handle_record(std::string const &ctr, time_t time, double val)
     {
         handle_forward(ctr, time, val, val*val, val, val, 1);
     }
+    if (hasPromExporter()) {
+        handle_forward_prom(ctr, time, val);
+    }
 }
 
 void StatServer::handle_record(std::string const &ctr, time_t time, double val, double sumSq, double min, double max, size_t n)
@@ -603,6 +612,9 @@ void StatServer::handle_record(std::string const &ctr, time_t time, double val, 
     if (hasAgent())
     {
         handle_forward(ctr, time, val, sumSq, min, max, n);
+    }
+    if (hasPromExporter()) {
+        handle_forward_prom(ctr, time, val);
     }
 }
 
@@ -633,6 +645,17 @@ void StatServer::handle_forward(std::string const &ctr, time_t time, double val,
     {
         LogDebug << "StatServer::handle_forwarded for" << ctr << update_err_msg;
     }
+}
+
+void StatServer::handle_forward_prom(std::string const &ctr, time_t time, double val)
+{
+    LogDebug << "StatServer::handle_forward_prom()";
+
+    if (time == 0)
+    {
+        istat::istattime(&time);
+    }
+    promExporter_->storeMetrics(ctr, time, val);
 }
 
 void StatServer::clearForward(AgentFlushRequest * agentFlushRequest)

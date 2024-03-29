@@ -25,6 +25,7 @@
 using namespace istat;
 
 extern DebugOption debugHttp;
+extern DebugOption debugPromServer;
 
 RequestInFlight::RequestInFlight(boost::shared_ptr<IHttpRequest> const &req,
         StatServer *ss, std::string const &filesDir) :
@@ -36,6 +37,13 @@ RequestInFlight::RequestInFlight(boost::shared_ptr<IHttpRequest> const &req,
 RequestInFlight::RequestInFlight(boost::shared_ptr<IHttpRequest> const &req,
         boost::asio::io_service &svc, std::string const &filesDir) :
     req_(req), isComplete_(false), ss_(0), svc_(svc), filesDir_(filesDir)
+{
+    init();
+}
+
+RequestInFlight::RequestInFlight(boost::shared_ptr<IHttpRequest> const &req,
+        StatServer *ss) :
+    req_(req), isComplete_(false), ss_(ss), svc_(ss->service())
 {
     init();
 }
@@ -119,6 +127,7 @@ void RequestInFlight::go()
         LogSpam << "left: " << left;
 
         querystring(right, params);
+
 
         if (req_->method() == "GET")
         {
@@ -230,6 +239,52 @@ void RequestInFlight::do_OPTIONS(std::string const &url)
         LogDebug << "http do_OPTIONS" << url;
     }
     complete(204);  //  no data, but headers
+}
+
+void RequestInFlight::goProm()
+{
+    LogSpam << "RequestInFlight:goProm()";
+    try {
+        std::string const &url(req_->url());
+        if (! ss_->promExporter()->enabled()) {
+            LogWarning << "PromExporter not enabled";
+            reportError("PromExporter not enabled", 503);
+            return;
+        }
+
+        prepareEncoding();
+
+        if (req_->method() == "GET")
+        {
+            do_GET(url);
+        }
+        else
+        {
+            do_UNKNOWN(req_->method());
+        }
+    }
+    catch (std::runtime_error const &re) {
+        LogError << std::string("HTTP exception: ") + re.what();
+        reportError(std::string("HTTP exception: ") + re.what());
+    }
+}
+
+void RequestInFlight::do_GET(std::string const &url)
+{
+    boost::shared_ptr<IPromExporter> promPtr(ss_->promExporter());
+
+    if (debugPromServer.enabled())
+    {
+        LogDebug << "Prometheus http do_GET" << url;
+    }
+
+    if (url == "/metrics") {
+        servePrometheus(promPtr);
+    }
+    else {
+        reportError("Malformed url", 400);
+        return;
+    }
 }
 
 
@@ -856,6 +911,24 @@ void RequestInFlight::generateCounterCSV(boost::shared_ptr<IStatCounter> statCou
         complete(200, "text/csv");
     } catch (std::runtime_error &re) {
         reportError(std::string("HTTP CSV exception:") + re.what());
+    }
+}
+
+void RequestInFlight::servePrometheus(boost::shared_ptr<IPromExporter> &promPtr) {
+    LogSpam << "RequestInFlight::servePrometheus - start";
+    std::vector<PromMetric> results;
+    promPtr->dumpMetrics(results);
+    createPromResponse(results);
+    LogSpam << "RequestInFlight::servePrometheus - done";
+    complete(200, "application/json");
+}
+
+void RequestInFlight::createPromResponse(std::vector<PromMetric> &prom_metrics)
+{
+    std::vector<PromMetric>::iterator pit;
+    for (pit = prom_metrics.begin(); pit != prom_metrics.end(); ++pit)
+    {
+        strm_buffer_ << (*pit).toString();
     }
 }
 

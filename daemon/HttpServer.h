@@ -140,7 +140,7 @@ public:
     //  Generally, sign up for onHeader_ and perhaps onError_ if you keep a reference.
     boost::signals2::signal<void (HttpRequestHolder const &)> onRequest_;
     void getInfo(HttpServerInfo &oInfo);
-private:
+protected:
     friend class HttpRequest;
     void acceptOne();
     void handleAccept(boost::system::error_code const &e, HttpRequestHolder const &req);

@@ -12,6 +12,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/detail/atomic_count.hpp>
+#include <boost/make_shared.hpp>
 
 #include "Bucketizer.h"
 #include "EagerConnection.h"
@@ -20,6 +21,7 @@
 #include "MetaInfo.h"
 #include "IStatStore.h"
 #include "Blacklist.h"
+#include "PromExporter.h"
 
 class IStatStore;
 class IComplete;
@@ -103,16 +105,20 @@ public:
         Blacklist::Configuration &blacklistCfg,
         boost::asio::io_service &svc,
         boost::shared_ptr<IStatStore> &statStore,
+        boost::shared_ptr<IPromExporter> &promExporter,
         int udpBufferSize,
-        int listenOverflowBacklog);
+        int listenOverflowBacklog
+        );
     ~StatServer();
     inline bool hasStore() const { return hasStatStore_; }
     inline bool hasAgent() const { return !forward_.empty(); }
+    inline bool hasPromExporter() const { return promExporter_.get()->enabled(); }
     inline boost::asio::io_service &service() { return svc_; }
     inline boost::shared_ptr<IStatStore> store() const
         {
             return hasStatStore_ ? statStore_ : boost::shared_ptr<IStatStore>((IStatStore *)NULL);
         }
+    inline boost::shared_ptr<IPromExporter> promExporter() const { return promExporter_; }
     inline boost::shared_ptr<Blacklist> blacklist() const { return blacklist_; }
     HandleStatus handleCmd(std::string const &cmd, boost::shared_ptr<ConnectionInfo> const &ec);
     void counters(int64_t *oConnects, int64_t *oDrops);
@@ -156,6 +162,7 @@ private:
     void handle_record(std::string const &ctr, time_t time, double val);
     void handle_record(std::string const &ctr, time_t time, double val, double sumSq, double min, double max, size_t n);
     void handle_forward(std::string const &ctr, time_t time, double val, double sumSq, double min, double max, size_t n);
+    void handle_forward_prom(std::string const &ctr, time_t time, double val);
     void on_forwardTimer();
     void clearForward(AgentFlushRequest * agentFlushRequest);
 
@@ -169,6 +176,7 @@ private:
 
     bool hasStatStore_;
     boost::shared_ptr<IStatStore> statStore_;
+    boost::shared_ptr<IPromExporter> promExporter_;
 
     ForwardList forward_;
     EagerConnectionFactory input_;

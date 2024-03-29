@@ -21,8 +21,10 @@ class RequestInFlight : public boost::enable_shared_from_this<RequestInFlight>
 public:
     RequestInFlight(boost::shared_ptr<IHttpRequest> const &req, StatServer *ss, std::string const &filesDir);
     RequestInFlight(boost::shared_ptr<IHttpRequest> const &req, boost::asio::io_service &svc, std::string const &filesDir);
+    RequestInFlight(boost::shared_ptr<IHttpRequest> const &req, StatServer *ss);
     ~RequestInFlight();
     void go();
+    void goProm();
 
 protected:
     virtual void complete(int code, char const *type);
@@ -49,6 +51,7 @@ private:
     AcceptEncodingHeader::EncodingSet acceptableEncodings_;
 
 
+    void do_GET(std::string const &url);
     void do_GET(std::string const &url, std::map<std::string, std::string> &params, std::string const &left);
     void do_POST(std::string const &url, std::map<std::string, std::string> &params);
     void do_OPTIONS(std::string const &url);
@@ -74,6 +77,9 @@ private:
 
     void getSettings(std::string const &settings, std::string const &key);
     void on_storeSettingsBody(std::string const &settings);
+
+    void servePrometheus(boost::shared_ptr<IPromExporter> &promPtr);
+    void createPromResponse(std::vector<PromMetric> &prom_metrics);
 };
 
 
