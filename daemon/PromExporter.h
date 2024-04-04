@@ -34,6 +34,13 @@ private:
     std::string name_;
 };
 
+struct TimeComp {
+  bool operator()(const time_t& a, const time_t& b) const 
+  {
+    return std::difftime(a, b) < 0;
+  }
+};
+
 class IPromExporter : public boost::noncopyable
 {
 public:
@@ -50,17 +57,21 @@ public:
     virtual ~PromExporter();
     void dumpMetrics(std::vector<PromMetric> &res);
     void storeMetrics(std::string const &ctr, time_t time, double val);
-    void cleanup();
     inline bool enabled() { return enabled_; }
 
 private:
-    typedef std::map<time_t, std::vector<PromMetric> > PromDataMap;
+    friend void test_prom_exporter();
+
+    typedef std::multimap<time_t, PromMetric, TimeComp> PromDataMap;
     boost::asio::io_service &svc_;
     int cleanup_interval_;
     PromDataMap data_;
-    time_t last_scrape_;
     lock mutex_;
     bool enabled_;
+    boost::asio::deadline_timer cleanup_timer_;
+
+    void cleanupNext();
+    void onCleanup();
 };
 
 class NullPromExporter : public IPromExporter

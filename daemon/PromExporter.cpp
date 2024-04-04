@@ -1,5 +1,6 @@
 #include "PromExporter.h"
 #include "istat/strfunc.h"
+#include "istat/istattime.h"
 #include "Logs.h"
 #include "Debug.h"
 
@@ -10,6 +11,7 @@
 #include <ctype.h>
 #include <iostream>
 
+#define CLEANUP_INTERVAL_SECOND 60
 
 DebugOption debugPromExporter("promExporter");
 
@@ -38,28 +40,30 @@ std::string PromMetric::toString()
 
 PromExporter::PromExporter(boost::asio::io_service &svc, bool enabled) :
     svc_(svc),
-    cleanup_interval_(60),
-    last_scrape_(0),
-    enabled_(enabled)
+    enabled_(enabled),
+    cleanup_timer_(svc_)
 {
+    cleanup_interval_ = CLEANUP_INTERVAL_SECOND;
+    cleanupNext();
 }
 
 PromExporter::~PromExporter()
 {
+    cleanup_timer_.cancel();
 }
 
 void PromExporter::dumpMetrics(std::vector<PromMetric> &res)
 {
-    std::map<time_t, std::vector<PromMetric> > sending_data;
+    PromDataMap sending_data;
     {
         grab aholdof(mutex_);
         data_.swap(sending_data);
     }
-    std::map<time_t, std::vector<PromMetric> >::iterator pit;
+    PromDataMap::iterator pit;
 
     for (pit = sending_data.begin(); pit != sending_data.end(); ++pit)
     {
-        res.insert(res.end(), (*pit).second.begin(), (*pit).second.end());
+        res.push_back((*pit).second);
     }
     sending_data.clear();
 }
@@ -81,19 +85,38 @@ void PromExporter::storeMetrics(std::string const &name, time_t time, double val
     PromMetric prom_metric(metric_name, time, val, type);
 
     grab aholdof(mutex_);
-    PromDataMap::iterator ptr(data_.find(time));
-    if (ptr != data_.end())
-    {
-        (*ptr).second.push_back(prom_metric);
-    }
-    else
-    {
-        std::vector<PromMetric> metric_list;
-        metric_list.push_back(prom_metric);
-        data_.insert(std::pair<time_t, std::vector<PromMetric> >(time, metric_list));
-    }
+    data_.insert(std::pair<time_t, PromMetric>(time, prom_metric));
 }
 
-void PromExporter::cleanup()
+void PromExporter::cleanupNext()
 {
+    LogSpam << "PromExporter::cleanupNext() every " << cleanup_interval_ << "s";
+    cleanup_timer_.expires_from_now(boost::posix_time::seconds(cleanup_interval_));
+    cleanup_timer_.async_wait(boost::bind(&PromExporter::onCleanup, this));
 }
+
+void PromExporter::onCleanup()
+{
+    time_t now;
+    istat::istattime(&now);
+    time_t tlower = now - cleanup_interval_;
+    {
+        grab aholdof(mutex_);
+        PromDataMap::iterator itUpper = data_.lower_bound(tlower);
+        if (debugPromExporter.enabled())
+        {
+            LogDebug << "PromExporter: discard unscraped data older than " << tlower 
+                << ". size before " << data_.size();
+        }
+        if (itUpper != data_.begin())
+        {
+            data_.erase(data_.begin(), itUpper);
+            if (debugPromExporter.enabled())
+            {
+                LogDebug << "PromExporter: size after" << data_.size();
+            }
+        }
+    }
+    cleanupNext();
+}
+
