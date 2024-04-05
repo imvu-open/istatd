@@ -15,26 +15,52 @@
 
 DebugOption debugPromExporter("promExporter");
 
-PromMetric::PromMetric(std::string &ctr, time_t time, double val) :
-    type_(PromTypeUnknown),
+PromMetric::PromMetric(std::string const &ctr, time_t time, double val) :
     time_(time),
-    value_(val),
-    name_(ctr)
+    value_(val)
 {
+    init(ctr);
 }
 
-PromMetric::PromMetric(std::string &ctr, time_t time, double val, MetricType type) :
-    type_(type),
-    time_(time),
-    value_(val),
-    name_(ctr)
+void PromMetric::init(std::string const& ctr)
 {
+    name_ = ctr;
+    if (ctr[0] == '*') 
+    {
+        name_ = ctr.substr(1);
+        type_ = PromTypeCounter;
+    }
+    else 
+    {
+        type_ = PromTypeGauge;
+    }
+    istat::prom_munge(name_);
 }
 
 std::string PromMetric::toString()
 {
     std::stringstream ss;
     ss << name_ << " " << value_ << " " << (time_ * 1000) << "\n"; 
+    return ss.str();
+}
+
+std::string PromMetric::typeString()
+{
+    std::stringstream ss;
+    ss << "# TYPE " << name_ << " " ;
+    switch (type_) 
+    {
+        case PromTypeGauge:
+            ss << "gauge";
+            break;
+        case PromTypeCounter:
+            ss << "counter";
+            break;
+        default:
+            ss << "untyped";
+            break;
+    }
+    ss << "\n"; 
     return ss.str();
 }
 
@@ -52,38 +78,29 @@ PromExporter::~PromExporter()
     cleanup_timer_.cancel();
 }
 
-void PromExporter::dumpMetrics(std::vector<PromMetric> &res)
+void PromExporter::dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMetric> & new_metrics)
 {
     PromDataMap sending_data;
-    {
-        grab aholdof(mutex_);
-        data_.swap(sending_data);
-    }
-    PromDataMap::iterator pit;
+    grab aholdof(mutex_);
+    data_.swap(sending_data);
 
-    for (pit = sending_data.begin(); pit != sending_data.end(); ++pit)
+    for (PromDataMap::iterator pit = sending_data.begin(); pit != sending_data.end(); ++pit)
     {
         res.push_back((*pit).second);
+        std::string mname = (*pit).second.getName();
+        MetricType mtype = (*pit).second.getType();
+        if (metric_type_map_.find(mname) == metric_type_map_.end()) 
+        {
+            metric_type_map_.insert(std::pair<std::string, MetricType>(mname, mtype));
+            new_metrics.push_back((*pit).second);
+        }
     }
     sending_data.clear();
 }
 
 void PromExporter::storeMetrics(std::string const &name, time_t time, double val)
 {
-    std::string metric_name(name);
-    MetricType type;
-    if (name[0] == '*') 
-    {
-        metric_name = name.substr(1);
-        type = PromTypeCounter;
-    }
-    else 
-    {
-        type = PromTypeGauge;
-    }
-    istat::prom_munge(metric_name);
-    PromMetric prom_metric(metric_name, time, val, type);
-
+    PromMetric prom_metric(name, time, val);
     grab aholdof(mutex_);
     data_.insert(std::pair<time_t, PromMetric>(time, prom_metric));
 }

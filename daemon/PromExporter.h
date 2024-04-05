@@ -4,6 +4,8 @@
 
 #include <map>
 #include <vector>
+#include <list>
+#include <tr1/unordered_map>
 
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
@@ -21,10 +23,11 @@ enum MetricType
 class PromMetric
 {
 public:
-    PromMetric(std::string &ctr, time_t time, double val);
-    PromMetric(std::string &ctr, time_t time, double val, MetricType type);
+    PromMetric(std::string const &ctr, time_t time, double val);
     std::string toString();
+    std::string typeString();
     inline double getValue() { return value_; }
+    inline std::string getName() { return name_; }
     inline MetricType getType() { return type_; }
 
 private:
@@ -32,6 +35,9 @@ private:
     time_t time_;
     double value_;
     std::string name_;
+    std::list<std::pair<std::string, std::string> > tags;
+
+    void init(std::string const& ctr);
 };
 
 struct TimeComp {
@@ -45,7 +51,7 @@ class IPromExporter : public boost::noncopyable
 {
 public:
     virtual ~IPromExporter() {};
-    virtual void dumpMetrics(std::vector<PromMetric> &res) = 0;
+    virtual void dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMetric> & new_metrics) = 0;
     virtual void storeMetrics(std::string const &ctr, time_t time, double val) = 0;
     virtual bool enabled() = 0;
 };
@@ -55,7 +61,7 @@ class PromExporter : public IPromExporter
 public:
     PromExporter(boost::asio::io_service &svc, bool enabled);
     virtual ~PromExporter();
-    void dumpMetrics(std::vector<PromMetric> &res);
+    void dumpMetrics(std::vector<PromMetric> &res, std::vector<PromMetric> & new_metrics);
     void storeMetrics(std::string const &ctr, time_t time, double val);
     inline bool enabled() { return enabled_; }
 
@@ -69,6 +75,7 @@ private:
     lock mutex_;
     bool enabled_;
     boost::asio::deadline_timer cleanup_timer_;
+    std::tr1::unordered_map<std::string, MetricType> metric_type_map_;
 
     void cleanupNext();
     void onCleanup();
@@ -79,7 +86,7 @@ class NullPromExporter : public IPromExporter
 public:
     NullPromExporter() {};
     virtual ~NullPromExporter() {};
-    inline void dumpMetrics(std::vector<PromMetric> &res) {}
+    inline void dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMetric> & new_metrics) {}
     inline void storeMetrics(std::string const &ctr, time_t time, double val) {}
     inline bool enabled() { return false; }
 };

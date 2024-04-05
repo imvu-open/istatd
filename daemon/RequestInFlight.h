@@ -79,7 +79,7 @@ private:
     void on_storeSettingsBody(std::string const &settings);
 
     void servePrometheus(boost::shared_ptr<IPromExporter> &promPtr);
-    void createPromResponse(std::vector<PromMetric> &prom_metrics);
+    void createPromResponse(std::vector<PromMetric> &prom_metrics, std::vector<PromMetric> &new_metrics);
 };
 
 

@@ -917,15 +917,20 @@ void RequestInFlight::generateCounterCSV(boost::shared_ptr<IStatCounter> statCou
 void RequestInFlight::servePrometheus(boost::shared_ptr<IPromExporter> &promPtr) {
     LogSpam << "RequestInFlight::servePrometheus - start";
     std::vector<PromMetric> results;
-    promPtr->dumpMetrics(results);
-    createPromResponse(results);
+    std::vector<PromMetric> new_metrics;
+    promPtr->dumpMetrics(results, new_metrics);
+    createPromResponse(results, new_metrics);
     LogSpam << "RequestInFlight::servePrometheus - done";
     complete(200, "application/json");
 }
 
-void RequestInFlight::createPromResponse(std::vector<PromMetric> &prom_metrics)
+void RequestInFlight::createPromResponse(std::vector<PromMetric> &prom_metrics, std::vector<PromMetric> &new_metrics)
 {
     std::vector<PromMetric>::iterator pit;
+    for (pit = new_metrics.begin(); pit != new_metrics.end(); ++pit)
+    {
+        strm_buffer_ << (*pit).typeString();
+    }
     for (pit = prom_metrics.begin(); pit != prom_metrics.end(); ++pit)
     {
         strm_buffer_ << (*pit).toString();

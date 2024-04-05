@@ -398,8 +398,10 @@ void test_forward_to_prom_exporter()
     server->handleCmd("something.different 4242", ec);
     svc.poll();
     std::vector<PromMetric> res;
-    server->promExporter()->dumpMetrics(res);
+    std::vector<PromMetric> new_metrics;
+    server->promExporter()->dumpMetrics(res, new_metrics);
     assert_equal(1, res.size());
+    assert_equal(1, new_metrics.size());
     assert_equal(4242, res[0].getValue());
 }
 

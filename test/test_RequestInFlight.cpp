@@ -214,7 +214,7 @@ void test_get_method_with_prom_exporter_200_reply()
     server->handleCmd("something.different 4242", ec);
     svc.poll();
     rif->goProm();
-    assert_equal("something_different 4242 1329345880000\n", ((FakeHttpRequest*)req.get())->theReply_);
+    assert_equal("# TYPE something_different gauge\nsomething_different 4242 1329345880000\n", ((FakeHttpRequest*)req.get())->theReply_);
     assert_equal(200, ((FakeHttpRequest*)req.get())->code());
 }
 
