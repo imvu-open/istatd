@@ -8,12 +8,16 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/assign.hpp>
 #include <ctype.h>
 #include <iostream>
 
 #define CLEANUP_INTERVAL_SECOND 60
 
 DebugOption debugPromExporter("promExporter");
+
+const std::map<PromMetric::TagName, std::string> PromMetric::tag_names_ = 
+    boost::assign::map_list_of<PromMetric::TagName, std::string>(PromTagHost, "host")(PromTagRole, "role")(PromTagClass, "class");
 
 PromMetric::PromMetric(std::string const &ctr, time_t time, double val) :
     time_(time),
@@ -28,19 +32,54 @@ void PromMetric::init(std::string const& ctr)
     if (ctr[0] == '*') 
     {
         name_ = ctr.substr(1);
-        type_ = PromTypeCounter;
+        type_ = PromMetric::PromTypeCounter;
     }
     else 
     {
-        type_ = PromTypeGauge;
+        type_ = PromMetric::PromTypeGauge;
     }
     istat::prom_munge(name_);
+
+    std::map<TagName, std::string>::const_iterator it = tag_names_.begin(); 
+    for (; it != tag_names_.end(); ++it)
+    {
+        if (hasTag(it->second)) return;
+    }
+}
+
+bool PromMetric::hasTag(std::string const & tname)
+{
+    std::string::size_type i;
+    if ((i = name_.find("_" + tname + "_")) != std::string::npos) 
+    {
+        const std::string::size_type j = name_.find_last_of("_");
+        if (j != std::string::npos && j != (name_.size() - 1) && (i + tname.size() + 1) == j)
+        {
+            tags_.push_back(std::pair<std::string, std::string>(tname, name_.substr(j + 1)));
+            name_ = name_.substr(0, i);
+            return true;
+        }
+    }
+    return false;
 }
 
 std::string PromMetric::toString()
 {
     std::stringstream ss;
-    ss << name_ << " " << value_ << " " << (time_ * 1000) << "\n"; 
+    ss << name_;
+    if (tags_.size() > 0)
+    {
+        std::list<std::pair<std::string, std::string> >::iterator it = tags_.begin();
+        ss << "{\"" << it->first << "\"=\"" << it->second << "\"";
+        ++it;
+        while (it != tags_.end())
+        {
+            ss << ",\"" << it->first << "\"=\"" << it->second << "\"";
+            ++it;;
+        }
+        ss << "}";
+    }
+    ss << " " << value_ << " " << (time_ * 1000) << "\n"; 
     return ss.str();
 }
 
@@ -88,10 +127,10 @@ void PromExporter::dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMe
     {
         res.push_back((*pit).second);
         std::string mname = (*pit).second.getName();
-        MetricType mtype = (*pit).second.getType();
+        PromMetric::MetricType mtype = (*pit).second.getType();
         if (metric_type_map_.find(mname) == metric_type_map_.end()) 
         {
-            metric_type_map_.insert(std::pair<std::string, MetricType>(mname, mtype));
+            metric_type_map_.insert(std::pair<std::string, PromMetric::MetricType>(mname, mtype));
             new_metrics.push_back((*pit).second);
         }
     }

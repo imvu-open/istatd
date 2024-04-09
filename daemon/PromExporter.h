@@ -13,16 +13,16 @@
 
 #include "threadfunc.h"
 
-enum MetricType
-{
-    PromTypeGauge = 0,
-    PromTypeCounter = 1,
-    PromTypeUnknown = 2
-};
-
 class PromMetric
 {
 public:
+    enum MetricType
+    {
+        PromTypeGauge = 0,
+        PromTypeCounter = 1,
+        PromTypeUnknown = 2
+    };
+
     PromMetric(std::string const &ctr, time_t time, double val);
     std::string toString();
     std::string typeString();
@@ -31,13 +31,22 @@ public:
     inline MetricType getType() { return type_; }
 
 private:
+    enum TagName
+    {
+        PromTagHost = 0,
+        PromTagRole,
+        PromTagClass
+    };
+
     MetricType type_;
     time_t time_;
     double value_;
     std::string name_;
-    std::list<std::pair<std::string, std::string> > tags;
+    std::list<std::pair<std::string, std::string> > tags_;
+    static const std::map<TagName, std::string> tag_names_;
 
-    void init(std::string const& ctr);
+    void init(std::string const & ctr);
+    bool hasTag(std::string const & tname);
 };
 
 struct TimeComp {
@@ -75,7 +84,7 @@ private:
     lock mutex_;
     bool enabled_;
     boost::asio::deadline_timer cleanup_timer_;
-    std::tr1::unordered_map<std::string, MetricType> metric_type_map_;
+    std::tr1::unordered_map<std::string, PromMetric::MetricType> metric_type_map_;
 
     void cleanupNext();
     void onCleanup();
