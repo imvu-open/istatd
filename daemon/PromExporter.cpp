@@ -38,21 +38,27 @@ void PromMetric::init(std::string const& ctr)
     {
         type_ = PromMetric::PromTypeGauge;
     }
-    istat::prom_munge(name_);
 
-    std::map<TagName, std::string>::const_iterator it = tag_names_.begin(); 
+    std::map<TagName, std::string>::const_iterator it = tag_names_.begin();
     for (; it != tag_names_.end(); ++it)
     {
-        if (hasTag(it->second)) return;
+        if (hasTag(it->second)) break;
+    }
+
+    istat::prom_munge(name_);
+    std::list<std::pair<std::string, std::string> >::iterator tit = tags_.begin();
+    for(; tit != tags_.end(); ++tit)
+    {
+        istat::prom_munge(tit->second);
     }
 }
 
 bool PromMetric::hasTag(std::string const & tname)
 {
     std::string::size_type i;
-    if ((i = name_.find("_" + tname + "_")) != std::string::npos) 
+    if ((i = name_.find("." + tname + ".")) != std::string::npos) 
     {
-        const std::string::size_type j = name_.find_last_of("_");
+        const std::string::size_type j = name_.find_last_of(".");
         if (j != std::string::npos && j != (name_.size() - 1) && (i + tname.size() + 1) == j)
         {
             tags_.push_back(std::pair<std::string, std::string>(tname, name_.substr(j + 1)));
