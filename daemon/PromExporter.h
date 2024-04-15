@@ -35,7 +35,10 @@ private:
     {
         PromTagHost = 0,
         PromTagRole,
-        PromTagClass
+        PromTagClass,
+        PromTagPool,
+        PromTagProxyPool,
+        PromTagCluster,
     };
 
     MetricType type_;

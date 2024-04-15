@@ -17,7 +17,13 @@
 DebugOption debugPromExporter("promExporter");
 
 const std::map<PromMetric::TagName, std::string> PromMetric::tag_names_ = 
-    boost::assign::map_list_of<PromMetric::TagName, std::string>(PromTagHost, "host")(PromTagRole, "role")(PromTagClass, "class");
+    boost::assign::map_list_of<PromMetric::TagName, std::string>
+        (PromTagHost, "host")
+        (PromTagRole, "role")
+        (PromTagClass, "class")
+        (PromTagPool, "pool")
+        (PromTagProxyPool, "proxy-pool")
+        (PromTagCluster, "cluster");
 
 PromMetric::PromMetric(std::string const &ctr, time_t time, double val) :
     time_(time),

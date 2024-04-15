@@ -89,10 +89,13 @@ void test_prom_exporter()
     pe->storeMetrics("*x.y.host.", 1329345875, 1);
     pe->storeMetrics("x.y.role.rr123-1", 1329345855, 0.4);
     pe->storeMetrics("x.y.class.ccc123", 1329345870, 0.3);
+    pe->storeMetrics("x.y.cluster.cl123", 1329345880, 0.3);
+    pe->storeMetrics("x.y.proxy-pool.pp123", 1329345885, 0.3);
+    pe->storeMetrics("x.y.pool.p123", 1329345890, 0.3);
     res.clear();
     new_metrics.clear();
     pe->dumpMetrics(res, new_metrics);
-    assert_equal(5, res.size());
+    assert_equal(8, res.size());
     assert_equal(2, new_metrics.size());
     assert_equal("x_y_host_h123_", (new_metrics.begin())->getName());
     assert_equal("x_y_host_", new_metrics[1].getName());
@@ -101,6 +104,9 @@ void test_prom_exporter()
     assert_equal("x_y_host_h123_ 0.2 1329345865000\n", res[2].toString());
     assert_equal("x_y{\"class\"=\"ccc123\"} 0.3 1329345870000\n", res[3].toString());
     assert_equal("x_y_host_ 1 1329345875000\n", res[4].toString());
+    assert_equal("x_y{\"cluster\"=\"cl123\"} 0.3 1329345880000\n", res[5].toString());
+    assert_equal("x_y{\"proxy-pool\"=\"pp123\"} 0.3 1329345885000\n", res[6].toString());
+    assert_equal("x_y{\"pool\"=\"p123\"} 0.3 1329345890000\n", res[7].toString());
 }
 
 void func() {
