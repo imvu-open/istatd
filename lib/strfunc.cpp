@@ -835,16 +835,21 @@ namespace istat
          * Prometheus metric name must match the regex [a-zA-Z_:][a-zA-Z0-9_:]*.
          * The colons are reserved for user defined recording rules.
          */
-        if (! ((ch > 47 && ch < 58) || (ch > 64 && ch < 91) || ch == '_' || (ch > 96 && ch < 123)))
+        if (! ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' || (ch>= '0' && ch <= '9')))
         {
             return '_';
         }
+
         return tolower(ch);
     }
 
     void prom_munge(std::string &key)
     {
         std::transform(key.begin(), key.end(), key.begin(), prom_munge_char);
+        if (key.size() > 0 && key[0] >= '0' && key[0] <= '9')
+        {
+            key.insert(key.begin(), '_');
+        }
     }
 }
 

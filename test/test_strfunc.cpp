@@ -437,7 +437,7 @@ namespace istat
 
         std::string e("059.aez-AxZ{");
         prom_munge(e);
-        assert_equal(e, "059_aez_axz_");
+        assert_equal(e, "_059_aez_axz_");
     }
 
     void func()
