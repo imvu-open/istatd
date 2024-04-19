@@ -71,11 +71,11 @@ public:
 class PromExporter : public IPromExporter
 {
 public:
-    PromExporter(boost::asio::io_service &svc, bool enabled);
+    PromExporter(boost::asio::io_service &svc);
     virtual ~PromExporter();
     void dumpMetrics(std::vector<PromMetric> &res, std::vector<PromMetric> & new_metrics);
     void storeMetrics(std::string const &ctr, time_t time, double val);
-    inline bool enabled() { return enabled_; }
+    inline bool enabled() { return true; }
 
 private:
     friend void test_prom_exporter();

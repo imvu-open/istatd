@@ -13,14 +13,14 @@ using namespace istat;
 boost::shared_ptr<PromExporter> makePromExporter()
 {
     boost::asio::io_service svc;
-    return boost::make_shared<PromExporter>(boost::ref(svc), true);
+    return boost::make_shared<PromExporter>(boost::ref(svc));
 }
 
 void test_prom_exporter()
 {
     istat::FakeTime ft(1329345880);
     boost::asio::io_service svc;
-    boost::shared_ptr<PromExporter> pe = boost::make_shared<PromExporter>(boost::ref(svc), true);
+    boost::shared_ptr<PromExporter> pe = boost::make_shared<PromExporter>(boost::ref(svc));
     std::vector<PromMetric> res;
     std::vector<PromMetric> new_metrics;
 

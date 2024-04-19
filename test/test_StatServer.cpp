@@ -66,7 +66,7 @@ boost::shared_ptr<StatServer> makeServerWithBlacklist(Mmap *mm, boost::asio::io_
 boost::shared_ptr<StatServer> makeServerWithPromExporter(boost::asio::io_service &svc, int port = 0, std::string agent = "", size_t agentCount = 1) {
     Blacklist::Configuration blacklistCfg = {};
     std::string listenAddress("");
-    boost::shared_ptr<IPromExporter> promExporter = boost::make_shared<PromExporter>(boost::ref(svc), true);
+    boost::shared_ptr<IPromExporter> promExporter = boost::make_shared<PromExporter>(boost::ref(svc));
     boost::shared_ptr<IStatStore> statStore = boost::make_shared<NullStatStore>();
     return boost::make_shared<StatServer>(port, listenAddress, agent, agentCount, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), boost::ref(promExporter), 256, 256);
 }

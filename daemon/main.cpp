@@ -990,7 +990,14 @@ int main(int argc, char const *argv[])
         Blacklist::Configuration cfg = {};
         cfg.path = blacklist_path.get();
         cfg.period = blacklist_period.get();
-        boost::shared_ptr<IPromExporter> promExporter = boost::make_shared<PromExporter>(boost::ref(g_service), promExporterEnabled);
+        boost::shared_ptr<IPromExporter> promExporter;
+        if (promExporterEnabled)
+        {
+            promExporter = boost::make_shared<PromExporter>(boost::ref(g_service));
+        }
+        else{
+            promExporter = boost::make_shared<NullPromExporter>();
+        }
         StatServer ss(statPort.get(), listenAddress.get(), agent.get(), std::max(agentCount.get(), 1), std::max(agentInterval.get(), 1), cfg, g_service, statStore, promExporter, udpBufferSize.get(), listenOverflowBacklog.get());
         if (replicaPort.get())
         {

@@ -115,9 +115,8 @@ std::string PromMetric::typeString()
     return ss.str();
 }
 
-PromExporter::PromExporter(boost::asio::io_service &svc, bool enabled) :
+PromExporter::PromExporter(boost::asio::io_service &svc) :
     svc_(svc),
-    enabled_(enabled),
     cleanup_timer_(svc_)
 {
     cleanup_interval_ = CLEANUP_INTERVAL_SECOND;
