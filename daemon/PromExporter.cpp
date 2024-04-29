@@ -82,7 +82,7 @@ std::string PromMetric::toString()
     if (tags_.size() > 0)
     {
         std::list<std::pair<std::string, std::string> >::iterator it = tags_.begin();
-        ss << "{\"" << it->first << "\"=\"" << it->second << "\"";
+        ss << "{" << it->first << "=\"" << it->second << "\"";
         ++it;
         while (it != tags_.end())
         {

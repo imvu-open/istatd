@@ -99,14 +99,14 @@ void test_prom_exporter()
     assert_equal(2, new_metrics.size());
     assert_equal("x_y_host_h123_", (new_metrics.begin())->getName());
     assert_equal("x_y_host_", new_metrics[1].getName());
-    assert_equal("x_y{\"role\"=\"rr123_1\"} 0.4 1329345855000\n", res[0].toString());
-    assert_equal("x_y{\"host\"=\"h123_\"} 0.2 1329345860000\n", res[1].toString());
+    assert_equal("x_y{role=\"rr123_1\"} 0.4 1329345855000\n", res[0].toString());
+    assert_equal("x_y{host=\"h123_\"} 0.2 1329345860000\n", res[1].toString());
     assert_equal("x_y_host_h123_ 0.2 1329345865000\n", res[2].toString());
-    assert_equal("x_y{\"class\"=\"ccc123\"} 0.3 1329345870000\n", res[3].toString());
+    assert_equal("x_y{class=\"ccc123\"} 0.3 1329345870000\n", res[3].toString());
     assert_equal("x_y_host_ 1 1329345875000\n", res[4].toString());
-    assert_equal("x_y{\"cluster\"=\"cl123\"} 0.3 1329345880000\n", res[5].toString());
-    assert_equal("x_y{\"proxy-pool\"=\"pp123\"} 0.3 1329345885000\n", res[6].toString());
-    assert_equal("x_y{\"pool\"=\"p123\"} 0.3 1329345890000\n", res[7].toString());
+    assert_equal("x_y{cluster=\"cl123\"} 0.3 1329345880000\n", res[5].toString());
+    assert_equal("x_y{proxy-pool=\"pp123\"} 0.3 1329345885000\n", res[6].toString());
+    assert_equal("x_y{pool=\"p123\"} 0.3 1329345890000\n", res[7].toString());
 }
 
 void func() {
