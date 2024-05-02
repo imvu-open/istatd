@@ -1,14 +1,21 @@
+istatd (1.01-1) UNRELEASED; urgency=medium
+
+  * fix metric labels of prometheus exporter
+  * Always exports Prometheus metric types
+
+ -- Fang Fang <ffang@imvu.com>  Wed, 01 May 2024 21:28:13 -0700
+
 istatd (1.00-1) UNRELEASED; urgency=medium
 
   [ Fang Fang ]
-  *initial checkin of Prometheus Exporter
-  *Use multimapt instead of map to store data; discard data older than 60s
-  *Prometheus should export metrics type
-  *add tags of host, class and role
-  *fix tag conversion
-  *add more tags
-  *The name or label of a Prometheus metric can not starts a number so prepend _
-  *tidy code
+  * initial checkin of Prometheus Exporter
+  * Use multimapt instead of map to store data; discard data older than 60s
+  * Prometheus should export metrics type
+  * add tags of host, class and role
+  * fix tag conversion
+  * add more tags
+  * The name or label of a Prometheus metric can not starts a number so prepend _
+  * tidy code
 
  -- Fang Fang <ffang@imvu.com>  Fri, 19 Apr 2024 15:52:49 -0700
 
