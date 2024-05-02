@@ -400,9 +400,9 @@ void test_forward_to_prom_exporter()
     std::vector<PromMetric> res;
     std::vector<PromMetric> new_metrics;
     server->promExporter()->dumpMetrics(res, new_metrics);
-    assert_equal(1, res.size());
+    assert_equal(0, res.size());
     assert_equal(1, new_metrics.size());
-    assert_equal(4242, res[0].getValue());
+    assert_equal(4242, new_metrics[0].getValue());
 }
 
 void func() {

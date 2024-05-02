@@ -74,6 +74,7 @@ public:
     PromExporter(boost::asio::io_service &svc);
     virtual ~PromExporter();
     void dumpMetrics(std::vector<PromMetric> &res, std::vector<PromMetric> & new_metrics);
+    void dumpMetrics(std::vector<PromMetric> &res);
     void storeMetrics(std::string const &ctr, time_t time, double val);
     inline bool enabled() { return true; }
 
@@ -81,13 +82,14 @@ private:
     friend void test_prom_exporter();
 
     typedef std::multimap<time_t, PromMetric, TimeComp> PromDataMap;
+    typedef std::tr1::unordered_map<std::string, PromMetric::MetricType> PromMetricTypeMap;
+
     boost::asio::io_service &svc_;
     int cleanup_interval_;
     PromDataMap data_;
     lock mutex_;
     bool enabled_;
     boost::asio::deadline_timer cleanup_timer_;
-    std::tr1::unordered_map<std::string, PromMetric::MetricType> metric_type_map_;
 
     void cleanupNext();
     void onCleanup();

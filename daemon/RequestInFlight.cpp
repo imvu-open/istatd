@@ -930,6 +930,7 @@ void RequestInFlight::createPromResponse(std::vector<PromMetric> &prom_metrics, 
     for (pit = new_metrics.begin(); pit != new_metrics.end(); ++pit)
     {
         strm_buffer_ << (*pit).typeString();
+        strm_buffer_ << (*pit).toString();
     }
     for (pit = prom_metrics.begin(); pit != prom_metrics.end(); ++pit)
     {

@@ -131,21 +131,26 @@ PromExporter::~PromExporter()
 void PromExporter::dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMetric> & new_metrics)
 {
     PromDataMap sending_data;
-    grab aholdof(mutex_);
-    data_.swap(sending_data);
+    {
+        grab aholdof(mutex_);
+        data_.swap(sending_data);
+    }
+    PromMetricTypeMap metric_type_map;
 
     for (PromDataMap::iterator pit = sending_data.begin(); pit != sending_data.end(); ++pit)
     {
-        res.push_back((*pit).second);
         std::string mname = (*pit).second.getName();
         PromMetric::MetricType mtype = (*pit).second.getType();
-        if (metric_type_map_.find(mname) == metric_type_map_.end()) 
+        if (metric_type_map.find(mname) == metric_type_map.end()) 
         {
-            metric_type_map_.insert(std::pair<std::string, PromMetric::MetricType>(mname, mtype));
+            metric_type_map.insert(std::pair<std::string, PromMetric::MetricType>(mname, mtype));
             new_metrics.push_back((*pit).second);
         }
+        else
+        {
+            res.push_back((*pit).second);
+        }
     }
-    sending_data.clear();
 }
 
 void PromExporter::storeMetrics(std::string const &name, time_t time, double val)
