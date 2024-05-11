@@ -29,14 +29,18 @@ void test_prom_exporter()
     pe->storeMetrics("x.0y", 1329345820, 0.5);
     pe->storeMetrics("foo.bar.baz", 1329345880, 2.5);
     pe->storeMetrics("foo.bar.baz", 1329345820, 1.5);
-    assert_equal(4, pe->data_.size());
-    PromExporter::PromDataMap::iterator it = pe->data_.begin();
+    assert_equal(3, pe->data_gauges_.size());
+    PromExporter::PromGaugeMap::iterator it = pe->data_gauges_.begin();
     assert_equal(1329345820, it->first);
     assert_equal(PromMetric::PromTypeGauge, it->second.getType());
     assert_equal(1329345820, (++it)->first);
-    assert_equal(1329345850, (++it)->first);
-    assert_equal(PromMetric::PromTypeCounter, it->second.getType());
+    assert_equal(PromMetric::PromTypeGauge, it->second.getType());
     assert_equal(1329345880, (++it)->first);
+    assert_equal(1, pe->data_counters_.size());
+    PromExporter::CumulativeCountsMap::iterator cit = pe->data_counters_.begin();
+    assert_equal(true, cit->second.getCounterStatus());
+    assert_equal(PromMetric::PromTypeCounter, cit->second.getType());
+    assert_equal(1, cit->second.getValue());
 
     //test dump
     pe->dumpMetrics(res, new_metrics);
@@ -49,36 +53,41 @@ void test_prom_exporter()
     pe->dumpMetrics(res, new_metrics);
     assert_equal(0, res.size());
     assert_equal(2, new_metrics.size());
-    assert_equal("x_y", (new_metrics.begin())->getName());
-    assert_equal("foo_bar", (++(new_metrics.begin()))->getName());
-    assert_equal("x_y 0.5 1329345820000\n", new_metrics[0].toString());
-    assert_equal("# TYPE x_y gauge\n", new_metrics[0].typeString());
-    assert_equal("foo_bar 1 1329345850000\n", new_metrics[1].toString());
-    assert_equal("# TYPE foo_bar counter\n", new_metrics[1].typeString());
+    assert_equal("foo_bar", (new_metrics.begin())->getName());
+    assert_equal("x_y", (++(new_metrics.begin()))->getName());
+    assert_equal("x_y 0.5 1329345820000\n", new_metrics[1].toString());
+    assert_equal("# TYPE x_y gauge\n", new_metrics[1].typeString());
+    assert_equal("foo_bar 2 1329345850000\n", new_metrics[0].toString());
+    assert_equal("# TYPE foo_bar counter\n", new_metrics[0].typeString());
+    assert_equal(false, cit->second.getCounterStatus());
     new_metrics.clear();
     pe->dumpMetrics(res, new_metrics);
     assert_equal(0, res.size());
     assert_equal(0, new_metrics.size());
 
     //test onCleanup
-    pe->storeMetrics("*foo.bar", 1329345550, 5);
+    pe->storeMetrics("*foo.bar", 1329345855, 5);
     pe->storeMetrics("x.0y", 1329345850, 0.5);
     pe->storeMetrics("*foo.bar", 1329345819, 2);
-    pe->storeMetrics("*foo.bar", 1329345821, 1);
+    pe->storeMetrics("x.0y", 1329345821, 1);
     pe->storeMetrics("foo.bar.baz", 1329345819, 2.0);
     pe->storeMetrics("foo.bar.baz", 1329345880, 2.5);
     pe->onCleanup();
-    assert_equal(3, pe->data_.size());
-    it = pe->data_.begin();
+    assert_equal(3, pe->data_gauges_.size());
+    it = pe->data_gauges_.begin();
     assert_equal(1, it->second.getValue());
     assert_equal(0.5, (++it)->second.getValue());
     assert_equal(2.5, (++it)->second.getValue());
+    assert_equal(9, cit->second.getValue());
+    assert_equal(1329345855, cit->second.getTimestamp());
+    assert_equal(true, cit->second.getCounterStatus());
 
     // test tags
     pe->dumpMetrics(res, new_metrics);
     pe->storeMetrics("x.y.host.h123_", 1329345860, 0.2);
     pe->storeMetrics("x.y.host.h123.", 1329345865, 0.2);
     pe->storeMetrics("*x.y.host.", 1329345875, 1);
+    pe->storeMetrics("*x.y.host.", 1329345880, 3);
     pe->storeMetrics("x.y.role.rr123-1", 1329345855, 0.4);
     pe->storeMetrics("x.y.class.ccc123", 1329345870, 0.3);
     pe->storeMetrics("x.y.cluster.cl123", 1329345880, 0.3);
@@ -87,14 +96,15 @@ void test_prom_exporter()
     res.clear();
     new_metrics.clear();
     pe->dumpMetrics(res, new_metrics);
+    assert_equal(2, pe->data_counters_.size());
     assert_equal(5, res.size());
     assert_equal(3, new_metrics.size());
-    assert_equal("# TYPE x_y gauge\n", new_metrics[0].typeString());
-    assert_equal("x_y{role=\"rr123_1\"} 0.4 1329345855000\n", new_metrics[0].toString());
-    assert_equal("# TYPE x_y_host_h123_ gauge\n", new_metrics[1].typeString());
-    assert_equal("x_y_host_h123_ 0.2 1329345865000\n", new_metrics[1].toString());
-    assert_equal("# TYPE x_y_host_ counter\n", new_metrics[2].typeString());
-    assert_equal("x_y_host_ 1 1329345875000\n", new_metrics[2].toString());
+    assert_equal("# TYPE x_y_host_ counter\n", new_metrics[0].typeString());
+    assert_equal("x_y_host_ 4 1329345880000\n", new_metrics[0].toString());
+    assert_equal("# TYPE x_y gauge\n", new_metrics[1].typeString());
+    assert_equal("x_y{role=\"rr123_1\"} 0.4 1329345855000\n", new_metrics[1].toString());
+    assert_equal("# TYPE x_y_host_h123_ gauge\n", new_metrics[2].typeString());
+    assert_equal("x_y_host_h123_ 0.2 1329345865000\n", new_metrics[2].toString());
     assert_equal("x_y{host=\"h123_\"} 0.2 1329345860000\n", res[0].toString());
     assert_equal("x_y{class=\"ccc123\"} 0.3 1329345870000\n", res[1].toString());
     assert_equal("x_y{cluster=\"cl123\"} 0.3 1329345880000\n", res[2].toString());

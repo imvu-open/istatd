@@ -11,6 +11,7 @@
 #include <boost/assign.hpp>
 #include <ctype.h>
 #include <iostream>
+#include <tr1/unordered_set>
 
 #define CLEANUP_INTERVAL_SECOND 60
 
@@ -27,7 +28,8 @@ const std::map<PromMetric::TagName, std::string> PromMetric::tag_names_ =
 
 PromMetric::PromMetric(std::string const &ctr, time_t time, double val) :
     time_(time),
-    value_(val)
+    value_(val),
+    counter_updated_(true)
 {
     init(ctr);
 }
@@ -48,7 +50,7 @@ void PromMetric::init(std::string const& ctr)
     std::map<TagName, std::string>::const_iterator it = tag_names_.begin();
     for (; it != tag_names_.end(); ++it)
     {
-        if (hasTag(it->second)) break;
+        if (storeTag(it->second)) break;
     }
 
     istat::prom_munge(name_);
@@ -59,7 +61,7 @@ void PromMetric::init(std::string const& ctr)
     }
 }
 
-bool PromMetric::hasTag(std::string const & tname)
+bool PromMetric::storeTag(std::string const & tname)
 {
     std::string::size_type i;
     if ((i = name_.find("." + tname + ".")) != std::string::npos) 
@@ -115,6 +117,25 @@ std::string PromMetric::typeString()
     return ss.str();
 }
 
+void PromMetric::accumulate(time_t time, double val)
+{
+    if (type_ == PromTypeCounter) {
+        if (value_ > COUNT_MAX - val)
+        {
+            value_ = val;
+        }
+        else
+        {
+            value_ += val;
+        }
+        if (time > time_)
+        {
+            time_ = time;
+        }
+        counter_updated_ = true;
+    }
+}
+
 PromExporter::PromExporter(boost::asio::io_service &svc) :
     svc_(svc),
     cleanup_timer_(svc_)
@@ -130,25 +151,36 @@ PromExporter::~PromExporter()
 
 void PromExporter::dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMetric> & new_metrics)
 {
-    PromDataMap sending_data;
+    PromGaugeMap gagues_to_send;
     {
+        //gauges
         grab aholdof(mutex_);
-        data_.swap(sending_data);
-    }
-    PromMetricTypeMap metric_type_map;
+        data_gauges_.swap(gagues_to_send);
 
-    for (PromDataMap::iterator pit = sending_data.begin(); pit != sending_data.end(); ++pit)
-    {
-        std::string mname = (*pit).second.getName();
-        PromMetric::MetricType mtype = (*pit).second.getType();
-        if (metric_type_map.find(mname) == metric_type_map.end()) 
+        // counters
+        CumulativeCountsMap::iterator cit;
+        for (cit = data_counters_.begin(); cit != data_counters_.end(); ++cit)
         {
-            metric_type_map.insert(std::pair<std::string, PromMetric::MetricType>(mname, mtype));
-            new_metrics.push_back((*pit).second);
+            if ((*cit).second.getCounterStatus())
+            {
+                new_metrics.push_back((*cit).second);
+                (*cit).second.setCounterStatus(false);
+            }
+        }
+    }
+
+    std::tr1::unordered_set<std::string> new_gauges;
+    for (PromGaugeMap::iterator git = gagues_to_send.begin(); git != gagues_to_send.end(); ++git)
+    {
+        std::string mname = (*git).second.getName();
+        if (new_gauges.find(mname) == new_gauges.end())
+        {
+            new_gauges.insert(mname);
+            new_metrics.push_back((*git).second);
         }
         else
         {
-            res.push_back((*pit).second);
+            res.push_back((*git).second);
         }
     }
 }
@@ -157,7 +189,21 @@ void PromExporter::storeMetrics(std::string const &name, time_t time, double val
 {
     PromMetric prom_metric(name, time, val);
     grab aholdof(mutex_);
-    data_.insert(std::pair<time_t, PromMetric>(time, prom_metric));
+    if (prom_metric.getType() == PromMetric::PromTypeCounter) {
+        CumulativeCountsMap::iterator cit = data_counters_.find(name);
+        if (cit == data_counters_.end())
+        {
+            data_counters_.insert(std::pair<std::string, PromMetric>(name, prom_metric));
+        }
+        else
+        {
+            (*cit).second.accumulate(time, val);
+        }
+    }
+    else
+    {
+        data_gauges_.insert(std::pair<time_t, PromMetric>(time, prom_metric));
+    }
 }
 
 void PromExporter::cleanupNext()
@@ -174,18 +220,18 @@ void PromExporter::onCleanup()
     time_t tlower = now - cleanup_interval_;
     {
         grab aholdof(mutex_);
-        PromDataMap::iterator itUpper = data_.lower_bound(tlower);
+        PromGaugeMap::iterator itUpper = data_gauges_.lower_bound(tlower);
         if (debugPromExporter.enabled())
         {
             LogDebug << "PromExporter: discard unscraped data older than " << tlower 
-                << ". size before " << data_.size();
+                << ". size before " << data_gauges_.size();
         }
-        if (itUpper != data_.begin())
+        if (itUpper != data_gauges_.begin())
         {
-            data_.erase(data_.begin(), itUpper);
+            data_gauges_.erase(data_gauges_.begin(), itUpper);
             if (debugPromExporter.enabled())
             {
-                LogDebug << "PromExporter: size after" << data_.size();
+                LogDebug << "PromExporter: size after" << data_gauges_.size();
             }
         }
     }

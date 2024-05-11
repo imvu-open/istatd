@@ -13,6 +13,8 @@
 
 #include "threadfunc.h"
 
+#define COUNT_MAX 0xffffffff
+
 class PromMetric
 {
 public:
@@ -26,9 +28,13 @@ public:
     PromMetric(std::string const &ctr, time_t time, double val);
     std::string toString();
     std::string typeString();
+    void accumulate(time_t time, double val);
     inline double getValue() { return value_; }
     inline std::string getName() { return name_; }
     inline MetricType getType() { return type_; }
+    inline time_t getTimestamp() { return time_; }
+    inline bool getCounterStatus() { return counter_updated_; }
+    inline void setCounterStatus(bool updated) { counter_updated_ = updated; }
 
 private:
     enum TagName
@@ -45,11 +51,12 @@ private:
     time_t time_;
     double value_;
     std::string name_;
+    bool counter_updated_;
     std::list<std::pair<std::string, std::string> > tags_;
     static const std::map<TagName, std::string> tag_names_;
 
     void init(std::string const & ctr);
-    bool hasTag(std::string const & tname);
+    bool storeTag(std::string const & tname);
 };
 
 struct TimeComp {
@@ -81,12 +88,13 @@ public:
 private:
     friend void test_prom_exporter();
 
-    typedef std::multimap<time_t, PromMetric, TimeComp> PromDataMap;
-    typedef std::tr1::unordered_map<std::string, PromMetric::MetricType> PromMetricTypeMap;
+    typedef std::multimap<time_t, PromMetric, TimeComp> PromGaugeMap;
+    typedef std::tr1::unordered_map<std::string, PromMetric> CumulativeCountsMap;
 
     boost::asio::io_service &svc_;
     int cleanup_interval_;
-    PromDataMap data_;
+    PromGaugeMap data_gauges_;
+    CumulativeCountsMap data_counters_; //key is unmunged name
     lock mutex_;
     bool enabled_;
     boost::asio::deadline_timer cleanup_timer_;
