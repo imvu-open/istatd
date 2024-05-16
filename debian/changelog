@@ -1,3 +1,10 @@
+istatd (1.02-1) UNRELEASED; urgency=medium
+
+  * Fix convertion of istad event count to prometheus counter
+  * fix conversion of prometheus tags and add ftests of prometheus exporter
+
+ -- Fang Fang <ffang@imvu.com>  Thu, 16 May 2024 14:23:08 -0700
+
 istatd (1.01-1) UNRELEASED; urgency=medium
 
   * fix metric labels of prometheus exporter
