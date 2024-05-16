@@ -1,0 +1,6 @@
+# TYPE test_counter_c counter
+test_counter_c 1 50000
+# TYPE test_counter counter
+test_counter{host="h",role="r",class="c"} 3 25000
+# TYPE test_gauge gauge
+test_gauge 43 25000

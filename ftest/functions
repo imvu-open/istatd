@@ -588,6 +588,13 @@ function assert_expected {
     assert_files_equal $RESULT_F $EXPECT_F
 }
 
+function check_get_metrics {
+    PORT="$1"; shift
+    OUTFILE="$1"; shift
+    curl -s "http://localhost:$PORT/metrics" > "$OUTFILE"
+    assert_expected "$OUTFILE"
+}
+
 TEST_NUM=0
 TEST_OUT=/var/tmp/test_out_$$
 EXPECT_OUT=/var/tmp/expect_out_$$

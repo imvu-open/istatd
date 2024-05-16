@@ -24,16 +24,18 @@ public:
         PromTypeCounter = 1,
         PromTypeUnknown = 2
     };
+    typedef std::list<std::pair<std::string, std::string> > PromTagList;
 
     PromMetric(std::string const &ctr, time_t time, double val);
-    std::string toString();
-    std::string typeString();
-    void accumulate(time_t time, double val);
-    inline double getValue() { return value_; }
-    inline std::string getName() { return name_; }
-    inline MetricType getType() { return type_; }
-    inline time_t getTimestamp() { return time_; }
-    inline bool getCounterStatus() { return counter_updated_; }
+    PromMetric(std::string const &ctr, PromTagList const & tags, time_t time, double val);
+    std::string toString() const;
+    std::string typeString() const;
+    void accumulate(PromMetric const & prom_metric);
+    inline const double & getValue() const { return value_; }
+    inline const std::string & getName() const { return name_; }
+    inline const MetricType & getType() const { return type_; }
+    inline const time_t & getTimestamp() const { return time_; }
+    inline const bool getCounterStatus() const { return counter_updated_; }
     inline void setCounterStatus(bool updated) { counter_updated_ = updated; }
 
 private:
@@ -52,11 +54,9 @@ private:
     double value_;
     std::string name_;
     bool counter_updated_;
-    std::list<std::pair<std::string, std::string> > tags_;
-    static const std::map<TagName, std::string> tag_names_;
+    PromTagList tags_;
 
     void init(std::string const & ctr);
-    bool storeTag(std::string const & tname);
 };
 
 struct TimeComp {
@@ -71,7 +71,7 @@ class IPromExporter : public boost::noncopyable
 public:
     virtual ~IPromExporter() {};
     virtual void dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMetric> & new_metrics) = 0;
-    virtual void storeMetrics(std::string const &ctr, time_t time, double val) = 0;
+    virtual void storeMetrics(std::string const & basename, std::vector<std::string> const & cnames, time_t time, double val) = 0;
     virtual bool enabled() = 0;
 };
 
@@ -81,8 +81,7 @@ public:
     PromExporter(boost::asio::io_service &svc);
     virtual ~PromExporter();
     void dumpMetrics(std::vector<PromMetric> &res, std::vector<PromMetric> & new_metrics);
-    void dumpMetrics(std::vector<PromMetric> &res);
-    void storeMetrics(std::string const &ctr, time_t time, double val);
+    void storeMetrics(std::string const & basename, std::vector<std::string> const & cname, time_t time, double val);
     inline bool enabled() { return true; }
 
 private:
@@ -94,11 +93,17 @@ private:
     boost::asio::io_service &svc_;
     int cleanup_interval_;
     PromGaugeMap data_gauges_;
-    CumulativeCountsMap data_counters_; //key is unmunged name
+    CumulativeCountsMap data_counters_;
     lock mutex_;
     bool enabled_;
     boost::asio::deadline_timer cleanup_timer_;
 
+    void extract_tags(
+            std::string const & base, 
+            std::vector<std::string> const & cname, 
+            PromMetric::PromTagList & tags, 
+            std::vector<std::string> & no_tag_ctrs);
+    void storeAmetric(PromMetric const & metric);
     void cleanupNext();
     void onCleanup();
 };
@@ -109,7 +114,7 @@ public:
     NullPromExporter() {};
     virtual ~NullPromExporter() {};
     inline void dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMetric> & new_metrics) {}
-    inline void storeMetrics(std::string const &ctr, time_t time, double val) {}
+    inline void storeMetrics(std::string const &ctr, std::vector<std::string> const & cname, time_t time, double val) {}
     inline bool enabled() { return false; }
 };
 

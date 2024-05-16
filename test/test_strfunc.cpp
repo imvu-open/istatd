@@ -210,50 +210,68 @@ namespace istat
     void test_extract()
     {
         std::vector<std::string> out;
+        std::string basename;
 
         out.clear();
-        extract_ctrs("foo.bar", out);
+        basename.clear();
+        extract_ctrs("foo.bar", out, basename);
         assert_equal(out.size(), 1);
         assert_equal(out[0], "foo.bar");
+        assert_equal(basename, "foo.bar");
 
         out.clear();
-        extract_ctrs("", out);
+        basename.clear();
+        extract_ctrs("", out, basename);
         assert_equal(out.size(), 0);
+        assert_equal(basename.size(), 0);
 
         out.clear();
-        extract_ctrs("^", out);
+        basename.clear();
+        extract_ctrs("^", out, basename);
         assert_equal(out.size(), 0);
+        assert_equal(basename.size(), 0);
 
         out.clear();
-        extract_ctrs("^xy", out);
+        basename.clear();
+        extract_ctrs("^xy", out, basename);
         assert_equal(out.size(), 1);
         assert_equal(out[0], "xy");
+        assert_equal(basename, "");
 
         out.clear();
-        extract_ctrs("xy^", out);
+        basename.clear();
+        extract_ctrs("xy^", out, basename);
         assert_equal(out.size(), 1);
         assert_equal(out[0], "xy");
+        assert_equal(basename, "xy");
 
         out.clear();
-        extract_ctrs("x^y", out);
+        basename.clear();
+        extract_ctrs("x^y", out, basename);
         assert_equal(out.size(), 1);
         assert_equal(out[0], "x.y");
+        assert_equal(basename, "x");
 
         out.clear();
-        extract_ctrs("x^y^z", out);
+        basename.clear();
+        extract_ctrs("x^y^z", out, basename);
         assert_equal(out.size(), 2);
         assert_equal(out[0], "x.y");
         assert_equal(out[1], "x.z");
+        assert_equal(basename, "x");
 
         out.clear();
-        extract_ctrs("x^y^z^", out);
+        basename.clear();
+        extract_ctrs("x^y^z^", out, basename);
         assert_equal(out.size(), 3);
         assert_equal(out[0], "x.y");
         assert_equal(out[1], "x.z");
         assert_equal(out[2], "x");
+        assert_equal(basename, "x");
 
         out.clear();
-        extract_ctrs("cpu.idle^host.af1234^class.dbserver^class.memcache^role.db-shard-10^role.memcache-13^role.memcache-14", out);
+        basename.clear();
+        extract_ctrs("cpu.idle^host.af1234^class.dbserver^class.memcache^role.db-shard-10^role.memcache-13^role.memcache-14", out, basename);
         assert_equal(out.size(), 6);
         assert_equal(out[0], "cpu.idle.host.af1234");
         assert_equal(out[1], "cpu.idle.class.dbserver");
@@ -261,6 +279,7 @@ namespace istat
         assert_equal(out[3], "cpu.idle.role.db-shard-10");
         assert_equal(out[4], "cpu.idle.role.memcache-13");
         assert_equal(out[5], "cpu.idle.role.memcache-14");
+        assert_equal(basename, "cpu.idle");
     }
 
     void test_explode()

@@ -31,7 +31,7 @@ namespace istat
     //  Thus, "string^" is an alias for "string" whereas "string^x" is an alias
     //  for (only) "string.x" and "string^x^" is an alias for "string.x, string".
     //  Subs will be appended to the vector.
-    void extract_ctrs(std::string const &istr, std::vector<std::string> &osubs);
+    void extract_ctrs(std::string const &istr, std::vector<std::string> &osubs, std::string & basename);
     //  Combine path names -- if the second is absolute, then use that; else
     //  combine the two paths.
     std::string combine_paths(std::string const &left, std::string const &right);

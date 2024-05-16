@@ -362,7 +362,7 @@ namespace istat
         }
     }
 
-    void extract_ctrs(std::string const &istr, std::vector<std::string> &osubs)
+    void extract_ctrs(std::string const &istr, std::vector<std::string> &osubs, std::string & prombase)
     {
         std::string base;
         size_t pos = istr.find_first_of('^');
@@ -371,10 +371,12 @@ namespace istat
             if (istr.size())
             {
                 osubs.push_back(istr);
+                prombase = istr;
             }
             return;
         }
         base = istr.substr(0, pos);
+        prombase = istr.substr(0, pos);
         if (pos > 0)
         {
             base.push_back('.');

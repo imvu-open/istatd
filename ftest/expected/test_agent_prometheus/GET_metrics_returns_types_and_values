@@ -1,0 +1,9 @@
+# TYPE test_counter_2 counter
+test_counter_2{host="hh",role="rr"} 1 20000
+# TYPE test_counter counter
+test_counter{host="h",role="r",class="c"} 2 20000
+# TYPE test_gauge_1 gauge
+test_gauge_1 41 10000
+# TYPE test_gauge_2 gauge
+test_gauge_2 43 30000
+test_gauge_1 42 20000

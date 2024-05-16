@@ -518,7 +518,8 @@ void StatServer::handle_counter_cmd(std::string const &cmd)
     if(n > 1)
     {
         std::vector<std::string> cnames;
-        extract_ctrs(parts[0], cnames);
+        std::string prom_base;
+        extract_ctrs(parts[0], cnames, prom_base);
 
         for (std::vector<std::string>::iterator it(cnames.begin()), end(cnames.end()); it != end; ++it)
         {
@@ -539,6 +540,22 @@ void StatServer::handle_counter_cmd(std::string const &cmd)
                 LogError << "Bad format in received stat (" << n << "fields; expected 2, 3 or 7):" << cmd;
                 ++badCommands_;
                 break;
+            }
+        }
+
+        if (hasPromExporter())
+        {
+            switch (n)
+            {
+                case 2: //  ctr, value
+                    handle_forward_prom(prom_base, cnames, 0, to_double(parts[1]));
+                    break;
+                case 3: //  ctr, time, value
+                case 7: //  ctr, time, value, valuesq, min, max, cnt
+                    handle_forward_prom(prom_base, cnames, to_time_t(parts[1]), to_double(parts[2]));
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -589,9 +606,6 @@ void StatServer::handle_record(std::string const &ctr, double val)
     {
         handle_forward(ctr, 0, val, val*val, val, val, 1);
     }
-    if (hasPromExporter()) {
-        handle_forward_prom(ctr, 0, val);
-    }
 }
 
 void StatServer::handle_record(std::string const &ctr, time_t time, double val)
@@ -601,9 +615,6 @@ void StatServer::handle_record(std::string const &ctr, time_t time, double val)
     {
         handle_forward(ctr, time, val, val*val, val, val, 1);
     }
-    if (hasPromExporter()) {
-        handle_forward_prom(ctr, time, val);
-    }
 }
 
 void StatServer::handle_record(std::string const &ctr, time_t time, double val, double sumSq, double min, double max, size_t n)
@@ -612,9 +623,6 @@ void StatServer::handle_record(std::string const &ctr, time_t time, double val, 
     if (hasAgent())
     {
         handle_forward(ctr, time, val, sumSq, min, max, n);
-    }
-    if (hasPromExporter()) {
-        handle_forward_prom(ctr, time, val);
     }
 }
 
@@ -647,7 +655,7 @@ void StatServer::handle_forward(std::string const &ctr, time_t time, double val,
     }
 }
 
-void StatServer::handle_forward_prom(std::string const &ctr, time_t time, double val)
+void StatServer::handle_forward_prom(std::string const &ctr, std::vector<std::string> const & cnames, time_t time, double val)
 {
     LogDebug << "StatServer::handle_forward_prom()";
 
@@ -655,7 +663,7 @@ void StatServer::handle_forward_prom(std::string const &ctr, time_t time, double
     {
         istat::istattime(&time);
     }
-    promExporter_->storeMetrics(ctr, time, val);
+    promExporter_->storeMetrics(ctr, cnames, time, val);
 }
 
 void StatServer::clearForward(AgentFlushRequest * agentFlushRequest)
