@@ -1,3 +1,9 @@
+istatd (1.03-1) UNRELEASED; urgency=medium
+
+  * Prometheus tag names need to be unique
+
+ -- Fang Fang <ffang@imvu.com>  Sun, 19 May 2024 20:58:37 -0700
+
 istatd (1.02-1) UNRELEASED; urgency=medium
 
   * Fix convertion of istad event count to prometheus counter
