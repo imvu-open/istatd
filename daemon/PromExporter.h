@@ -6,6 +6,7 @@
 #include <vector>
 #include <list>
 #include <tr1/unordered_map>
+#include <tr1/unordered_set>
 
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
@@ -39,23 +40,12 @@ public:
     inline void setCounterStatus(bool updated) { counter_updated_ = updated; }
 
 private:
-    enum TagName
-    {
-        PromTagHost = 0,
-        PromTagRole,
-        PromTagClass,
-        PromTagPool,
-        PromTagProxyPool,
-        PromTagCluster,
-    };
-
     MetricType type_;
     time_t time_;
     double value_;
     std::string name_;
     bool counter_updated_;
     PromTagList tags_;
-
     void init(std::string const & ctr);
 };
 
@@ -71,7 +61,7 @@ class IPromExporter : public boost::noncopyable
 public:
     virtual ~IPromExporter() {};
     virtual void dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMetric> & new_metrics) = 0;
-    virtual void storeMetrics(std::string const & basename, std::vector<std::string> const & cnames, time_t time, double val) = 0;
+    virtual void storeMetrics(std::string const &ctr, std::string const & basename, std::vector<std::string> const & cnames, time_t time, double val) = 0;
     virtual bool enabled() = 0;
 };
 
@@ -81,7 +71,7 @@ public:
     PromExporter(boost::asio::io_service &svc);
     virtual ~PromExporter();
     void dumpMetrics(std::vector<PromMetric> &res, std::vector<PromMetric> & new_metrics);
-    void storeMetrics(std::string const & basename, std::vector<std::string> const & cname, time_t time, double val);
+    void storeMetrics(std::string const &ctr, std::string const & basename, std::vector<std::string> const & cname, time_t time, double val);
     inline bool enabled() { return true; }
 
 private:
@@ -97,13 +87,14 @@ private:
     lock mutex_;
     bool enabled_;
     boost::asio::deadline_timer cleanup_timer_;
+    static const std::tr1::unordered_set<std::string> allowed_tags_;
 
     void extract_tags(
-            std::string const & base, 
-            std::vector<std::string> const & cname, 
-            PromMetric::PromTagList & tags, 
+            std::string const & base,
+            std::vector<std::string> const & cname,
+            PromMetric::PromTagList & tags,
             std::vector<std::string> & no_tag_ctrs);
-    void storeAmetric(PromMetric const & metric);
+    void storeAmetric(std::string const & ctr, PromMetric const & metric);
     void cleanupNext();
     void onCleanup();
 };
@@ -114,7 +105,7 @@ public:
     NullPromExporter() {};
     virtual ~NullPromExporter() {};
     inline void dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMetric> & new_metrics) {}
-    inline void storeMetrics(std::string const &ctr, std::vector<std::string> const & cname, time_t time, double val) {}
+    inline void storeMetrics(std::string const &ctr, std::string const & basename, std::vector<std::string> const & cname, time_t time, double val) {}
     inline bool enabled() { return false; }
 };
 

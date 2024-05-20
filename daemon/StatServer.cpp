@@ -548,11 +548,11 @@ void StatServer::handle_counter_cmd(std::string const &cmd)
             switch (n)
             {
                 case 2: //  ctr, value
-                    handle_forward_prom(prom_base, cnames, 0, to_double(parts[1]));
+                    handle_forward_prom(parts[0], prom_base, cnames, 0, to_double(parts[1]));
                     break;
                 case 3: //  ctr, time, value
                 case 7: //  ctr, time, value, valuesq, min, max, cnt
-                    handle_forward_prom(prom_base, cnames, to_time_t(parts[1]), to_double(parts[2]));
+                    handle_forward_prom(parts[0], prom_base, cnames, to_time_t(parts[1]), to_double(parts[2]));
                     break;
                 default:
                     break;
@@ -655,7 +655,7 @@ void StatServer::handle_forward(std::string const &ctr, time_t time, double val,
     }
 }
 
-void StatServer::handle_forward_prom(std::string const &ctr, std::vector<std::string> const & cnames, time_t time, double val)
+void StatServer::handle_forward_prom(std::string const & ctr, std::string const & basename, std::vector<std::string> const & cnames, time_t time, double val)
 {
     LogDebug << "StatServer::handle_forward_prom()";
 
@@ -663,7 +663,7 @@ void StatServer::handle_forward_prom(std::string const &ctr, std::vector<std::st
     {
         istat::istattime(&time);
     }
-    promExporter_->storeMetrics(ctr, cnames, time, val);
+    promExporter_->storeMetrics(ctr, basename, cnames, time, val);
 }
 
 void StatServer::clearForward(AgentFlushRequest * agentFlushRequest)

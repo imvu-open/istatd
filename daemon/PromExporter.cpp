@@ -11,7 +11,6 @@
 #include <boost/assign.hpp>
 #include <ctype.h>
 #include <iostream>
-#include <tr1/unordered_set>
 
 #define CLEANUP_INTERVAL_SECOND 60
 
@@ -42,7 +41,7 @@ void PromMetric::init(std::string const& ctr)
         name_ = ctr.substr(1);
         type_ = PromMetric::PromTypeCounter;
     }
-    else 
+    else
     {
         type_ = PromMetric::PromTypeGauge;
     }
@@ -52,7 +51,6 @@ void PromMetric::init(std::string const& ctr)
     for(; tit != tags_.end(); ++tit)
     {
         istat::prom_munge(tit->first);
-        istat::prom_munge(tit->second);
     }
 }
 
@@ -117,6 +115,15 @@ void PromMetric::accumulate(PromMetric const &  prom_metric)
     }
 }
 
+const std::tr1::unordered_set<std::string> PromExporter::allowed_tags_ =
+    boost::assign::list_of<std::string>
+        ("host")
+        ("role")
+        ("class")
+        ("pool")
+        ("proxy-pool")
+        ("cluster");
+
 PromExporter::PromExporter(boost::asio::io_service &svc) :
     svc_(svc),
     cleanup_timer_(svc_)
@@ -166,7 +173,7 @@ void PromExporter::dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMe
     }
 }
 
-void PromExporter::storeMetrics(std::string const &basename, std::vector<std::string> const & cnames, time_t time, double val)
+void PromExporter::storeMetrics(std::string const &ctr, std::string const &basename, std::vector<std::string> const & cnames, time_t time, double val)
 {
     PromMetric::PromTagList tags;
     std::vector<std::string> no_tag_names;
@@ -174,11 +181,11 @@ void PromExporter::storeMetrics(std::string const &basename, std::vector<std::st
     grab aholdof(mutex_);
     if (! tags.empty())
     {
-        storeAmetric(PromMetric(basename, tags, time, val));
+        storeAmetric(ctr, PromMetric(basename, tags, time, val));
     }
     for (std::vector<std::string>::iterator it = no_tag_names.begin(); it != no_tag_names.end(); ++it)
     {
-        storeAmetric(PromMetric(*it, time, val));
+        storeAmetric(ctr, PromMetric(*it, time, val));
     }
 }
 
@@ -194,33 +201,33 @@ void PromExporter::extract_tags(
         std::vector<std::string>::const_iterator it;
         for (it = cnames.begin(); it != cnames.end(); ++it)
         {
-            if (base == (*it))
+            if (bsize > (*it).size() || (*it).substr(0, bsize) != base || (bsize < (*it).size() && (*it)[bsize] != '.'))
             {
-                no_tag_ctrs.push_back(*it);
+                LogError << "PromExporter::extract_tags metric name mismatch base:" << base  << ", full name:" << (*it) << ".";
+                continue;
             }
-            else if (bsize >= (*it).size() || (*it).substr(0, bsize) != base) 
-            {
-                 LogError << "PromExporter::extract_tags metric name mismatch base:" << base  << ", full name:" << (*it) << ".";
-            }
-            else
+            else if (bsize < (*it).size())
             {
                 std::string maybe_tag = (*it).substr(bsize);
-                if (maybe_tag[0] != '.') {
-                    LogError << "PromExporter::extract_tags metric name mismatch base:" << base  << ", full name:" << (*it) << ".";
-                }
-                else
+                size_t pos = maybe_tag.find_first_of('.', 1);
+                if (pos != std::string::npos && pos + 1 < maybe_tag.size() )
                 {
-                    size_t pos = maybe_tag.find_first_of('.', 1);
-                    if (pos != std::string::npos && pos + 1 < maybe_tag.size() )
+                    std::string tname = maybe_tag.substr(1, pos-1);
+                    if (allowed_tags_.find(tname) != allowed_tags_.end())
                     {
-                        tags.push_back(std::pair<std::string, std::string>(maybe_tag.substr(1, pos-1), maybe_tag.substr(pos+1)));
-                    }
-                    else
-                    {
-                        no_tag_ctrs.push_back(*it);
+                        if (tname == "host")
+                        {
+                            tags.push_back(std::pair<std::string, std::string>(maybe_tag.substr(1, pos-1), maybe_tag.substr(pos+1)));
+                        }
+                        else
+                        {
+                            tags.push_back(std::pair<std::string, std::string>(maybe_tag.substr(1), "1"));
+                        }
+                        continue;
                     }
                 }
             }
+             no_tag_ctrs.push_back(*it);
         }
     }
     else
@@ -229,14 +236,14 @@ void PromExporter::extract_tags(
     }
 }
 
-void PromExporter::storeAmetric(PromMetric const & prom_metric)
+void PromExporter::storeAmetric(std::string const & ctr, PromMetric const & prom_metric)
 {
 
     if (PromMetric::PromTypeCounter == prom_metric.getType()) {
-        CumulativeCountsMap::iterator cit = data_counters_.find(prom_metric.getName());
+        CumulativeCountsMap::iterator cit = data_counters_.find(ctr);
         if (cit == data_counters_.end())
         {
-            data_counters_.insert(std::pair<std::string, PromMetric>(prom_metric.getName(), prom_metric));
+            data_counters_.insert(std::pair<std::string, PromMetric>(ctr, prom_metric));
         }
         else
         {

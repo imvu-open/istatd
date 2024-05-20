@@ -1,0 +1,5 @@
+# TYPE test_counter counter
+test_counter{host="h",role_r="1",role_r_2="1"} 1 35000
+# TYPE test_gauge_2 gauge
+test_gauge_2{host="h",class_foo="1"} 44 35000
+test_gauge_2{host="h",class_foo="1"} 45 40000

@@ -162,7 +162,7 @@ private:
     void handle_record(std::string const &ctr, time_t time, double val);
     void handle_record(std::string const &ctr, time_t time, double val, double sumSq, double min, double max, size_t n);
     void handle_forward(std::string const &ctr, time_t time, double val, double sumSq, double min, double max, size_t n);
-    void handle_forward_prom(std::string const &base, std::vector<std::string> const & cnames, time_t time, double val);
+    void handle_forward_prom(std::string const & ctr, std::string const & base, std::vector<std::string> const & cnames, time_t time, double val);
     void on_forwardTimer();
     void clearForward(AgentFlushRequest * agentFlushRequest);
 

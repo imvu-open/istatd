@@ -18,16 +18,20 @@ send_stat ${INSTANCE} "test.gauge.1" 10 41
 send_stat ${INSTANCE} "test.gauge.1" 20 42
 send_stat ${INSTANCE} "*test.counter^host.h^role.r^class.c" 20 1
 send_stat ${INSTANCE} "*test.counter^host.h^role.r^class.c" 15 1
-send_stat ${INSTANCE} "*test.counter.2^host.hh^role.rr" 20 1
-send_stat ${INSTANCE} "test.gauge.2" 30 43
+send_stat ${INSTANCE} "test.gauge.2^host.h^class.foo" 20 43
 flush_istatd ${INSTANCE}
 test_name GET_metrics_returns_types_and_values
 check_get_metrics 18121 $TEST_OUT
 
 send_stat ${INSTANCE} "*test.counter^host.h^role.r^class.c" 25 1
 send_stat ${INSTANCE} "test.gauge" 25 43
-send_stat ${INSTANCE} "*test.counter^c"  1
 test_name GET_metrics_returns_cumulative_counters
+check_get_metrics 18121 $TEST_OUT
+
+send_stat ${INSTANCE} "*test.counter^host.h^role.r^role.r-2" 35 1
+send_stat ${INSTANCE} "test.gauge.2^host.h^class.foo" 35 44
+send_stat ${INSTANCE} "test.gauge.2^host.h^class.foo" 40 45
+test_name GET_metrics_returns_new_counter_when_tag_change
 check_get_metrics 18121 $TEST_OUT
 
 purge_istatd 18032
