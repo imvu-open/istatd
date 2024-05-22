@@ -1,3 +1,10 @@
+istatd (1.04-1) UNRELEASED; urgency=medium
+
+  * fix a bug in prometheus exporter
+  * improve the test compatibility
+
+ -- Fang Fang <ffang@imvu.com>  Wed, 22 May 2024 10:02:22 -0700
+
 istatd (1.03-1) UNRELEASED; urgency=medium
 
   * Prometheus tag names need to be unique
