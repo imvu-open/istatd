@@ -1,4 +1,6 @@
-# TYPE test_counter counter
+test_counter_d_f 3 25000
 test_counter{host="h",role_r="1",class_c="1"} 3 25000
-# TYPE test_gauge gauge
 test_gauge 43 25000
+# TYPE test_counter counter
+# TYPE test_counter_d_f counter
+# TYPE test_gauge gauge

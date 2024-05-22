@@ -185,7 +185,7 @@ void PromExporter::storeMetrics(std::string const &ctr, std::string const &basen
     }
     for (std::vector<std::string>::iterator it = no_tag_names.begin(); it != no_tag_names.end(); ++it)
     {
-        storeAmetric(ctr, PromMetric(*it, time, val));
+        storeAmetric((*it), PromMetric(*it, time, val));
     }
 }
 

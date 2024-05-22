@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <boost/asio.hpp>
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
@@ -20,6 +21,11 @@ void storeMetrics(boost::shared_ptr<PromExporter> pe, std::string const & name, 
 {
     std::vector<std::string> ctrs(1, name);
     pe->storeMetrics(name, name, ctrs, t, v);
+}
+
+bool comparePromMetric(PromMetric & a, PromMetric & b)
+{
+    return a.getName() < b.getName();
 }
 
 void test_prom_exporter()
@@ -96,10 +102,10 @@ void test_prom_exporter()
     assert_equal(1329345855, cit->second.getTimestamp());
     assert_equal(true, cit->second.getCounterStatus());
 
-    // test extract_tags
+    // test extract_tags gauge
     pe->dumpMetrics(res, new_metrics);
     std::vector<std::string> ctrs;
-    std::string ctr = "x.y.z^host.h123^role.r123^role.r456-1";
+    std::string ctr = "x.y.z^host.h123^role.r123^role.r456-1^a-b^a-b.^a-b.ab123.x.y.z";
     ctrs.push_back("x.y.z.host.h123.");
     ctrs.push_back("x.y.z.role.r123");
     ctrs.push_back("x.y.z.role.r456-1");
@@ -133,6 +139,33 @@ void test_prom_exporter()
     assert_equal("x_y_z_a_b_ab123_x_y_z 0.4 1329345865000\n", res[1].toString());
     assert_equal("x_y_z_a_b 0.4 1329345865000\n", res[2].toString());
     assert_equal("x_y_z_a_b_ 0.4 1329345865000\n", res[3].toString());
+
+    // test extract_tags counters
+    ctrs.clear();
+    ctr = "*a.b.c^class.c123^proxy-pool.p123^abc^class.c456^a.b.c";
+    ctrs.push_back("*a.b.c.class.c123");
+    ctrs.push_back("*a.b.c.proxy-pool.p123");
+    ctrs.push_back("*a.b.c.abc");
+    ctrs.push_back("*a.b.c.class.c456");
+    ctrs.push_back("*a.b.c.a.b.c");
+    pe->storeMetrics(ctr, "*a.b.c", ctrs, 1329345870, 1);
+    pe->storeMetrics(ctr, "*a.b.c", ctrs, 1329345875, 1);
+    storeMetrics(pe, "*foo.bar", 1329345875, 1);
+    res.clear();
+    new_metrics.clear();
+    pe->dumpMetrics(res, new_metrics);
+    assert_equal(6, pe->data_counters_.size());
+    assert_equal(0, res.size());
+    assert_equal(4, new_metrics.size());
+    std::sort(new_metrics.begin(), new_metrics.end(), comparePromMetric);
+    assert_equal("# TYPE a_b_c counter\n", new_metrics[0].typeString());
+    assert_equal("a_b_c{class_c123=\"1\",proxy_pool_p123=\"1\",class_c456=\"1\"} 2 1329345875000\n", new_metrics[0].toString());
+    assert_equal("# TYPE a_b_c_a_b_c counter\n", new_metrics[1].typeString());
+    assert_equal("a_b_c_a_b_c 2 1329345875000\n", new_metrics[1].toString());
+    assert_equal("# TYPE a_b_c_abc counter\n", new_metrics[2].typeString());
+    assert_equal("a_b_c_abc 2 1329345875000\n", new_metrics[2].toString());
+    assert_equal("# TYPE foo_bar counter\n", new_metrics[3].typeString());
+    assert_equal("foo_bar 10 1329345875000\n", new_metrics[3].toString());
 }
 
 void func() {

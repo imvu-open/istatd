@@ -1,7 +1,11 @@
-# TYPE test_counter counter
+test_counter_d_f 2 20000
+test_counter_foo 1 15000
 test_counter{host="h",role_r="1",class_c="1"} 2 20000
-# TYPE test_gauge_1 gauge
 test_gauge_1 41 10000
-# TYPE test_gauge_2 gauge
-test_gauge_2{host="h",class_foo="1"} 43 20000
 test_gauge_1 42 20000
+test_gauge_2{host="h",class_foo="1"} 43 20000
+# TYPE test_counter counter
+# TYPE test_counter_d_f counter
+# TYPE test_counter_foo counter
+# TYPE test_gauge_1 gauge
+# TYPE test_gauge_2 gauge
