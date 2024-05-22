@@ -588,11 +588,34 @@ function assert_expected {
     assert_files_equal $RESULT_F $EXPECT_F
 }
 
+function assert_files_similar {
+    FILE1=$1
+    FILE2=$2
+    TMPF=/var/tmp/assert_files_similar_$$.txt
+    if ! ftest/compare_file.py $FILE1 $FILE2 > $TMPF 2>&1 ; then
+        echo "FAILURE: $TEST_NAME"
+        echo "test_output < $FILE1"
+        echo "test_expect > $FILE2"
+        cat $TMPF
+        rm -f $TMPF
+        exit 1
+    fi
+    rm -f $TMPF
+}
+
+function assert_expected_file {
+    RESULT_F=$1
+    EXPECT_F=ftest/expected/$FTEST_NAME/$TEST_NAME
+    [ -d ftest/expected ] || failure "dir does not exist: ftest/expected"
+    [ -d ftest/expected/$FTEST_NAME ] || failure "dir does not exist: ftest/expected/$FTEST_NAME"
+    assert_files_similar $RESULT_F $EXPECT_F
+}
+
 function check_get_metrics {
     PORT="$1"; shift
     OUTFILE="$1"; shift
-    curl -s "http://localhost:$PORT/metrics" | sort > "$OUTFILE"
-    assert_expected "$OUTFILE"
+    curl -s "http://localhost:$PORT/metrics" > "$OUTFILE"
+    assert_expected_file "$OUTFILE"
 }
 
 TEST_NUM=0
