@@ -1,6 +1,6 @@
-test_counter_d_f 2 20000
-test_counter_foo 1 15000
-test_counter{host="h",role_r="1",class_c="1"} 2 20000
+test_counter_d_f{counter="1"} 2 20000
+test_counter_foo{counter="1"} 1 15000
+test_counter{host="h",role_r="1",class_c="1",counter="1"} 2 20000
 test_gauge_1 41 10000
 test_gauge_1 42 20000
 test_gauge_2{host="h",class_foo="1"} 43 20000

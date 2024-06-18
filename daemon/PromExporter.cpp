@@ -40,6 +40,7 @@ void PromMetric::init(std::string const& ctr)
     {
         name_ = ctr.substr(1);
         type_ = PromMetric::PromTypeCounter;
+        tags_.push_back(std::pair<std::string, std::string>("counter", "1"));
     }
     else
     {

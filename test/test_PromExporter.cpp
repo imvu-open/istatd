@@ -75,7 +75,7 @@ void test_prom_exporter()
     assert_equal("x_y", (++(new_metrics.begin()))->getName());
     assert_equal("x_y 0.5 1329345820000\n", new_metrics[1].toString());
     assert_equal("# TYPE x_y gauge\n", new_metrics[1].typeString());
-    assert_equal("foo 1 1329345850000\n", new_metrics[0].toString());
+    assert_equal("foo{counter=\"1\"} 1 1329345850000\n", new_metrics[0].toString());
     assert_equal("# TYPE foo counter\n", new_metrics[0].typeString());
     assert_equal(false, cit->second.getCounterStatus());
     new_metrics.clear();
@@ -126,7 +126,7 @@ void test_prom_exporter()
     assert_equal(4, res.size());
     assert_equal(5, new_metrics.size());
     assert_equal("# TYPE x_y_host_ counter\n", new_metrics[0].typeString());
-    assert_equal("x_y_host_ 4 1329345880000\n", new_metrics[0].toString());
+    assert_equal("x_y_host_{counter=\"1\"} 4 1329345880000\n", new_metrics[0].toString());
     assert_equal("# TYPE x_y_z gauge\n", new_metrics[1].typeString());
     assert_equal("x_y_z{host=\"h123.\",role_r123=\"1\",role_r456_1=\"1\"} 0.2 1329345860000\n", new_metrics[1].toString());
     assert_equal("# TYPE x_y_z_a_b_ab123_x_y_z gauge\n", new_metrics[2].typeString());
@@ -159,13 +159,13 @@ void test_prom_exporter()
     assert_equal(4, new_metrics.size());
     std::sort(new_metrics.begin(), new_metrics.end(), comparePromMetric);
     assert_equal("# TYPE a_b_c counter\n", new_metrics[0].typeString());
-    assert_equal("a_b_c{class_c123=\"1\",proxy_pool_p123=\"1\",class_c456=\"1\"} 2 1329345875000\n", new_metrics[0].toString());
+    assert_equal("a_b_c{class_c123=\"1\",proxy_pool_p123=\"1\",class_c456=\"1\",counter=\"1\"} 2 1329345875000\n", new_metrics[0].toString());
     assert_equal("# TYPE a_b_c_a_b_c counter\n", new_metrics[1].typeString());
-    assert_equal("a_b_c_a_b_c 2 1329345875000\n", new_metrics[1].toString());
+    assert_equal("a_b_c_a_b_c{counter=\"1\"} 2 1329345875000\n", new_metrics[1].toString());
     assert_equal("# TYPE a_b_c_abc counter\n", new_metrics[2].typeString());
-    assert_equal("a_b_c_abc 2 1329345875000\n", new_metrics[2].toString());
+    assert_equal("a_b_c_abc{counter=\"1\"} 2 1329345875000\n", new_metrics[2].toString());
     assert_equal("# TYPE foo_bar counter\n", new_metrics[3].typeString());
-    assert_equal("foo_bar 10 1329345875000\n", new_metrics[3].toString());
+    assert_equal("foo_bar{counter=\"1\"} 10 1329345875000\n", new_metrics[3].toString());
 }
 
 void func() {
