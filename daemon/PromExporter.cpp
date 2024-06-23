@@ -12,7 +12,7 @@
 #include <ctype.h>
 #include <iostream>
 
-#define CLEANUP_INTERVAL_SECOND 60
+#define CLEANUP_INTERVAL_SECOND 30
 
 DebugOption debugPromExporter("promExporter");
 
@@ -140,26 +140,20 @@ PromExporter::~PromExporter()
 
 void PromExporter::dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMetric> & new_metrics)
 {
-    PromGaugeMap gagues_to_send;
+    grab aholdof(mutex_);
+    // counters
+    CumulativeCountsMap::iterator cit;
+    for (cit = data_counters_.begin(); cit != data_counters_.end(); ++cit)
     {
-        //gauges
-        grab aholdof(mutex_);
-        data_gauges_.swap(gagues_to_send);
-
-        // counters
-        CumulativeCountsMap::iterator cit;
-        for (cit = data_counters_.begin(); cit != data_counters_.end(); ++cit)
+        if ((*cit).second.getCounterStatus())
         {
-            if ((*cit).second.getCounterStatus())
-            {
-                new_metrics.push_back((*cit).second);
-                (*cit).second.setCounterStatus(false);
-            }
+            new_metrics.push_back((*cit).second);
+            (*cit).second.setCounterStatus(false);
         }
     }
-
+    //gauges
     std::tr1::unordered_set<std::string> new_gauges;
-    for (PromGaugeMap::iterator git = gagues_to_send.begin(); git != gagues_to_send.end(); ++git)
+    for (PromGaugeMap::iterator git = data_gauges_.begin(); git != data_gauges_.end(); ++git)
     {
         std::string mname = (*git).second.getName();
         if (new_gauges.find(mname) == new_gauges.end())
