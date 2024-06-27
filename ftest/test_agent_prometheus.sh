@@ -29,7 +29,7 @@ send_stat ${INSTANCE} "test.gauge" 25 43
 test_name GET_metrics_returns_cumulative_counters
 check_get_metrics 18121 $TEST_OUT
 
-send_stat ${INSTANCE} "*test.counter^host.h^role.r^role.r-2" 35 1
+send_stat ${INSTANCE} "*test.counter^host.h^role.r^role.r-2" 51 1
 send_stat ${INSTANCE} "test.gauge.2^host.h^class.foo" 35 44
 send_stat ${INSTANCE} "test.gauge.2^host.h^class.foo" 40 45
 test_name GET_metrics_returns_new_metric_if_tag_changes

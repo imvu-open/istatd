@@ -30,7 +30,7 @@ bool comparePromMetric(PromMetric & a, PromMetric & b)
 
 void test_prom_exporter()
 {
-    istat::FakeTime ft(1329345880);
+    istat::FakeTime ft(1329345881);
     boost::asio::io_service svc;
     boost::shared_ptr<PromExporter> pe = boost::make_shared<PromExporter>(boost::ref(svc));
     std::vector<PromMetric> res;
@@ -65,25 +65,23 @@ void test_prom_exporter()
     assert_equal(3, new_metrics.size());
     res.clear();
     new_metrics.clear();
-    storeMetrics(pe, "*foo", 1329345845, 1);
     storeMetrics(pe, "x.y", 1329345815, 0.5);
     storeMetrics(pe, "x.y", 1329345860, 1.5);
     pe->dumpMetrics(res, new_metrics);
     assert_equal(2, res.size());
     assert_equal(4, new_metrics.size());
-    assert_equal("foo", new_metrics[0].getName());
+    assert_equal("foo_bar{counter=\"1\"} 2 1329345880000\n", new_metrics[0].toString());
     assert_equal("x_y", new_metrics[1].getName());
     assert_equal("x_0y", new_metrics[2].getName());
     assert_equal("foo_bar_baz", new_metrics[3].getName());
     assert_equal("x_y 1.5 1329345860000\n", res[0].toString());
     assert_equal("foo_bar_baz 2 1329345880000\n", res[1].toString());
-    assert_equal(false, cit->second.getCounterStatus());
-    assert_equal(2, pe->data_counters_.size());
+    assert_equal(1, pe->data_counters_.size());
 
     //test onCleanup
     pe->data_gauges_.clear();
     storeMetrics(pe, "*foo.bar", 1329345855, 5);
-    storeMetrics(pe, "x.0y", 1329345850, 0.5);
+    storeMetrics(pe, "x.0y", 1329345851, 0.5);
     storeMetrics(pe, "*foo.bar", 1329345819, 2);
     storeMetrics(pe, "x.0y", 1329345821, 1);
     storeMetrics(pe, "foo.bar.baz", 1329345819, 2.0);
@@ -118,19 +116,21 @@ void test_prom_exporter()
     res.clear();
     new_metrics.clear();
     pe->dumpMetrics(res, new_metrics);
-    assert_equal(3, pe->data_counters_.size()); //foo.bar, foo, x_y_host_
+    assert_equal(2, pe->data_counters_.size()); //foo.bar, x_y_host_
     assert_equal(4, res.size());
-    assert_equal(5, new_metrics.size());
+    assert_equal(6, new_metrics.size());
     assert_equal("# TYPE x_y_host_ counter\n", new_metrics[0].typeString());
     assert_equal("x_y_host_{counter=\"1\"} 4 1329345880000\n", new_metrics[0].toString());
-    assert_equal("# TYPE x_y_z gauge\n", new_metrics[1].typeString());
-    assert_equal("x_y_z{host=\"h123.\",role_r123=\"1\",role_r456_1=\"1\"} 0.2 1329345860000\n", new_metrics[1].toString());
-    assert_equal("# TYPE x_y_z_a_b_ab123_x_y_z gauge\n", new_metrics[2].typeString());
-    assert_equal("x_y_z_a_b_ab123_x_y_z 0.2 1329345860000\n", new_metrics[2].toString());
-    assert_equal("# TYPE x_y_z_a_b gauge\n", new_metrics[3].typeString());
-    assert_equal("x_y_z_a_b 0.2 1329345860000\n", new_metrics[3].toString());
-    assert_equal("# TYPE x_y_z_a_b_ gauge\n", new_metrics[4].typeString());
-    assert_equal("x_y_z_a_b_ 0.2 1329345860000\n", new_metrics[4].toString());
+    assert_equal("# TYPE foo_bar counter\n", new_metrics[1].typeString());
+    assert_equal("foo_bar{counter=\"1\"} 9 1329345880000\n", new_metrics[1].toString());
+    assert_equal("# TYPE x_y_z gauge\n", new_metrics[2].typeString());
+    assert_equal("x_y_z{host=\"h123.\",role_r123=\"1\",role_r456_1=\"1\"} 0.2 1329345860000\n", new_metrics[2].toString());
+    assert_equal("# TYPE x_y_z_a_b_ab123_x_y_z gauge\n", new_metrics[3].typeString());
+    assert_equal("x_y_z_a_b_ab123_x_y_z 0.2 1329345860000\n", new_metrics[3].toString());
+    assert_equal("# TYPE x_y_z_a_b gauge\n", new_metrics[4].typeString());
+    assert_equal("x_y_z_a_b 0.2 1329345860000\n", new_metrics[4].toString());
+    assert_equal("# TYPE x_y_z_a_b_ gauge\n", new_metrics[5].typeString());
+    assert_equal("x_y_z_a_b_ 0.2 1329345860000\n", new_metrics[5].toString());
     assert_equal("x_y_z{host=\"h123.\",role_r123=\"1\",role_r456_1=\"1\"} 0.4 1329345865000\n", res[0].toString());
     assert_equal("x_y_z_a_b_ab123_x_y_z 0.4 1329345865000\n", res[1].toString());
     assert_equal("x_y_z_a_b 0.4 1329345865000\n", res[2].toString());
@@ -151,18 +151,20 @@ void test_prom_exporter()
     res.clear();
     new_metrics.clear();
     pe->dumpMetrics(res, new_metrics);
-    assert_equal(6, pe->data_counters_.size());
+    assert_equal(5, pe->data_counters_.size());
     assert_equal(0, res.size());
-    assert_equal(4, new_metrics.size());
+    assert_equal(5, new_metrics.size());
     std::sort(new_metrics.begin(), new_metrics.end(), comparePromMetric);
     assert_equal("# TYPE a_b_c counter\n", new_metrics[0].typeString());
-    assert_equal("a_b_c{class_c123=\"1\",proxy_pool_p123=\"1\",class_c456=\"1\",counter=\"1\"} 2 1329345875000\n", new_metrics[0].toString());
+    assert_equal("a_b_c{class_c123=\"1\",proxy_pool_p123=\"1\",class_c456=\"1\",counter=\"1\"} 2 1329345880000\n", new_metrics[0].toString());
     assert_equal("# TYPE a_b_c_a_b_c counter\n", new_metrics[1].typeString());
-    assert_equal("a_b_c_a_b_c{counter=\"1\"} 2 1329345875000\n", new_metrics[1].toString());
+    assert_equal("a_b_c_a_b_c{counter=\"1\"} 2 1329345880000\n", new_metrics[1].toString());
     assert_equal("# TYPE a_b_c_abc counter\n", new_metrics[2].typeString());
-    assert_equal("a_b_c_abc{counter=\"1\"} 2 1329345875000\n", new_metrics[2].toString());
+    assert_equal("a_b_c_abc{counter=\"1\"} 2 1329345880000\n", new_metrics[2].toString());
     assert_equal("# TYPE foo_bar counter\n", new_metrics[3].typeString());
-    assert_equal("foo_bar{counter=\"1\"} 10 1329345875000\n", new_metrics[3].toString());
+    assert_equal("foo_bar{counter=\"1\"} 10 1329345880000\n", new_metrics[3].toString());
+    assert_equal("# TYPE x_y_host_ counter\n", new_metrics[4].typeString());
+    assert_equal("x_y_host_{counter=\"1\"} 4 1329345880000\n", new_metrics[4].toString());
 }
 
 void func() {

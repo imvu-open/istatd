@@ -13,6 +13,7 @@
 #include <iostream>
 
 #define CLEANUP_INTERVAL_SECOND 30
+#define COUNTER_RESOLUTION_SECOND 5
 
 DebugOption debugPromExporter("promExporter");
 
@@ -71,7 +72,16 @@ std::string PromMetric::toString() const
         }
         ss << "}";
     }
-    ss << " " << value_ << " " << (time_ * 1000) << "\n"; 
+    if (type_ == PromTypeCounter) 
+    {
+        time_t now;
+        istat::istattime(&now);
+        ss << " " << value_ << " " << (now / COUNTER_RESOLUTION_SECOND) * COUNTER_RESOLUTION_SECOND * 1000 << "\n";
+    }
+    else
+    {
+        ss << " " << value_ << " " << (time_ * 1000) << "\n";
+    }
     return ss.str();
 }
 
@@ -145,11 +155,7 @@ void PromExporter::dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMe
     CumulativeCountsMap::iterator cit;
     for (cit = data_counters_.begin(); cit != data_counters_.end(); ++cit)
     {
-        if ((*cit).second.getCounterStatus())
-        {
-            new_metrics.push_back((*cit).second);
-            (*cit).second.setCounterStatus(false);
-        }
+        new_metrics.push_back((*cit).second);
     }
     //gauges
     std::tr1::unordered_set<std::string> new_gauges;
