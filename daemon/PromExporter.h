@@ -83,11 +83,13 @@ private:
 
     boost::asio::io_service &svc_;
     int cleanup_interval_;
+    int staleness_interval_;
     PromGaugeMap data_gauges_;
     CumulativeCountsMap data_counters_;
     lock mutex_;
     bool enabled_;
     boost::asio::deadline_timer cleanup_timer_;
+    boost::asio::deadline_timer staleness_timer_;
     static const std::tr1::unordered_set<std::string> allowed_tags_;
 
     void extract_tags(
@@ -98,6 +100,8 @@ private:
     void storeAmetric(std::string const & ctr, PromMetric const & metric);
     void cleanupNext();
     void onCleanup();
+    void removeStaleCounterNext();
+    void onRemoveStaleCounter();
 };
 
 class NullPromExporter : public IPromExporter

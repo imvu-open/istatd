@@ -14,6 +14,7 @@
 
 #define CLEANUP_INTERVAL_SECOND 30
 #define COUNTER_RESOLUTION_SECOND 5
+#define STALE_COUNTER_INTERVAL_SECOND 86400
 
 DebugOption debugPromExporter("promExporter");
 
@@ -150,15 +151,19 @@ const std::tr1::unordered_set<std::string> PromExporter::allowed_tags_ =
 
 PromExporter::PromExporter(boost::asio::io_service &svc) :
     svc_(svc),
-    cleanup_timer_(svc_)
+    cleanup_timer_(svc_),
+    staleness_timer_(svc_)
 {
     cleanup_interval_ = CLEANUP_INTERVAL_SECOND;
     cleanupNext();
+    staleness_interval_ = STALE_COUNTER_INTERVAL_SECOND;
+    removeStaleCounterNext();
 }
 
 PromExporter::~PromExporter()
 {
     cleanup_timer_.cancel();
+    staleness_timer_.cancel();
 }
 
 void PromExporter::dumpMetrics(std::vector<PromMetric> & res, std::vector<PromMetric> & new_metrics)
@@ -309,5 +314,38 @@ void PromExporter::onCleanup()
         }
     }
     cleanupNext();
+}
+
+void PromExporter::removeStaleCounterNext()
+{
+    LogSpam << "PromExporter::removeStaleCounterNext() every " << staleness_interval_ << "s";
+    staleness_timer_.expires_from_now(boost::posix_time::seconds(staleness_interval_));
+    staleness_timer_.async_wait(boost::bind(&PromExporter::onRemoveStaleCounter, this));
+}
+
+void PromExporter::onRemoveStaleCounter()
+{
+    time_t now;
+    istat::istattime(&now);
+    time_t tlower = now - staleness_interval_;
+    {
+        grab aholdof(mutex_);
+        CumulativeCountsMap::iterator cit = data_counters_.begin();
+        while (cit != data_counters_.end())
+        {
+            CumulativeCountsMap::iterator current = cit;
+            ++cit;
+            if ((*current).second.getTimestamp() < tlower)
+            {
+                if (debugPromExporter.enabled())
+                {
+                    LogDebug << "PromExporter: discard staled counter " << (*current).second.getName()
+                        << "older than " << tlower;
+                }
+               data_counters_.erase(current);
+            }
+        }
+    }
+    removeStaleCounterNext();
 }
 

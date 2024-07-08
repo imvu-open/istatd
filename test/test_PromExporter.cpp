@@ -165,6 +165,16 @@ void test_prom_exporter()
     assert_equal("foo_bar{counter=\"1\"} 10 1329345880000\n", new_metrics[3].toString());
     assert_equal("# TYPE x_y_host_ counter\n", new_metrics[4].typeString());
     assert_equal("x_y_host_{counter=\"1\"} 4 1329345880000\n", new_metrics[4].toString());
+
+    //test remove stale counters
+    size_t expected = pe->data_counters_.size();
+    storeMetrics(pe, "*a_stale", 1329245850, 1);
+    storeMetrics(pe, "*z_stale", 1329259475, 1);
+    assert_equal(expected+2, pe->data_counters_.size());
+    pe->onRemoveStaleCounter();
+    assert_equal(expected, pe->data_counters_.size());
+    assert_equal(true, pe->data_counters_.end() == pe->data_counters_.find("a_stale"));
+    assert_equal(true, pe->data_counters_.end() == pe->data_counters_.find("z_stale"));
 }
 
 void func() {
