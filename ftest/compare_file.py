@@ -13,7 +13,7 @@ def read_file(filename):
 def sort_line(line):
     return ''.join(sorted(line))
 
-data1 = list(map(sort_line, read_file(sys.argv[1])))
+data1 = list(read_file(sys.argv[1]))
 data2 = list(map(sort_line, read_file(sys.argv[2])))
 data1.sort()
 data2.sort()
@@ -24,7 +24,7 @@ def compare_file(first, second):
         return False
 
     for line in first:
-        if line not in second:
+        if sort_line(line) not in second:
             print('first differs:')
             print('{0}'.format(line))
             return False
