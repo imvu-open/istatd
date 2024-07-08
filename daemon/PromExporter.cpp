@@ -41,48 +41,61 @@ void PromMetric::init(std::string const& ctr)
     {
         name_ = ctr.substr(1);
         type_ = PromMetric::PromTypeCounter;
-        tags_.push_back(std::pair<std::string, std::string>("counter", "1"));
     }
     else
     {
         type_ = PromMetric::PromTypeGauge;
     }
-
     istat::prom_munge(name_);
-    PromTagList::iterator tit = tags_.begin();
-    for(; tit != tags_.end(); ++tit)
-    {
-        istat::prom_munge(tit->first);
-    }
 }
 
 std::string PromMetric::toString() const
 {
     std::stringstream ss;
-    ss << name_;
-    if (tags_.size() > 0)
+    if (tags_.empty())
     {
-        PromTagList::const_iterator it = tags_.begin();
-        ss << "{" << it->first << "=\"" << it->second << "\"";
-        ++it;
-        while (it != tags_.end())
-        {
-            ss << "," << it->first << "=\"" << it->second << "\"";
-            ++it;;
+        if (type_ == PromMetric::PromTypeCounter) {
+            ss << name_ << "{counter=\"1\"} " << value_ << " " << timestampMilliseconds() << "\n";
         }
-        ss << "}";
-    }
-    if (type_ == PromTypeCounter) 
-    {
-        time_t now;
-        istat::istattime(&now);
-        ss << " " << value_ << " " << (now / COUNTER_RESOLUTION_SECOND) * COUNTER_RESOLUTION_SECOND * 1000 << "\n";
+        else {
+            ss << name_ << " " << value_ << " " << timestampMilliseconds() << "\n";
+        }
     }
     else
     {
-        ss << " " << value_ << " " << (time_ * 1000) << "\n";
+        for (PromTagList::const_iterator tit = tags_.begin(); tit != tags_.end(); ++tit)
+        {
+            ss << name_;
+            std::tr1::unordered_map<std::string, std::string>::const_iterator mit = (*tit).begin();
+            ss << "{" << mit->first << "=\"" << mit->second << "\"";
+            ++mit;
+            while (mit != (*tit).end())
+            {
+                ss << "," << mit->first << "=\"" << mit->second << "\"";
+                ++mit;;
+            }
+            if (type_ == PromMetric::PromTypeCounter) {
+                ss << ",counter=\"1\"";
+            }
+            ss << "}";
+            ss << " " << value_ << " " << timestampMilliseconds() << "\n";
+        }
     }
     return ss.str();
+}
+
+long PromMetric::timestampMilliseconds () const
+{
+    if (type_ == PromTypeCounter)
+    {
+        time_t now;
+        istat::istattime(&now);
+        return (now / COUNTER_RESOLUTION_SECOND) * COUNTER_RESOLUTION_SECOND * 1000;
+    }
+    else
+    {
+        return time_ * 1000;
+    }
 }
 
 std::string PromMetric::typeString() const
@@ -132,7 +145,7 @@ const std::tr1::unordered_set<std::string> PromExporter::allowed_tags_ =
         ("role")
         ("class")
         ("pool")
-        ("proxy-pool")
+        ("proxy_pool")
         ("cluster");
 
 PromExporter::PromExporter(boost::asio::io_service &svc) :
@@ -214,15 +227,24 @@ void PromExporter::extract_tags(
                 if (pos != std::string::npos && pos + 1 < maybe_tag.size() )
                 {
                     std::string tname = maybe_tag.substr(1, pos-1);
+                    istat::prom_munge(tname);
+                    std::string tvalue = maybe_tag.substr(pos+1);
                     if (allowed_tags_.find(tname) != allowed_tags_.end())
                     {
-                        if (tname == "host")
-                        {
-                            tags.push_back(std::pair<std::string, std::string>(maybe_tag.substr(1, pos-1), maybe_tag.substr(pos+1)));
+                        bool tag_added = false;
+                        for (PromMetric::PromTagList::iterator tit = tags.begin(); tit != tags.end(); ++tit) {
+                            if ((*tit).find(tname) == (*tit).end())
+                            {
+                                (*tit)[tname] = tvalue;
+                                tag_added = true;
+                                break;
+                            }
                         }
-                        else
+                        if (! tag_added)
                         {
-                            tags.push_back(std::pair<std::string, std::string>(maybe_tag.substr(1), "1"));
+                            std::tr1::unordered_map<std::string, std::string> tag_grp =
+                                boost::assign::map_list_of<std::string, std::string>(tname, tvalue);
+                            tags.push_back(tag_grp);
                         }
                         continue;
                     }

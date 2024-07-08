@@ -1,9 +1,9 @@
 test_counter_d_f{counter="1"} 2 50000
 test_counter_foo{counter="1"} 1 50000
-test_counter{host="h",role_r="1",class_c="1",counter="1"} 2 50000
+test_counter{host="h",class="c",role="r",counter="1"} 2 50000
 test_gauge_1 41 10000
 test_gauge_1 42 20000
-test_gauge_2{host="h",class_foo="1"} 43 20000
+test_gauge_2{host="h",class="foo"} 43 20000
 # TYPE test_counter counter
 # TYPE test_counter_d_f counter
 # TYPE test_counter_foo counter

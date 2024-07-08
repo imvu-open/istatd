@@ -25,7 +25,7 @@ public:
         PromTypeCounter = 1,
         PromTypeUnknown = 2
     };
-    typedef std::list<std::pair<std::string, std::string> > PromTagList;
+    typedef std::list<std::tr1::unordered_map<std::string, std::string> > PromTagList;
 
     PromMetric(std::string const &ctr, time_t time, double val);
     PromMetric(std::string const &ctr, PromTagList const & tags, time_t time, double val);
@@ -47,6 +47,7 @@ private:
     bool counter_updated_;
     PromTagList tags_;
     void init(std::string const & ctr);
+    long timestampMilliseconds () const;
 };
 
 struct TimeComp {
