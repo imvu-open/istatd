@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <stdint.h>
+#include <ctime>
 
 namespace istat
 {
