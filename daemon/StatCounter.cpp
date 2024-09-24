@@ -43,6 +43,9 @@ StatCounter::CollationInfo::CollationInfo(time_t t)
 {
 }
 
+time_t StatCounter::lastFromPastLog_ = 0;
+uint32_t StatCounter::fromPastLogsPerSec_ = 0;
+
 StatCounter::StatCounter(std::string const &pathName, bool isCollated, time_t zeroTime, istat::Mmap *mm, RetentionPolicy const &rp) :
     isCollated_(isCollated),
     collationInterval_(1)
@@ -179,7 +182,7 @@ void StatCounter::record(time_t time, double value, double valueSq, double min, 
         if(time < collations_[0].time)
         {
             ++recordsFromThePast_;
-            if (debugRejectedCounters)
+            if (debugRejectedCounters && shouldLog(time))
             {
                 LogWarning << "StatCounter::record rejected counter from the past: " << time
                            << " < " << collations_[0].time
@@ -275,6 +278,25 @@ void StatCounter::record(time_t time, double value, double valueSq, double min, 
             ptr->file->updateBucket(b);
         }
     }
+}
+
+bool StatCounter::shouldLog(const time_t& t)
+{
+    grab aholdof(mutex_);
+    if (t == lastFromPastLog_)
+    {
+        if (fromPastLogsPerSec_ < MAX_FROM_PAST_LOG_PER_SEC) {
+            ++fromPastLogsPerSec_;
+            return true;
+        }
+    }
+    else if (t > lastFromPastLog_)
+    {
+        fromPastLogsPerSec_ = 1;
+        lastFromPastLog_ = t;
+        return true;
+    }
+    return false;
 }
 
 size_t StatCounter::findCollationIndex(time_t t)

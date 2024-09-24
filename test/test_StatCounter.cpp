@@ -7,11 +7,13 @@
 #include "../daemon/StatCounter.h"
 #include "../daemon/Retention.h"
 #include "../daemon/FakeStatStore.h"
+#include "../daemon/Debug.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/make_shared.hpp>
 
 using namespace istat;
+extern DebugOption debugRejectedCounters;
 
 Mmap *mm(NewMmap());
 
@@ -720,7 +722,32 @@ void run_tests(void)
         counter->flush(ssp);
         counter->record(TIME_RECORD2, 1.0, 1.0, 1.0, 1.0, 1);
 
+        assert_equal(StatCounter::lastFromPastLog_, 0);
+        assert_equal(StatCounter::fromPastLogsPerSec_, 0);
         assert_equal(IStatCounter::recordsFromThePast_.getAggregate(), 0);
+    }
+
+    // test rejected counter from the past 
+    {
+        test_init_path("/tmp/test");
+
+        time_t TIME_RECORD1 = 1250;
+        time_t TIME_RECORD2 = 1240;
+        time_t TIME_RECORD3 = 1209;
+        time_t TIME_RECORD4 = 1195;
+        time_t TIME_NOW = 1255;
+
+        IStatCounter::recordsFromThePast_ = LoopbackCounter("past", TypeEvent);
+        debugRejectedCounters.set(true);
+        FakeTime faketime(TIME_NOW);
+        boost::shared_ptr<StatCounter> counter = boost::make_shared<StatCounter>("/tmp/test/logsfrompast", true, 10, mm, rp);
+        counter->record(TIME_RECORD1, 1.0, 1.0, 1.0, 1.0, 1);
+        counter->record(TIME_RECORD2, 1.0, 1.0, 1.0, 1.0, 1);
+        counter->record(TIME_RECORD3, 1.0, 1.0, 1.0, 1.0, 1);
+        counter->record(TIME_RECORD4, 1.0, 1.0, 1.0, 1.0, 1);
+        assert_equal(StatCounter::lastFromPastLog_, 1209);
+        assert_equal(StatCounter::fromPastLogsPerSec_, 1);
+        assert_equal(IStatCounter::recordsFromThePast_.getAggregate(), 2);
     }
 
     //  test trailing files

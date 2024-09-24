@@ -4,6 +4,7 @@
 
 #include "IStatCounter.h"
 #include <istat/StatFile.h>
+#include "threadfunc.h"
 
 #include <string>
 #include <vector>
@@ -62,6 +63,12 @@ private:
     bool isCollated_;   
     time_t collationInterval_;
     CollationInfo collations_[BUCKETS_PER_COLLATION_WINDOW];
+
+    static uint32_t const MAX_FROM_PAST_LOG_PER_SEC = 50;
+    static time_t lastFromPastLog_;
+    static uint32_t fromPastLogsPerSec_;
+    lock mutex_;
+    bool shouldLog(const time_t& t);
 
     size_t findCollationIndex(time_t t);
     void readBucketsFromFile(boost::shared_ptr<istat::StatFile> sf, time_t start_time, time_t end_time, std::vector<istat::Bucket> &oBuckets);
