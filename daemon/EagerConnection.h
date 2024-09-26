@@ -95,6 +95,7 @@ private:
     bool writePending_;
     bool readPending_;
     bool tryingLater_;
+    bool hasErrorConnect_;
     time_t tryLaterTime_;
     int backoff_;
     int successfulWritesDuringBackoff_;

@@ -26,6 +26,7 @@
 using boost::asio::ip::udp;
 using namespace istat;
 
+#define MAX_AGENT_CONN_TRIES 3
 
 DebugOption debugUdp("statUdp");
 DebugOption debugTcp("statTcp");
@@ -129,6 +130,7 @@ StatServer::StatServer(int statPort, std::string listenAddress,
     {
         for (size_t i = 0; i < agentCount_; ++i) {
             forward_.push_back(EagerConnection::create(svc));
+            noConnectionCounts_.push_back(0);
         }
 
         startResolveAgents();
@@ -669,14 +671,28 @@ void StatServer::handle_forward_prom(std::string const & ctr, std::string const 
 void StatServer::clearForward(AgentFlushRequest * agentFlushRequest)
 {
     std::tr1::unordered_map<std::string, Bucketizer> buckets;
+    ForwardList conns;
     {
         grab aholdof(forwardMutex_);
         buckets.swap(forwardBuckets_);
-    }
-    ForwardList conns;
-    for (ForwardList::iterator i = forward_.begin(); i < forward_.end(); ++i) {
-        if ((*i)->opened()) {
-            conns.push_back(*i);
+
+        size_t noConnSize = noConnectionCounts_.size();
+        size_t connIndex = 0;
+        for (ForwardList::iterator i = forward_.begin(); i < forward_.end(); ++i) {
+            if ((*i)->opened()) {
+                // should always be true
+                if (connIndex < noConnSize) {
+                    if ((*i)->connected()) {
+                        noConnectionCounts_[connIndex] = 0;
+                    } else {
+                        noConnectionCounts_[connIndex] += 1;
+                    }
+                }
+                if (connIndex >= noConnSize || noConnectionCounts_[connIndex] <= MAX_AGENT_CONN_TRIES) {
+                    conns.push_back(*i);
+                }
+            }
+            ++connIndex;
         }
     }
     size_t count = conns.size();
@@ -723,6 +739,10 @@ void StatServer::clearForward(AgentFlushRequest * agentFlushRequest)
             }
         }
     }
+    else if (count == 0 && buckets.size()) {
+        LogError << "StatServer: agent forward server is down and data dropped";
+    }
+
 }
 
 void StatServer::on_forwardTimer()

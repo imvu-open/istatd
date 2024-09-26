@@ -169,10 +169,10 @@ private:
     boost::shared_ptr<MetaInfo> metaInfo(boost::shared_ptr<ConnectionInfo> const &ec);
 
     int port_;
-    int backoffSeconds_;
     time_t forwardInterval_;
     std::string agent_;
     size_t agentCount_;
+    std::vector<uint16_t> noConnectionCounts_;
 
     bool hasStatStore_;
     boost::shared_ptr<IStatStore> statStore_;

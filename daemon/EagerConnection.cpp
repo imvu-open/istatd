@@ -54,6 +54,7 @@ void EagerConnection::init()
     successfulWritesDuringBackoff_ = 1;
     writePending_ = false;
     readPending_ = false;
+    hasErrorConnect_ = false;
 }
 
 EagerConnection::~EagerConnection()
@@ -122,7 +123,7 @@ bool EagerConnection::opened()
 
 bool EagerConnection::connected()
 {
-    return socket_.is_open();
+    return socket_.is_open() && ! hasErrorConnect_;
 }
 
 size_t EagerConnection::pendingOut()
@@ -295,6 +296,7 @@ void EagerConnection::on_resolve(boost::system::error_code const &err, tcp::reso
         LogError << "Could not resolve " << resolveHost_ << ":" << resolvePort_;
         grab aholdof(mutex_);
         tryingLater_ = false;
+        hasErrorConnect_ = true;
         tryLater();
     }
 }
@@ -357,6 +359,7 @@ void EagerConnection::on_connect(boost::system::error_code const &err, tcp::endp
     if (!err)
     {
         LogWarning << "Connected to " << endpoint;
+        hasErrorConnect_ = false;
         if (initialData_.size())
         {
             outgoing_.insert(outgoing_.begin(), initialData_.begin(), initialData_.end());
@@ -369,6 +372,7 @@ void EagerConnection::on_connect(boost::system::error_code const &err, tcp::endp
     {
         LogError << "Error connecting to " << endpoint;
         grab aholdof(mutex_);
+        hasErrorConnect_ = true;
         tryLater();
     }
 }
@@ -422,6 +426,7 @@ void EagerConnection::on_write(boost::system::error_code const &err, size_t xfer
         return;
     }
     resetBackoffOnSuccessfulWrites();
+    hasErrorConnect_ = false;
 
     onWrite_(xfer);
     startWrite();
