@@ -1095,6 +1095,9 @@ int main(int argc, char const *argv[])
         LogError << "Error in main() [" << x.what() << "]";
         delete hsp;
         delete asp;
+        delete rof;
+        delete reps;
+        delete psp;
         return 2;
     }
     catch (...)
@@ -1102,6 +1105,9 @@ int main(int argc, char const *argv[])
         LogError << "Error in main() [unknown]";
         delete hsp;
         delete asp;
+        delete rof;
+        delete reps;
+        delete psp;
         return 1;
     }
 
@@ -1111,4 +1117,3 @@ int main(int argc, char const *argv[])
 #if defined(main)
 #undef main
 #endif
-
