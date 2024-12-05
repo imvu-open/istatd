@@ -1,4 +1,5 @@
 usr/bin/istatd-agent
+usr/share/istatd/istatd-agent.sh
 etc/init.d/istatd-agent
 etc/default/istatd-agent
 etc/istatd-agent.cfg

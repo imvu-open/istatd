@@ -105,7 +105,7 @@ case "$1" in
         start_istatd
         ;;
     *)
-        echo "Usage: /etc/init.d/$NAME {start|stop|restart|status}" >&2
+        echo "Usage: "`dirname $0`"/$NAME {start|stop|restart|status}" >&2
         exit 1
         ;;
 esac

@@ -104,6 +104,7 @@ $(eval $(call add_install,istatd-server.default,$(ETC_PREFIX)/default/istatd-ser
 $(eval $(call add_install,istatd-server-init.sh,$(ETC_PREFIX)/init.d/istatd-server,755))
 $(eval $(call add_install,istatd-agent.default,$(ETC_PREFIX)/default/istatd-agent,755))
 $(eval $(call add_install,istatd-agent-init.sh,$(ETC_PREFIX)/init.d/istatd-agent,755))
+$(eval $(call add_install,istatd-agent-init.sh,$(USR_PREFIX)/share/istatd/istatd-agent.sh,755))
 $(foreach set,$(SETTINGS_SRCS),$(eval $(call add_precious_install,$(set),$(VAR_PREFIX)/db/istatd/$(set),664)))
 $(eval $(call add_precious_install,istatd-server.settings,$(ETC_PREFIX)/istatd-server.cfg,644))
 $(eval $(call add_precious_install,istatd-agent.settings,$(ETC_PREFIX)/istatd-agent.cfg,644))
