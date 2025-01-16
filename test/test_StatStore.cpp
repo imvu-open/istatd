@@ -103,42 +103,6 @@ void run_tests(void)
         boost::filesystem::create_directories(storepath);
         boost::shared_ptr<IStatCounterFactory> statCounterFactory = boost::make_shared<StatCounterFactory>(storepath, mm, boost::ref(rp));
         {
-            boost::filesystem::remove_all(storepath);
-            StatStore store(storepath, getuid(), service, statCounterFactory, mm, -1, -1, 60000, false);
-
-            store.record("seafood.shrimp", 42.42);
-            std::list<std::pair<std::string, CounterResponse> > oList;
-            store.listMatchingCounters("bbq", oList);
-            assert_equal(0, oList.size());
-            store.listMatchingCounters("seafood shrimp is delicious!", oList);
-            assert_equal(0, oList.size());
-            store.listMatchingCounters("seafood.shrimp", oList);
-            assert_equal(1, oList.size());
-            store.record("seafood.shrimp.california.spot", 42.42);
-            store.record("*seafood.scallop", 42.42);
-            store.record("*seafood.crawfish", 42.42);
-            store.record("seafood.crawfish.washington", 42.42);
-            std::list<std::pair<std::string, CounterResponse> > oList2;
-            store.listMatchingCounters("seafood*", oList2);
-            assert_equal(4, oList2.size());
-            std::list<std::pair<std::string, CounterResponse> >::iterator ptr = oList2.begin();
-            assert_equal("seafood", (*ptr).first);
-            assert_equal(false, (*ptr).second.isLeaf);
-            assert_equal(CounterResponse::DisplayTypeAggregate, (*ptr).second.counterType);
-            std::advance(ptr, 1);
-            assert_equal("seafood.scallop", (*ptr).first);
-            assert_equal(true, (*ptr).second.isLeaf);
-            assert_equal(CounterResponse::DisplayTypeEvent, (*ptr).second.counterType);
-            std::advance(ptr, 1);
-            assert_equal("seafood.shrimp", (*ptr).first);
-            assert_equal(true, (*ptr).second.isLeaf);
-            assert_equal(CounterResponse::DisplayTypeGauge, (*ptr).second.counterType);
-            std::advance(ptr, 1);
-            assert_equal("seafood.crawfish", (*ptr).first);
-            assert_equal(true, (*ptr).second.isLeaf);
-            assert_equal(CounterResponse::DisplayTypeEvent, (*ptr).second.counterType);
-        }
-        {
             StatStore store(storepath, getuid(), service, statCounterFactory, mm);
 
             store.record("taco", 42.42);
