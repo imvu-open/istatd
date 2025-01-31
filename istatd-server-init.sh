@@ -43,15 +43,13 @@ is_istatd_running() {
 
 start_istatd() {
     if [ "$ENABLE_ISTATD" -eq 1 ]; then  
-        echo -n "Starting $DESC: "
+        echo -n "Starting $DESC: $NAME "
         "$DAEMON" \
             --daemonize \
             --pid-file "$PIDFILE" \
             --config "$CONFIG" \
             --log-file "$LOGFILE" \
             $EXTRA_ARGS
-        echo -n "$NAME."
-        echo
     else
         echo "ISTATD Server is not enabled. Modify /etc/default/istatd-server to enable."
     fi
