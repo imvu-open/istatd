@@ -1,3 +1,10 @@
+istatd (1.07-4) UNRELEASED; urgency=medium
+
+  * fix init scripts
+  * better error handling
+
+ -- Fang Fang <ffang@imvu.com>  Mon, 03 Feb 2025 10:36:10 -0800
+
 istatd (1.07-3) UNRELEASED; urgency=medium
 
   * Revert "Do not allow to create a new counter if its prefix is an existing counter"
