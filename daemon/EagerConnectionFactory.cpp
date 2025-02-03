@@ -40,6 +40,10 @@ void EagerConnectionFactory::listen(int port, std::string listen_address, int li
         acceptor_.listen(listenOverflowBacklog);
         startAccept();
     }
+    catch (std::exception const &x)
+    {
+        LogError << "EagerConnectionFactory::listen(" << port << ", " << listen_address << ", " << listenOverflowBacklog << "): " << x.what();
+    }
     catch (...)
     {
         LogError << "EagerConnectionFactory::listen(" << port << ", " << listen_address << ", " << listenOverflowBacklog << "): unknown exception";

@@ -29,17 +29,25 @@ HttpServer::HttpServer(int port, boost::asio::io_service &svc, std::string liste
 {
     if (port_ != 0)
     {
-        sInfo_.port = port_;
-        tcp::resolver resolver(svc);
-        acceptor_.open(tcp::v4());
-        acceptor_.set_option(tcp::acceptor::reuse_address(true));
-        if (listen_addr.length() > 0) {
-            acceptor_.bind(tcp::endpoint(ip::address::from_string(listen_addr.c_str()), port));
-        } else {
-            acceptor_.bind(tcp::endpoint(tcp::v4(), port));
+        try
+        {
+            sInfo_.port = port_;
+            tcp::resolver resolver(svc);
+            acceptor_.open(tcp::v4());
+            acceptor_.set_option(tcp::acceptor::reuse_address(true));
+            if (listen_addr.length() > 0) {
+                acceptor_.bind(tcp::endpoint(ip::address::from_string(listen_addr.c_str()), port));
+            } else {
+                acceptor_.bind(tcp::endpoint(tcp::v4(), port));
+            }
+            acceptor_.listen(listenOverflowBacklog_);
+            acceptOne();
         }
-        acceptor_.listen(listenOverflowBacklog_);
-        acceptOne();
+        catch (std::exception const &x)
+        {
+            LogError << "HttpServer listen: " << port << ", " << listen_addr << ", " << listenOverflowBacklog;
+            throw std::runtime_error(x.what());
+        }
     }
 }
 
