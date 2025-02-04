@@ -45,7 +45,6 @@ start_istatd() {
     if [ "$ENABLE_ISTATD" -eq 1 ]; then  
         echo -n "Starting $DESC: $NAME "
         "$DAEMON" \
-            --daemonize \
             --pid-file "$PIDFILE" \
             --config "$CONFIG" \
             --log-file "$LOGFILE" \
