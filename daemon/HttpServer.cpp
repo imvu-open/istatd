@@ -31,6 +31,7 @@ HttpServer::HttpServer(int port, boost::asio::io_service &svc, std::string liste
     {
         try
         {
+            LogWarning << "HttpServer bind socket: " << port << ", " << listen_addr << ", " << listenOverflowBacklog;
             sInfo_.port = port_;
             tcp::resolver resolver(svc);
             acceptor_.open(tcp::v4());
