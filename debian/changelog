@@ -1,3 +1,10 @@
+istatd (1.07-5) UNRELEASED; urgency=medium
+
+  * update istatd-agent init script
+  * add some log messages
+
+ -- Fang Fang <ffang@imvu.com>  Fri, 07 Feb 2025 10:58:36 -0800
+
 istatd (1.07-4) UNRELEASED; urgency=medium
 
   * fix init scripts
