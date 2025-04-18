@@ -553,9 +553,18 @@ void StatServer::handle_counter_cmd(std::string const &cmd)
                     handle_forward_prom(parts[0], prom_base, cnames, 0, to_double(parts[1]));
                     break;
                 case 3: //  ctr, time, value
-                case 7: //  ctr, time, value, valuesq, min, max, cnt
                     handle_forward_prom(parts[0], prom_base, cnames, to_time_t(parts[1]), to_double(parts[2]));
                     break;
+                case 7: { //  ctr, time, value, valuesq, min, max, cnt
+                    size_t cnt = to_size_t(parts[6]);
+                    if (cnt == 0) {
+                        LogWarning << "StatServer::handle_counter_cmd rejected counter with 0 count: " << parts[0];
+                    }
+                    else {
+                        handle_forward_prom(parts[0], prom_base, cnames, to_time_t(parts[1]), to_double(parts[2]) / double(cnt));
+                    }
+                    break;
+                }
                 default:
                     break;
             }

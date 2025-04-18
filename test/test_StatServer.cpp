@@ -392,17 +392,23 @@ void test_multiple_forward_agents() {
 
 void test_forward_to_prom_exporter()
 {
+    istat::FakeTime ft(1329345880);
     boost::asio::io_service svc;
     boost::shared_ptr<StatServer> server = makeServerWithPromExporter(svc);
     boost::shared_ptr<ConnectionInfo> ec = boost::make_shared<FakeEagerConnection>(boost::ref(svc));
     server->handleCmd("something.different 4242", ec);
+    server->handleCmd("something.different.2 1329345870 42", ec);
+    server->handleCmd("something.different.4 1329345872 4200 12345 0 3000 0", ec);
+    server->handleCmd("something.different.3 1329345875 4242 12345 0 3000 2", ec);
     svc.poll();
     std::vector<PromMetric> res;
     std::vector<PromMetric> new_metrics;
     server->promExporter()->dumpMetrics(res, new_metrics);
     assert_equal(0, res.size());
-    assert_equal(1, new_metrics.size());
-    assert_equal(4242, new_metrics[0].getValue());
+    assert_equal(3, new_metrics.size());
+    assert_equal(42, new_metrics[0].getValue());
+    assert_equal(2121, new_metrics[1].getValue());
+    assert_equal(4242, new_metrics[2].getValue());
 }
 
 void func() {
