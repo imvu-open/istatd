@@ -452,7 +452,7 @@ void RequestInFlight::on_multigetBody()
     {
         time_t start = root["start"].asInt64();
         time_t stop = root["stop"].asInt64();
-        size_t maxSamples = root["maxSamples"].asInt();
+        ssize_t maxSamples = root["maxSamples"].asInt();
         if (start < 0) {
             reportError("Invalid 'start' parameter", 400);
             return;
@@ -570,10 +570,10 @@ void RequestInFlight::serveFile(std::string const &name)
     }
     time_t modTime = st.st_mtime;
     int64_t fileSize = st.st_size;
-    time_t now;
-    time_t expires = now;
+    time_t now, expires;
     bool cacheAll = false;
     time(&now);
+    expires = now;
     std::string etag(boost::lexical_cast<std::string>(modTime) + "_" + boost::lexical_cast<std::string>(fileSize));
     //  todo: maybe do some if-none-match optimization here
     hdrs_["Etag"] = etag;
