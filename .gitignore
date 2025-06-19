@@ -26,6 +26,7 @@ debian/istatd/
 debian/istatd-agent/
 debian/istatd-server/
 debian/tmp/
+debian/.debhelper/
 python
 tags
 files/files

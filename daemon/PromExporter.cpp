@@ -18,24 +18,24 @@
 
 DebugOption debugPromExporter("promExporter");
 
-PromMetric::PromMetric(std::string const &ctr, time_t time, double val) :
+PromMetric::PromMetric(std::string const &ctr, time_t time, double val, bool translate_name) :
     time_(time),
     value_(val),
     counter_updated_(true)
 {
-    init(ctr);
+    init(ctr, translate_name);
 }
 
-PromMetric::PromMetric(std::string const &ctr, PromTagList const & tags, time_t time, double val) :
+PromMetric::PromMetric(std::string const &ctr, PromTagList const & tags, time_t time, double val, bool translate_name) :
     time_(time),
     value_(val),
     counter_updated_(true),
     tags_(tags)
 {
-    init(ctr);
+    init(ctr, translate_name);
 }
 
-void PromMetric::init(std::string const& ctr)
+void PromMetric::init(std::string const& ctr, bool translate_name)
 {
     name_ = ctr;
     if (ctr[0] == '*') 
@@ -47,7 +47,12 @@ void PromMetric::init(std::string const& ctr)
     {
         type_ = PromMetric::PromTypeGauge;
     }
-    istat::prom_munge(name_);
+    if (translate_name) {
+        istat::prom_munge(name_);
+    }
+    else {
+        istat::munge(name_);
+    }
 }
 
 std::string PromMetric::toString() const
@@ -146,13 +151,13 @@ const std::tr1::unordered_set<std::string> PromExporter::allowed_tags_ =
         ("role")
         ("class")
         ("pool")
-        ("proxy_pool")
         ("cluster");
 
-PromExporter::PromExporter(boost::asio::io_service &svc) :
+PromExporter::PromExporter(boost::asio::io_service &svc, bool map_metric_name_) :
     svc_(svc),
     cleanup_timer_(svc_),
-    staleness_timer_(svc_)
+    staleness_timer_(svc_),
+    map_metric_name_(map_metric_name_)
 {
     cleanup_interval_ = CLEANUP_INTERVAL_SECOND;
     cleanupNext();
@@ -200,11 +205,11 @@ void PromExporter::storeMetrics(std::string const &ctr, std::string const &basen
     grab aholdof(mutex_);
     if (! tags.empty())
     {
-        storeAmetric(ctr, PromMetric(basename, tags, time, val));
+        storeAmetric(ctr, PromMetric(basename, tags, time, val, map_metric_name_));
     }
     for (std::vector<std::string>::iterator it = no_tag_names.begin(); it != no_tag_names.end(); ++it)
     {
-        storeAmetric((*it), PromMetric(*it, time, val));
+        storeAmetric((*it), PromMetric(*it, time, val, map_metric_name_));
     }
 }
 
@@ -232,7 +237,12 @@ void PromExporter::extract_tags(
                 if (pos != std::string::npos && pos + 1 < maybe_tag.size() )
                 {
                     std::string tname = maybe_tag.substr(1, pos-1);
-                    istat::prom_munge(tname);
+                    if (map_metric_name_) {
+                        istat::prom_munge(tname);
+                    }
+                    else {
+                        istat::munge(tname);
+                    }
                     std::string tvalue = maybe_tag.substr(pos+1);
                     if (allowed_tags_.find(tname) != allowed_tags_.end())
                     {

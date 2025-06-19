@@ -161,7 +161,7 @@ int uid_by_name(std::string const &str)
 Argument<std::string> listenAddress("listen-address", "", "IP address on which to start listeners. empty string to accept on all interfaces.");
 Argument<int> httpPort("http-port", 8000, "Port to listen to for HTTP status service. 0 to disable.");
 Argument<int> statPort("stat-port", 8111, "Port to listen to for incoming statistics. 0 to disable.");
-Argument<int> prometheusPort("prometheus-port", 0, "Prom scraping port. 0 to disable.");
+Argument<int> prometheusPort("prometheus-port", 0, "Prometheus scraping port. 0 to disable.");
 Argument<std::string> agent("agent", "", "Agent to forward to, rather than save data locally.");
 Argument<int> agentCount("agentCount", 1, "How many agent connections to open");
 Argument<std::string> replicaOf("replica-of", "", "Source to pull-replicate from. Incompatible with stat-port.");
@@ -195,6 +195,7 @@ Argument<int> udpBufferSize("udp-buffer-size", 1024, "Buffer size for UDP socket
 Argument<int> listenOverflowBacklog("listen-overflow-backlog", boost::asio::socket_base::max_connections, "Listen overflow backlog, defaults to boost::asio::socket_base::max_connections");
 Argument<bool> dontRecursivelyCreateCounters("dont-recursively-create-counters", false, "Should we disable recursing up the counter chain (split on .) and make parent counters");
 Argument<int> allocationStrategy("allocation-strategy", static_cast<int>(istat::allocateAll), "The allocation strategy used when making files. 1 = write all as 0, 2 = sparse file");
+Argument<bool> dontTranslateMetricNames("dont-translate-metric-names", false, "Should we map istatd metrics names to prometheus metric names for pulling.");
 
 
 void usage()
@@ -993,7 +994,7 @@ int main(int argc, char const *argv[])
         boost::shared_ptr<IPromExporter> promExporter;
         if (promExporterEnabled)
         {
-            promExporter = boost::make_shared<PromExporter>(boost::ref(g_service));
+            promExporter = boost::make_shared<PromExporter>(boost::ref(g_service), !dontTranslateMetricNames.get());
         }
         else{
             promExporter = boost::make_shared<NullPromExporter>();

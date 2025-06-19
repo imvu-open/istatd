@@ -1,0 +1,11 @@
+test.counter.d.f{counter="1"} 2 50000
+test.counter.foo{counter="1"} 1 50000
+test.counter{host="h",class="c",role="r",counter="1"} 2 50000
+test.gauge.1 41 10000
+test.gauge.1 42 20000
+test.gauge.2{host="h",class="foo"} 43 20000
+# TYPE test.counter counter
+# TYPE test.counter.d.f counter
+# TYPE test.counter.foo counter
+# TYPE test.gauge.1 gauge
+# TYPE test.gauge.2 gauge

@@ -27,8 +27,8 @@ public:
     };
     typedef std::list<std::tr1::unordered_map<std::string, std::string> > PromTagList;
 
-    PromMetric(std::string const &ctr, time_t time, double val);
-    PromMetric(std::string const &ctr, PromTagList const & tags, time_t time, double val);
+    PromMetric(std::string const &ctr, time_t time, double val, bool translate_name = true);
+    PromMetric(std::string const &ctr, PromTagList const & tags, time_t time, double val, bool translate_name = true);
     std::string toString() const;
     std::string typeString() const;
     void accumulate(PromMetric const & prom_metric);
@@ -46,7 +46,7 @@ private:
     std::string name_;
     bool counter_updated_;
     PromTagList tags_;
-    void init(std::string const & ctr);
+    void init(std::string const & ctr, bool translate_name = true);
     long timestampMilliseconds () const;
 };
 
@@ -69,7 +69,7 @@ public:
 class PromExporter : public IPromExporter
 {
 public:
-    PromExporter(boost::asio::io_service &svc);
+    PromExporter(boost::asio::io_service &svc, bool map_metric_name_ = true);
     virtual ~PromExporter();
     void dumpMetrics(std::vector<PromMetric> &res, std::vector<PromMetric> & new_metrics);
     void storeMetrics(std::string const &ctr, std::string const & basename, std::vector<std::string> const & cname, time_t time, double val);
@@ -77,6 +77,7 @@ public:
 
 private:
     friend void test_prom_exporter();
+    friend void test_prom_exporter_no_name_mapping();
 
     typedef std::multimap<time_t, PromMetric, TimeComp> PromGaugeMap;
     typedef std::tr1::unordered_map<std::string, PromMetric> CumulativeCountsMap;
@@ -91,6 +92,7 @@ private:
     boost::asio::deadline_timer cleanup_timer_;
     boost::asio::deadline_timer staleness_timer_;
     static const std::tr1::unordered_set<std::string> allowed_tags_;
+    bool map_metric_name_;
 
     void extract_tags(
             std::string const & base,
