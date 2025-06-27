@@ -196,6 +196,7 @@ Argument<int> listenOverflowBacklog("listen-overflow-backlog", boost::asio::sock
 Argument<bool> dontRecursivelyCreateCounters("dont-recursively-create-counters", false, "Should we disable recursing up the counter chain (split on .) and make parent counters");
 Argument<int> allocationStrategy("allocation-strategy", static_cast<int>(istat::allocateAll), "The allocation strategy used when making files. 1 = write all as 0, 2 = sparse file");
 Argument<bool> dontTranslateMetricNames("dont-translate-metric-names", false, "Should we map istatd metrics names to prometheus metric names for pulling.");
+Argument<std::string> tagnames_path("tagnames-path", "", "Where to look for allowed tag names of prometheus metrics");
 
 
 void usage()
@@ -994,7 +995,7 @@ int main(int argc, char const *argv[])
         boost::shared_ptr<IPromExporter> promExporter;
         if (promExporterEnabled)
         {
-            promExporter = boost::make_shared<PromExporter>(boost::ref(g_service), !dontTranslateMetricNames.get());
+            promExporter = boost::make_shared<PromExporter>(boost::ref(g_service), tagnames_path.get(), !dontTranslateMetricNames.get());
         }
         else{
             promExporter = boost::make_shared<NullPromExporter>();

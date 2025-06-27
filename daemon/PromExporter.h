@@ -2,6 +2,7 @@
 #if !defined(daemon_PromExporter_h)
 #define daemon_PromExporter_h
 
+#include <string>
 #include <map>
 #include <vector>
 #include <list>
@@ -69,7 +70,7 @@ public:
 class PromExporter : public IPromExporter
 {
 public:
-    PromExporter(boost::asio::io_service &svc, bool map_metric_name_ = true);
+    PromExporter(boost::asio::io_service &svc, std::string const &config_file, bool map_metric_name_ = true);
     virtual ~PromExporter();
     void dumpMetrics(std::vector<PromMetric> &res, std::vector<PromMetric> & new_metrics);
     void storeMetrics(std::string const &ctr, std::string const & basename, std::vector<std::string> const & cname, time_t time, double val);
@@ -81,6 +82,7 @@ private:
 
     typedef std::multimap<time_t, PromMetric, TimeComp> PromGaugeMap;
     typedef std::tr1::unordered_map<std::string, PromMetric> CumulativeCountsMap;
+    typedef std::tr1::unordered_set<std::string> TagNameSet;
 
     boost::asio::io_service &svc_;
     int cleanup_interval_;
@@ -91,9 +93,12 @@ private:
     bool enabled_;
     boost::asio::deadline_timer cleanup_timer_;
     boost::asio::deadline_timer staleness_timer_;
-    static const std::tr1::unordered_set<std::string> allowed_tags_;
+    static const TagNameSet allowed_tags_;
+    TagNameSet extra_allowed_tags_;
     bool map_metric_name_;
 
+    void load_allowed_tags(std::string const & file);
+    size_t get_tag_pos(std::string const &suffix, size_t start);
     void extract_tags(
             std::string const & base,
             std::vector<std::string> const & cname,

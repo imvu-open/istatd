@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <fstream>
 #include <boost/asio.hpp>
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
@@ -26,7 +27,7 @@ void test_prom_exporter()
 {
     istat::FakeTime ft(1329345881);
     boost::asio::io_service svc;
-    boost::shared_ptr<PromExporter> pe = boost::make_shared<PromExporter>(boost::ref(svc));
+    boost::shared_ptr<PromExporter> pe = boost::make_shared<PromExporter>(boost::ref(svc), "");
     std::vector<PromMetric> res;
     std::vector<PromMetric> new_metrics;
 
@@ -173,9 +174,15 @@ void test_prom_exporter()
 
 void test_prom_exporter_no_name_mapping()
 {
+    std::string config_file = "/tmp/test/config/allowed_tags.txt";
+    {
+        mkdir("/tmp/test/config", 511);
+        std::ofstream ofs(config_file.c_str(), std::ofstream::out);
+        ofs << "a.b.c\npo.ol\n";
+    }
     istat::FakeTime ft(1329345881);
     boost::asio::io_service svc;
-    boost::shared_ptr<PromExporter> pe = boost::make_shared<PromExporter>(boost::ref(svc), false);
+    boost::shared_ptr<PromExporter> pe = boost::make_shared<PromExporter>(boost::ref(svc), config_file, false);
     std::vector<PromMetric> res;
     std::vector<PromMetric> new_metrics;
 
@@ -282,9 +289,9 @@ void test_prom_exporter_no_name_mapping()
     // test extract_tags counters
     pe->data_gauges_.clear();
     ctrs.clear();
-    ctr = "*a.b.c^class.c123^pool.p123^abc^class.c456^a.b.c";
+    ctr = "*a.b.c^class.c123^po.ol.p123^abc^class.c456^a.b.c";
     ctrs.push_back("*a.b.c.class.c123");
-    ctrs.push_back("*a.b.c.pool.p123");
+    ctrs.push_back("*a.b.c.po.ol.p123");
     ctrs.push_back("*a.b.c.abc");
     ctrs.push_back("*a.b.c.class.c456");
     ctrs.push_back("*a.b.c.a.b.c");
@@ -299,7 +306,7 @@ void test_prom_exporter_no_name_mapping()
     assert_equal(5, new_metrics.size());
     std::sort(new_metrics.begin(), new_metrics.end(), comparePromMetric);
     assert_equal("# TYPE a.b.c counter\n", new_metrics[0].typeString());
-    assert_equal("a.b.c{class=\"c123\",pool=\"p123\",counter=\"1\"} 2 1329345880000\na.b.c{class=\"c456\",counter=\"1\"} 2 1329345880000\n", new_metrics[0].toString());
+    assert_equal("a.b.c{po.ol=\"p123\",class=\"c123\",counter=\"1\"} 2 1329345880000\na.b.c{class=\"c456\",counter=\"1\"} 2 1329345880000\n", new_metrics[0].toString());
     assert_equal("# TYPE a.b.c.a.b.c counter\n", new_metrics[1].typeString());
     assert_equal("a.b.c.a.b.c{counter=\"1\"} 2 1329345880000\n", new_metrics[1].toString());
     assert_equal("# TYPE a.b.c.abc counter\n", new_metrics[2].typeString());

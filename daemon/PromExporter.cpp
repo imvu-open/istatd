@@ -11,6 +11,7 @@
 #include <boost/assign.hpp>
 #include <ctype.h>
 #include <iostream>
+#include <fstream>
 
 #define CLEANUP_INTERVAL_SECOND 30
 #define COUNTER_RESOLUTION_SECOND 5
@@ -153,12 +154,13 @@ const std::tr1::unordered_set<std::string> PromExporter::allowed_tags_ =
         ("pool")
         ("cluster");
 
-PromExporter::PromExporter(boost::asio::io_service &svc, bool map_metric_name_) :
+PromExporter::PromExporter(boost::asio::io_service &svc, std::string const &config_file, bool map_metric_name_) :
     svc_(svc),
     cleanup_timer_(svc_),
     staleness_timer_(svc_),
     map_metric_name_(map_metric_name_)
 {
+    load_allowed_tags(config_file);
     cleanup_interval_ = CLEANUP_INTERVAL_SECOND;
     cleanupNext();
     staleness_interval_ = STALE_COUNTER_INTERVAL_SECOND;
@@ -213,6 +215,26 @@ void PromExporter::storeMetrics(std::string const &ctr, std::string const &basen
     }
 }
 
+void PromExporter::load_allowed_tags(std::string const & tagnames_file)
+{
+    if (tagnames_file != "") {
+       std::ifstream infile(tagnames_file.c_str());
+       if (infile.is_open())
+       {
+            std::string tag_name;
+            while(std::getline(infile, tag_name))
+            {
+                istat::trim(tag_name);
+                extra_allowed_tags_.insert(tag_name);
+            }
+       }
+       else
+       {
+            LogError << "PromExporter::load_allowed_tags unable to open: " << tagnames_file;
+       }
+    }
+}
+
 void PromExporter::extract_tags(
             std::string const & base,
             std::vector<std::string> const & cnames,
@@ -233,8 +255,8 @@ void PromExporter::extract_tags(
             else if (bsize < (*it).size())
             {
                 std::string maybe_tag = (*it).substr(bsize);
-                size_t pos = maybe_tag.find_first_of('.', 1);
-                if (pos != std::string::npos && pos + 1 < maybe_tag.size() )
+                size_t pos = get_tag_pos(maybe_tag, 1);
+                if (pos != std::string::npos)
                 {
                     std::string tname = maybe_tag.substr(1, pos-1);
                     if (map_metric_name_) {
@@ -244,25 +266,22 @@ void PromExporter::extract_tags(
                         istat::munge(tname);
                     }
                     std::string tvalue = maybe_tag.substr(pos+1);
-                    if (allowed_tags_.find(tname) != allowed_tags_.end())
-                    {
-                        bool tag_added = false;
-                        for (PromMetric::PromTagList::iterator tit = tags.begin(); tit != tags.end(); ++tit) {
-                            if ((*tit).find(tname) == (*tit).end())
-                            {
-                                (*tit)[tname] = tvalue;
-                                tag_added = true;
-                                break;
-                            }
-                        }
-                        if (! tag_added)
+                    bool tag_added = false;
+                    for (PromMetric::PromTagList::iterator tit = tags.begin(); tit != tags.end(); ++tit) {
+                        if ((*tit).find(tname) == (*tit).end())
                         {
-                            std::tr1::unordered_map<std::string, std::string> tag_grp =
-                                boost::assign::map_list_of<std::string, std::string>(tname, tvalue);
-                            tags.push_back(tag_grp);
+                            (*tit)[tname] = tvalue;
+                            tag_added = true;
+                            break;
                         }
-                        continue;
                     }
+                    if (! tag_added)
+                    {
+                        std::tr1::unordered_map<std::string, std::string> tag_grp =
+                            boost::assign::map_list_of<std::string, std::string>(tname, tvalue);
+                        tags.push_back(tag_grp);
+                    }
+                    continue;
                 }
             }
              no_tag_ctrs.push_back(*it);
@@ -272,6 +291,25 @@ void PromExporter::extract_tags(
     {
         no_tag_ctrs = cnames;
     }
+}
+
+size_t PromExporter::get_tag_pos(std::string const &suffix, size_t start)
+{
+    size_t pos = suffix.find_first_of('.', start);
+    if (pos == std::string::npos) {
+        return pos;
+    }
+    if (pos + 1 < suffix.size() )
+    {
+        std::string candidate = suffix.substr(1, pos-1);
+        if (allowed_tags_.find(candidate) != allowed_tags_.end()
+            || extra_allowed_tags_.find(candidate) != extra_allowed_tags_.end())
+        {
+            return pos;
+        }
+        return get_tag_pos(suffix, pos+1);
+    }
+    return std::string::npos;
 }
 
 void PromExporter::storeAmetric(std::string const & ctr, PromMetric const & prom_metric)

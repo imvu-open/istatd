@@ -50,7 +50,7 @@ void assert_in_heavy_set(std::multimap<int, std::string> &weights, std::set<std:
 boost::shared_ptr<StatServer> makeServerWithPromExporter(boost::asio::io_service & svc)
 {
     Blacklist::Configuration blacklistCfg = {};
-    boost::shared_ptr<IPromExporter> promExporter = boost::make_shared<PromExporter>(boost::ref(svc));
+    boost::shared_ptr<IPromExporter> promExporter = boost::make_shared<PromExporter>(boost::ref(svc), "");
     boost::shared_ptr<IStatStore> statStore = boost::make_shared<NullStatStore>();
     return boost::make_shared<StatServer>(0, "", "", 1, 1, boost::ref(blacklistCfg), boost::ref(svc), boost::ref(statStore), boost::ref(promExporter), 256, 256);
 }
