@@ -7,6 +7,7 @@
 #include <istat/test.h>
 #include <istat/istattime.h>
 #include <istat/Log.h>
+#include <istat/strfunc.h>
 
 #include "../daemon/PromExporter.h"
 
@@ -21,6 +22,27 @@ void storeMetrics(boost::shared_ptr<PromExporter> pe, std::string const & name, 
 bool comparePromMetric(PromMetric & a, PromMetric & b)
 {
     return a.getName() < b.getName();
+}
+
+void compareMetricString(std::string const & a, std::string const & b)
+{
+    std::vector<std::string> as, bs;
+    istat::explode(a, '\n', as);
+    istat::explode(b, '\n', bs);
+    assert_equal(as.size(), bs.size());
+    for (size_t i = 0; i < as.size(); i++)
+    {
+        std::vector<std::string> afields, bfields;
+        istat::explode(as[i], ' ', afields);
+        assert_equal(afields.size(), 3);
+        istat::explode(bs[i], ' ', bfields);
+        assert_equal(bfields.size(), 3);
+        std::sort(afields[0].begin(), afields[0].end());
+        std::sort(bfields[0].begin(), bfields[0].end());
+        assert_equal(afields[0], bfields[0]);
+        assert_equal(afields[1], bfields[1]);
+        assert_equal(afields[2], bfields[2]);
+    }
 }
 
 void test_prom_exporter()
@@ -119,14 +141,18 @@ void test_prom_exporter()
     assert_equal("# TYPE foo_bar counter\n", new_metrics[1].typeString());
     assert_equal("foo_bar{counter=\"1\"} 9 1329345880000\n", new_metrics[1].toString());
     assert_equal("# TYPE x_y_z gauge\n", new_metrics[2].typeString());
-    assert_equal("x_y_z{host=\"h123.\",role=\"r123\"} 0.2 1329345860000\nx_y_z{role=\"r456-1\"} 0.2 1329345860000\n", new_metrics[2].toString());
+    compareMetricString(
+            "x_y_z{host=\"h123.\",role=\"r123\"} 0.2 1329345860000\nx_y_z{role=\"r456-1\"} 0.2 1329345860000\n",
+            new_metrics[2].toString());
     assert_equal("# TYPE x_y_z_a_b_ab123_x_y_z gauge\n", new_metrics[3].typeString());
     assert_equal("x_y_z_a_b_ab123_x_y_z 0.2 1329345860000\n", new_metrics[3].toString());
     assert_equal("# TYPE x_y_z_a_b gauge\n", new_metrics[4].typeString());
     assert_equal("x_y_z_a_b 0.2 1329345860000\n", new_metrics[4].toString());
     assert_equal("# TYPE x_y_z_a_b_ gauge\n", new_metrics[5].typeString());
     assert_equal("x_y_z_a_b_ 0.2 1329345860000\n", new_metrics[5].toString());
-    assert_equal("x_y_z{host=\"h123.\",role=\"r123\"} 0.4 1329345865000\nx_y_z{role=\"r456-1\"} 0.4 1329345865000\n", res[0].toString());
+    compareMetricString(
+            "x_y_z{host=\"h123.\",role=\"r123\"} 0.4 1329345865000\nx_y_z{role=\"r456-1\"} 0.4 1329345865000\n",
+            res[0].toString());
     assert_equal("x_y_z_a_b_ab123_x_y_z 0.4 1329345865000\n", res[1].toString());
     assert_equal("x_y_z_a_b 0.4 1329345865000\n", res[2].toString());
     assert_equal("x_y_z_a_b_ 0.4 1329345865000\n", res[3].toString());
@@ -151,7 +177,9 @@ void test_prom_exporter()
     assert_equal(5, new_metrics.size());
     std::sort(new_metrics.begin(), new_metrics.end(), comparePromMetric);
     assert_equal("# TYPE a_b_c counter\n", new_metrics[0].typeString());
-    assert_equal("a_b_c{class=\"c123\",pool=\"p123\",counter=\"1\"} 2 1329345880000\na_b_c{class=\"c456\",counter=\"1\"} 2 1329345880000\n", new_metrics[0].toString());
+    compareMetricString(
+            "a_b_c{class=\"c123\",pool=\"p123\",counter=\"1\"} 2 1329345880000\na_b_c{class=\"c456\",counter=\"1\"} 2 1329345880000\n",
+            new_metrics[0].toString());
     assert_equal("# TYPE a_b_c_a_b_c counter\n", new_metrics[1].typeString());
     assert_equal("a_b_c_a_b_c{counter=\"1\"} 2 1329345880000\n", new_metrics[1].toString());
     assert_equal("# TYPE a_b_c_abc counter\n", new_metrics[2].typeString());
@@ -249,11 +277,12 @@ void test_prom_exporter_no_name_mapping()
     pe->data_gauges_.clear();
     pe->dumpMetrics(res, new_metrics);
     std::vector<std::string> ctrs;
-    std::string ctr = "x.y.z^host.h123^role.r123^role.r456-1^a-b^a-b.^a-b.ab123.x.y.z";
+    std::string ctr = "x.y.z^host.h123^role.r123^role.r456-1^a-b^a-b.^a-b.ab123.x.y.z^po.ol.a.b.c";
     ctrs.push_back("x.y.z.host.h123.");
     ctrs.push_back("x.y.z.role.r123");
     ctrs.push_back("x.y.z.role.r456-1");
     ctrs.push_back("x.y.z.a-b.ab123.x.y.z");
+    ctrs.push_back("x.y.z.po.ol.a.b.c");
     ctrs.push_back("x.y.z.a-b");
     ctrs.push_back("x.y.z.a-b.");
     ctrs.push_back(".x.y.z");
@@ -274,14 +303,18 @@ void test_prom_exporter_no_name_mapping()
     assert_equal("# TYPE foo.bar counter\n", new_metrics[1].typeString());
     assert_equal("foo.bar{counter=\"1\"} 9 1329345880000\n", new_metrics[1].toString());
     assert_equal("# TYPE x.y.z gauge\n", new_metrics[2].typeString());
-    assert_equal("x.y.z{host=\"h123.\",role=\"r123\"} 0.2 1329345860000\nx.y.z{role=\"r456-1\"} 0.2 1329345860000\n", new_metrics[2].toString());
+    compareMetricString(
+            "x.y.z{host=\"h123.\",role=\"r123\",po.ol=\"a.b.c\"} 0.2 1329345860000\nx.y.z{role=\"r456-1\"} 0.2 1329345860000\n",
+            new_metrics[2].toString());
     assert_equal("# TYPE x.y.z.a-b.ab123.x.y.z gauge\n", new_metrics[3].typeString());
     assert_equal("x.y.z.a-b.ab123.x.y.z 0.2 1329345860000\n", new_metrics[3].toString());
     assert_equal("# TYPE x.y.z.a-b gauge\n", new_metrics[4].typeString());
     assert_equal("x.y.z.a-b 0.2 1329345860000\n", new_metrics[4].toString());
     assert_equal("# TYPE x.y.z.a-b. gauge\n", new_metrics[5].typeString());
     assert_equal("x.y.z.a-b. 0.2 1329345860000\n", new_metrics[5].toString());
-    assert_equal("x.y.z{host=\"h123.\",role=\"r123\"} 0.4 1329345865000\nx.y.z{role=\"r456-1\"} 0.4 1329345865000\n", res[0].toString());
+    compareMetricString(
+            "x.y.z{host=\"h123.\",role=\"r123\",po.ol=\"a.b.c\"} 0.4 1329345865000\nx.y.z{role=\"r456-1\"} 0.4 1329345865000\n",
+            res[0].toString());
     assert_equal("x.y.z.a-b.ab123.x.y.z 0.4 1329345865000\n", res[1].toString());
     assert_equal("x.y.z.a-b 0.4 1329345865000\n", res[2].toString());
     assert_equal("x.y.z.a-b. 0.4 1329345865000\n", res[3].toString());
@@ -306,7 +339,9 @@ void test_prom_exporter_no_name_mapping()
     assert_equal(5, new_metrics.size());
     std::sort(new_metrics.begin(), new_metrics.end(), comparePromMetric);
     assert_equal("# TYPE a.b.c counter\n", new_metrics[0].typeString());
-    assert_equal("a.b.c{po.ol=\"p123\",class=\"c123\",counter=\"1\"} 2 1329345880000\na.b.c{class=\"c456\",counter=\"1\"} 2 1329345880000\n", new_metrics[0].toString());
+    compareMetricString(
+            "a.b.c{po.ol=\"p123\",class=\"c123\",counter=\"1\"} 2 1329345880000\na.b.c{class=\"c456\",counter=\"1\"} 2 1329345880000\n",
+            new_metrics[0].toString());
     assert_equal("# TYPE a.b.c.a.b.c counter\n", new_metrics[1].typeString());
     assert_equal("a.b.c.a.b.c{counter=\"1\"} 2 1329345880000\n", new_metrics[1].toString());
     assert_equal("# TYPE a.b.c.abc counter\n", new_metrics[2].typeString());
