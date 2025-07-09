@@ -29,6 +29,7 @@ public:
     typedef std::list<std::tr1::unordered_map<std::string, std::string> > PromTagList;
 
     PromMetric(std::string const &ctr, time_t time, double val, bool translate_name = true);
+    PromMetric(std::string const &ctr, PromTagList const & tags, double val, bool translate_name = true);
     PromMetric(std::string const &ctr, PromTagList const & tags, time_t time, double val, bool translate_name = true);
     std::string toString() const;
     std::string typeString() const;
@@ -70,7 +71,11 @@ public:
 class PromExporter : public IPromExporter
 {
 public:
-    PromExporter(boost::asio::io_service &svc, std::string const &config_file, bool map_metric_name_ = true);
+    PromExporter(boost::asio::io_service &svc, std::string const &config_file,
+            bool map_metric_name = true,
+            size_t max_count = -1,
+            int cleanup_period = 30
+            );
     virtual ~PromExporter();
     void dumpMetrics(std::vector<PromMetric> &res, std::vector<PromMetric> & new_metrics);
     void storeMetrics(std::string const &ctr, std::string const & basename, std::vector<std::string> const & cname, time_t time, double val);
@@ -96,7 +101,11 @@ private:
     static const TagNameSet allowed_tags_;
     TagNameSet extra_allowed_tags_;
     bool map_metric_name_;
+    size_t max_metric_count_;
+    PromMetric::PromTagList agent_tags_;
 
+    inline bool max_count_reached() { return max_metric_count_ > 0 && data_gauges_.size() + data_counters_.size() > max_metric_count_; }
+    void insertCounter(std::string const & ctr, PromMetric const & prom_metric);
     void load_allowed_tags(std::string const & file);
     size_t get_tag_pos(std::string const &suffix, size_t start);
     void extract_tags(

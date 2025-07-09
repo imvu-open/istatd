@@ -9,21 +9,31 @@
 #include <boost/bind/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/assign.hpp>
+#include <boost/asio/ip/host_name.hpp>
 #include <ctype.h>
 #include <iostream>
 #include <fstream>
 
-#define CLEANUP_INTERVAL_SECOND 30
 #define COUNTER_RESOLUTION_SECOND 5
 #define STALE_COUNTER_INTERVAL_SECOND 86400
 
 DebugOption debugPromExporter("promExporter");
+std::string metrics_dropped_counter("*istatd.agent.dropped.metrics");
 
 PromMetric::PromMetric(std::string const &ctr, time_t time, double val, bool translate_name) :
     time_(time),
     value_(val),
     counter_updated_(true)
 {
+    init(ctr, translate_name);
+}
+
+PromMetric::PromMetric(std::string const &ctr, PromTagList const & tags, double val, bool translate_name) :
+    value_(val),
+    counter_updated_(true),
+    tags_(tags)
+{
+    istat::istattime(&time_);
     init(ctr, translate_name);
 }
 
@@ -48,12 +58,7 @@ void PromMetric::init(std::string const& ctr, bool translate_name)
     {
         type_ = PromMetric::PromTypeGauge;
     }
-    if (translate_name) {
-        istat::prom_munge(name_);
-    }
-    else {
-        istat::munge(name_);
-    }
+    istat::prom_munge_or_munge(name_, translate_name);
 }
 
 std::string PromMetric::toString() const
@@ -154,14 +159,18 @@ const std::tr1::unordered_set<std::string> PromExporter::allowed_tags_ =
         ("pool")
         ("cluster");
 
-PromExporter::PromExporter(boost::asio::io_service &svc, std::string const &config_file, bool map_metric_name_) :
+PromExporter::PromExporter(boost::asio::io_service &svc, std::string const &config_file, bool map_metric_name, size_t max_count, int cleanup_period) :
     svc_(svc),
+    cleanup_interval_(cleanup_period),
     cleanup_timer_(svc_),
     staleness_timer_(svc_),
-    map_metric_name_(map_metric_name_)
+    map_metric_name_(map_metric_name),
+    max_metric_count_(max_count)
 {
     load_allowed_tags(config_file);
-    cleanup_interval_ = CLEANUP_INTERVAL_SECOND;
+    std::string hostname = boost::asio::ip::host_name();
+    istat::prom_munge_or_munge(hostname, map_metric_name_);
+    agent_tags_ = boost::assign::list_of(boost::assign::map_list_of("host", hostname));
     cleanupNext();
     staleness_interval_ = STALE_COUNTER_INTERVAL_SECOND;
     removeStaleCounterNext();
@@ -259,12 +268,7 @@ void PromExporter::extract_tags(
                 if (pos != std::string::npos)
                 {
                     std::string tname = maybe_tag.substr(1, pos-1);
-                    if (map_metric_name_) {
-                        istat::prom_munge(tname);
-                    }
-                    else {
-                        istat::munge(tname);
-                    }
+                    istat::prom_munge_or_munge(tname, map_metric_name_);
                     std::string tvalue = maybe_tag.substr(pos+1);
                     bool tag_added = false;
                     for (PromMetric::PromTagList::iterator tit = tags.begin(); tit != tags.end(); ++tit) {
@@ -314,21 +318,27 @@ size_t PromExporter::get_tag_pos(std::string const &suffix, size_t start)
 
 void PromExporter::storeAmetric(std::string const & ctr, PromMetric const & prom_metric)
 {
-
-    if (PromMetric::PromTypeCounter == prom_metric.getType()) {
-        CumulativeCountsMap::iterator cit = data_counters_.find(ctr);
-        if (cit == data_counters_.end())
-        {
-            data_counters_.insert(std::pair<std::string, PromMetric>(ctr, prom_metric));
-        }
-        else
-        {
-            (*cit).second.accumulate(prom_metric);
-        }
+    if (max_count_reached())
+    {
+        insertCounter(metrics_dropped_counter, PromMetric(metrics_dropped_counter, agent_tags_, 1, map_metric_name_));
     }
     else
     {
-        data_gauges_.insert(std::pair<time_t, PromMetric>(prom_metric.getTimestamp(), prom_metric));
+        if (PromMetric::PromTypeCounter == prom_metric.getType()) {
+            insertCounter(ctr, prom_metric);
+        } else {
+            data_gauges_.insert(std::pair<time_t, PromMetric>(prom_metric.getTimestamp(), prom_metric));
+        }
+    }
+}
+
+void PromExporter::insertCounter(std::string const & ctr, PromMetric const & prom_metric)
+{
+    CumulativeCountsMap::iterator cit = data_counters_.find(ctr);
+    if (cit == data_counters_.end()) {
+        data_counters_.insert(std::pair<std::string, PromMetric>(ctr, prom_metric));
+    } else {
+        (*cit).second.accumulate(prom_metric);
     }
 }
 

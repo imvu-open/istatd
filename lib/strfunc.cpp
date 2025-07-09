@@ -853,5 +853,14 @@ namespace istat
             key.insert(key.begin(), '_');
         }
     }
+
+    void prom_munge_or_munge(std::string &s, bool do_prom_mung)
+    {
+        if (do_prom_mung) {
+            istat::prom_munge(s);
+        } else {
+            istat::munge(s);
+        }
+    }
 }
 

@@ -49,7 +49,7 @@ void test_prom_exporter()
 {
     istat::FakeTime ft(1329345881);
     boost::asio::io_service svc;
-    boost::shared_ptr<PromExporter> pe = boost::make_shared<PromExporter>(boost::ref(svc), "");
+    boost::shared_ptr<PromExporter> pe = boost::make_shared<PromExporter>(boost::ref(svc), "", true, -1, 30);
     std::vector<PromMetric> res;
     std::vector<PromMetric> new_metrics;
 
@@ -198,6 +198,24 @@ void test_prom_exporter()
     assert_equal(expected, pe->data_counters_.size());
     assert_equal(true, pe->data_counters_.end() == pe->data_counters_.find("a_stale"));
     assert_equal(true, pe->data_counters_.end() == pe->data_counters_.find("z_stale"));
+
+    //test mamimum meric count
+    pe->data_gauges_.clear();
+    pe->data_counters_.clear();
+    pe->max_metric_count_ = 2;
+    storeMetrics(pe, "*a.ok.1", 1329345850, 1);
+    storeMetrics(pe, "*a.ok.2", 1329345850, 1);
+    storeMetrics(pe, "z.ok", 1329345870, 1);
+    storeMetrics(pe, "z.dropped", 1329345880, 1);
+    storeMetrics(pe, "*y.dropped", 1329345880, 1);
+    assert_equal(3, pe->data_counters_.size());
+    assert_equal(1, pe->data_gauges_.size());
+    std::string dropped_counter("*istatd.agent.dropped.metrics");
+    PromExporter::CumulativeCountsMap::iterator ait = pe->data_counters_.find(dropped_counter);
+    assert_equal(true, pe->data_counters_.end() != ait);
+    assert_equal(2, ait->second.getValue());
+    assert_equal(1329345881, ait->second.getTimestamp());
+    assert_equal("istatd_agent_dropped_metrics", ait->second.getName());
 }
 
 void test_prom_exporter_no_name_mapping()
@@ -213,6 +231,7 @@ void test_prom_exporter_no_name_mapping()
     boost::shared_ptr<PromExporter> pe = boost::make_shared<PromExporter>(boost::ref(svc), config_file, false);
     std::vector<PromMetric> res;
     std::vector<PromMetric> new_metrics;
+    pe->max_metric_count_ = -1;
 
     //test storeMetrics
     storeMetrics(pe, "*foo.bar", 1329345850, 1);
@@ -360,6 +379,23 @@ void test_prom_exporter_no_name_mapping()
     assert_equal(expected, pe->data_counters_.size());
     assert_equal(true, pe->data_counters_.end() == pe->data_counters_.find("a.stale"));
     assert_equal(true, pe->data_counters_.end() == pe->data_counters_.find("z.stale"));
+
+    //test mamimum meric count
+    pe->data_gauges_.clear();
+    pe->data_counters_.clear();
+    pe->max_metric_count_ = 2;
+    storeMetrics(pe, "*a.ok.1", 1329345850, 1);
+    storeMetrics(pe, "*a.ok.2", 1329345850, 1);
+    storeMetrics(pe, "z.ok", 1329345870, 1);
+    storeMetrics(pe, "z.dropped", 1329345880, 1);
+    storeMetrics(pe, "*y.dropped", 1329345880, 1);
+    assert_equal(3, pe->data_counters_.size());
+    assert_equal(1, pe->data_gauges_.size());
+    std::string dropped_counter("*istatd.agent.dropped.metrics");
+    PromExporter::CumulativeCountsMap::iterator ait = pe->data_counters_.find(dropped_counter);
+    assert_equal(true, pe->data_counters_.end() != ait);
+    assert_equal(2, ait->second.getValue());
+    assert_equal(1329345881, ait->second.getTimestamp());
 }
 
 void func() {
