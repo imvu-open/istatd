@@ -1,3 +1,13 @@
+istatd (1.08-1) UNRELEASED; urgency=medium
+
+  * Fix the value of a gauge sent by promexporter
+  * add configuration option not to map to Prometheus metric names
+  * add the option to look for allowed tag names for mapping to prometheus metrics; allow . in tag name
+  * fix some tests
+  * add options to limit memory usage of agent when exposing metrics is enabled
+
+ -- Fang Fang <ffang@imvu.com>  Wed, 09 Jul 2025 15:41:46 -0700
+
 istatd (1.07-5) UNRELEASED; urgency=medium
 
   * update istatd-agent init script
